@@ -36,3 +36,36 @@ test('niente file fuori dalla cartella, 404 e 405', async () => {
   assert.equal((await fetch(`${url}/`, { method: 'POST' })).status, 405);
   server.close();
 });
+
+function setupJev(ask) {
+  const server = createServer(mkdtempSync(path.join(tmpdir(), 'ur-')), { ask });
+  return new Promise(resolve => server.listen(0, '127.0.0.1', () =>
+    resolve({ server, url: `http://127.0.0.1:${server.address().port}` })));
+}
+const post = (url, body) => fetch(`${url}/api/jev`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+
+test('proxy Jev: disponibilità e inoltro', async () => {
+  let ricevuto;
+  const { server, url } = await setupJev(async req => { ricevuto = req; return { answers: { q: { noul: 0.8 } } }; });
+  assert.deepEqual(await (await fetch(`${url}/api/jev`)).json(), { disponibile: true });
+  const r = await post(url, JSON.stringify({ state: { s: 1 }, questions: { q: { type: 'noul', instructions: 'x' } } }));
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).answers.q.noul, 0.8);
+  assert.deepEqual(ricevuto, { state: { s: 1 }, questions: { q: { type: 'noul', instructions: 'x' } } });
+  assert.equal((await post(url, 'boh')).status, 400);
+  assert.equal((await post(url, JSON.stringify({ state: 1 }))).status, 400);
+  assert.equal((await post(url, JSON.stringify({ state: 'x'.repeat(300000), questions: {} }))).status, 413);
+  server.close();
+});
+
+test('proxy Jev: senza chiave 503, errore di Jev 502', async () => {
+  const a = await setupJev(null);
+  assert.deepEqual(await (await fetch(`${a.url}/api/jev`)).json(), { disponibile: false });
+  assert.equal((await post(a.url, JSON.stringify({ state: {}, questions: {} }))).status, 503);
+  a.server.close();
+  const b = await setupJev(async () => { throw new Error('Jev 529: occupato'); });
+  const r = await post(b.url, JSON.stringify({ state: {}, questions: {} }));
+  assert.equal(r.status, 502);
+  assert.match((await r.json()).errore, /529/);
+  b.server.close();
+});
