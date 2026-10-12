@@ -1,0 +1,48 @@
+:root {
+  --pergamena: #efe3c8; --inchiostro: #2b2118; --bordo: #8b6d47; --accento: #8b1e1e;
+  --mare: #a9c4c9; --pannello: #f6eedb; --riga: #e2d4b4;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--pergamena); color: var(--inchiostro); font: 14px/1.4 Georgia, 'Times New Roman', serif; }
+body { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+header#barra { grid-row: 1; display: flex; gap: 10px; align-items: center; padding: 6px 12px; background: #3b2a1a; color: #f3e6c8; flex-wrap: wrap; font-size: 13px; }
+header#barra[hidden] { display: none; }
+#b-data { font-weight: bold; min-width: 220px; }
+.voce b { color: #fff; }
+#b-vel { display: inline-block; min-width: 72px; text-align: center; }
+button, .bottone { font: inherit; background: var(--pannello); color: var(--inchiostro); border: 1px solid var(--bordo); border-radius: 4px; padding: 3px 9px; cursor: pointer; }
+button:hover:not(:disabled), .bottone:hover { background: #fff7e3; }
+button:disabled { opacity: .5; cursor: default; }
+button.attivo, button.attivo:hover:not(:disabled) { background: var(--accento); color: #fff; border-color: var(--accento); }
+main { grid-row: 2; position: relative; display: grid; grid-template-columns: 1fr 360px; min-height: 0; }
+main.senza-pannello { grid-template-columns: 1fr; }
+canvas#mappa { width: 100%; height: 100%; display: block; background: var(--mare); cursor: crosshair; }
+aside#pannello { overflow-y: auto; background: var(--pannello); border-left: 2px solid var(--bordo); padding: 10px 12px; }
+aside#pannello[hidden] { display: none; }
+h2, h3 { margin: .4em 0; font-variant: small-caps; letter-spacing: .03em; }
+.schede { display: flex; gap: 4px; margin: 10px 0 6px; flex-wrap: wrap; }
+table { border-collapse: collapse; width: 100%; }
+td { padding: 2px 4px; border-bottom: 1px solid var(--riga); vertical-align: top; }
+.riga { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--riga); }
+.riga.scelta { background: #fff7e3; }
+.muto { color: #7a6a55; font-size: 12px; }
+.guerra { color: #b03a2e; font-weight: bold; }
+.comandi { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+#inizio { position: absolute; left: 12px; top: 12px; bottom: 12px; width: 420px; display: flex; flex-direction: column; background: rgba(246, 238, 219, .96); border: 2px solid var(--bordo); border-radius: 6px; padding: 12px; }
+#inizio[hidden] { display: none; }
+#inizio h1 { margin: 0 0 4px; font-variant: small-caps; color: var(--accento); }
+#inizio-lista { overflow-y: auto; flex: 1; margin: 8px 0; }
+.carta { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 4px; cursor: pointer; }
+.carta:hover, .carta.scelta { background: #fff7e3; outline: 1px solid var(--bordo); }
+.colore { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #0006; flex: none; }
+.diff { margin-left: auto; font-size: 12px; }
+.diff-facile { color: #2e7d32; } .diff-normale { color: #6d5d2e; } .diff-difficile { color: #b8621b; } .diff-molto-difficile { color: #b03a2e; }
+#inizio-scheda { min-height: 120px; border-top: 1px solid var(--bordo); padding-top: 8px; }
+#notizie { position: absolute; left: 12px; bottom: 12px; max-width: 480px; pointer-events: none; display: flex; flex-direction: column; gap: 3px; }
+#notizie div { background: rgba(43, 33, 24, .82); color: #f3e6c8; padding: 3px 8px; border-radius: 3px; font-size: 13px; }
+#avviso { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: var(--accento); color: #fff; padding: 6px 14px; border-radius: 4px; z-index: 5; }
+#avviso[hidden] { display: none; }
+#finestra { position: absolute; inset: 0; background: rgba(30, 20, 10, .45); display: grid; place-items: center; z-index: 4; }
+#finestra[hidden] { display: none; }
+#finestra-corpo { background: var(--pannello); border: 2px solid var(--bordo); border-radius: 6px; padding: 16px 20px; max-width: 520px; max-height: 80vh; overflow-y: auto; }
+input[type=number] { width: 80px; font: inherit; }

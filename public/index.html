@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universalis Romae</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="barra" hidden>
+    <span id="b-data"></span>
+    <span class="voce" title="Tesoro e saldo mensile">Tesoro <b id="b-tesoro"></b> <small id="b-entrate"></small></span>
+    <span class="voce" title="Uomini disponibili / massimo">Uomini <b id="b-uomini"></b></span>
+    <span class="voce">Stabilità <b id="b-stabilita"></b></span>
+    <span class="voce" title="Infamia / soglia delle coalizioni">Infamia <b id="b-infamia"></b></span>
+    <span>
+      <button id="b-pausa" title="Pausa: barra spaziatrice">▶</button>
+      <button id="b-meno" title="Più lento: tasto −">−</button>
+      <span id="b-vel"></span>
+      <button id="b-piu" title="Più veloce: tasto +">+</button>
+    </span>
+    <span id="b-modi">
+      <button data-modo="politica" class="attivo">Politica</button>
+      <button data-modo="cultura">Cultura</button>
+      <button data-modo="terreno">Terreno</button>
+      <button data-modo="relazioni">Relazioni</button>
+    </span>
+    <span>
+      <button id="b-esporta">Esporta</button>
+      <label class="bottone">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
+    </span>
+  </header>
+  <main class="senza-pannello">
+    <canvas id="mappa"></canvas>
+    <aside id="pannello" hidden>
+      <div id="provincia"><p class="muto">Clic su una provincia per vederla.</p></div>
+      <div class="schede" id="schede">
+        <button data-scheda="governo" class="attivo">Governo</button>
+        <button data-scheda="diplomazia">Diplomazia</button>
+        <button data-scheda="eserciti">Eserciti</button>
+        <button data-scheda="guerre">Guerre</button>
+      </div>
+      <div id="scheda"></div>
+    </aside>
+    <section id="inizio">
+      <h1>Universalis Romae</h1>
+      <div class="muto">Italia, 753 a.C. Scegli un popolo dalla lista o sulla mappa.</div>
+      <div id="inizio-lista"></div>
+      <div id="inizio-scheda"><p class="muto">Nessun popolo scelto.</p></div>
+      <div class="comandi">
+        <label>Seme <input id="inizio-seme" type="number" min="1" value="1"></label>
+        <button id="inizio-via" disabled>Inizia</button>
+        <button id="inizio-continua" hidden>Continua</button>
+        <label class="bottone">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
+      </div>
+    </section>
+    <div id="notizie"></div>
+    <div id="avviso" hidden></div>
+    <div id="finestra" hidden><div id="finestra-corpo"></div></div>
+  </main>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

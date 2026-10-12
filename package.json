@@ -8,11 +8,13 @@
     "test": "node --test test/*.test.js",
     "fetch-ne": "sh tools/fetch-ne.sh",
     "build-map": "node tools/build-map.js",
-    "bench": "node bench.js"
+    "bench": "node bench.js",
+    "smoke": "node tools/smoke.mjs"
   },
   "devDependencies": {
     "d3-delaunay": "6.0.4",
     "d3-geo": "3.1.1",
+    "playwright-core": "1.63.0",
     "polygon-clipping": "0.15.7"
   }
 }
