@@ -810,9 +810,13 @@ test('sessione: si ferma per una proposta al giocatore, la fine, la sconfitta', 
 test('sessione: richiamo a ogni capodanno e notizie', () => {
   const s = createSession(data, 'roma', 1);
   let anni = 0;
-  const r = runDays(s, 300, { onYear: () => anni++ });
+  // una proposta dell'IA al giocatore ferma il tempo: la si scarta e si riparte
+  while (s.game.day < 300) {
+    s.game.proposte = {};
+    const r = runDays(s, 300 - s.game.day, { onYear: () => anni++ });
+    assert.ok(Array.isArray(r.notizie));
+  }
   assert.equal(anni, 1); // il 1 gennaio 752 a.C. è il giorno 255
-  assert.ok(Array.isArray(r.notizie));
 });
 ```
 
@@ -1746,9 +1750,10 @@ In `tools/smoke.mjs`, prima della riga `// @@ controlli successivi @@`, inserisc
   });
   await page.click('[data-scheda="guerre"]');
   await page.check('input[name^="chiedi-"][value="fidenae"]');
-  await page.keyboard.press(' ');
-  await wait(800);
-  await page.keyboard.press(' ');
+  // pausa con il bottone: la barra spaziatrice su una casella la toglierebbe
+  await page.click('#b-pausa');
+  await wait(400);
+  await page.click('#b-pausa');
   check(await page.isChecked('input[name^="chiedi-"][value="fidenae"]'), 'la casella spuntata resta spuntata mentre il tempo scorre');
   // esercito selezionato che scompare
   await page.evaluate(() => {
@@ -1835,6 +1840,8 @@ export function guerreHtml(list) {
 ```
 
 - [ ] **Step 4: Collega pannelli e comandi in `public/js/main.js`**
+
+Nota: la scheda Guerre mostra Veio perché Roma confina con Veio e Fidenae (di Veio); i Sabini non confinano con Roma.
 
 Aggiungi l'import di `applyCommand` accanto agli altri:
 
@@ -2003,17 +2010,26 @@ Prima della riga `// @@ controlli successivi @@`:
   await page.evaluate(async () => {
     const { declareWar, proposePeace } = await import('/js/sim/war.js');
     const g = window.universalis.ui.session.game;
-    const { guerra } = declareWar(g, 'sabini', 'roma');
-    proposePeace(g, 'sabini', guerra, { ricevente: 'sabini', province: [] });
+    g.proposte = {};
+    const { guerra } = declareWar(g, 'caere', 'roma');
+    proposePeace(g, 'caere', guerra, { ricevente: 'caere', province: [] });
     window.universalis.avanza(1);
   });
   check(await page.isVisible('#finestra'), 'proposta al giocatore: finestra aperta');
   check((await page.textContent('#finestra')).includes('pace bianca'), 'testo della proposta');
   await page.click('[data-azione="rispondi"][data-accetta="1"]');
   check(await page.isHidden('#finestra'), 'risposta data: finestra chiusa');
-  check(await page.evaluate(() => !Object.values(window.universalis.ui.session.game.guerre).some(w => w.attaccanti.includes('sabini'))), 'pace con i Sabini firmata');
+  check(await page.evaluate(() => !Object.values(window.universalis.ui.session.game.guerre).some(w => w.attaccanti.includes('caere'))), 'pace con Caere firmata');
 
-  await page.evaluate(() => window.universalis.avanza(400));
+  await page.evaluate(() => {
+    const u = window.universalis.ui;
+    const fine = u.session.game.day + 400;
+    while (u.session.game.day < fine) {
+      u.session.game.proposte = {};
+      window.universalis.avanza(fine - u.session.game.day);
+    }
+    document.getElementById('finestra').hidden = true;
+  });
   check(await page.evaluate(() => Boolean(localStorage.getItem('universalis-romae:autosave'))), 'salvataggio automatico a capodanno');
 
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#b-esporta')]);
@@ -2032,6 +2048,7 @@ Prima della riga `// @@ controlli successivi @@`:
 
   await page.evaluate(async () => {
     const { END_DAY } = await import('/js/sim/calendar.js');
+    window.universalis.ui.session.game.proposte = {};
     window.universalis.ui.session.game.day = END_DAY - 1;
     window.universalis.avanza(1);
   });
