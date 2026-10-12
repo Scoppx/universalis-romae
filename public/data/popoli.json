@@ -1,0 +1,310 @@
+{
+  "popoli": [
+    {
+      "id": "roma", "nome": "Roma", "colore": "#a01c2c", "cultura": "latina", "governo": "monarchia",
+      "capitale": "roma", "difficolta": "facile",
+      "tratti": { "reclute": 0.5, "stabilita": 0.5, "battaglia": 1 },
+      "carattere": "Città giovane, ambiziosa e testarda: non accetta paci sfavorevoli e torna a combattere dopo ogni sconfitta. Lega a sé i vinti con alleanze e colonie invece di annientarli, e usa i vicini latini come riserva di soldati."
+    },
+    {
+      "id": "lega_latina", "nome": "Lega latina", "colore": "#c4505e", "cultura": "latina", "governo": "lega",
+      "capitale": "alba_longa", "difficolta": "normale",
+      "tratti": { "reclute": 0.2 },
+      "carattere": "Confederazione di città latine unite da santuari e feste comuni, lenta a decidere ma solidale quando è minacciata. Preferisce la difesa comune contro Volsci ed Equi e teme sopra ogni cosa che una sola città, come Roma, prenda il comando."
+    },
+    {
+      "id": "sabini", "nome": "Sabini", "colore": "#5a8a3a", "cultura": "sabina", "governo": "tribù",
+      "capitale": "cures", "difficolta": "normale",
+      "tratti": { "montagna": 1 },
+      "carattere": "Popolo di colline, pastori e contadini austeri, legati a Roma da matrimoni e da antiche guerre. Scendono a valle per razzie e vendette, ma accettano volentieri accordi e fusioni con i vicini che li trattano da pari."
+    },
+    {
+      "id": "falisci", "nome": "Falisci", "colore": "#8e4f6e", "cultura": "falisca", "governo": "città-stato",
+      "capitale": "falerii", "difficolta": "difficile",
+      "tratti": {},
+      "carattere": "Piccolo popolo di lingua affine al latino ma di costumi etruschi, stretto tra Roma e Veio. Si difende nelle sue città su rupi e cerca sempre la protezione di Veio contro Roma."
+    },
+    {
+      "id": "veio", "nome": "Veio", "colore": "#b5651d", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "veio", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "La città etrusca più vicina a Roma, ricca e ben fortificata, rivale diretta per il Tevere e le saline. Combatte guerre lunghe e ostinate contro Roma e chiede aiuto alle altre città etrusche, che però raramente rispondono."
+    },
+    {
+      "id": "caere", "nome": "Caere", "colore": "#c1882b", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "caere", "difficolta": "normale",
+      "tratti": { "assimilazione": 0.2 },
+      "carattere": "Città marinara e commerciale, aperta a Greci e Fenici, più interessata ai porti e ai traffici che alle conquiste. Preferisce l'amicizia con Roma e le alleanze navali alla guerra di terra."
+    },
+    {
+      "id": "tarquinia", "nome": "Tarquinia", "colore": "#8b3a1e", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "tarquinia", "difficolta": "normale",
+      "tratti": { "stabilita": 0.2 },
+      "carattere": "Antica e orgogliosa città sacerdotale, guida religiosa dell'Etruria meridionale. Diffida di Roma, combatte con durezza quando si sente sfidata e cerca di trascinare con sé le altre città etrusche."
+    },
+    {
+      "id": "vulci", "nome": "Vulci", "colore": "#d09a3a", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "vulci", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Città ricca di botteghe e commerci con la Grecia, attenta ai guadagni. Fa guerra soprattutto per difendere le sue terre e le sue vie commerciali e si allea volentieri con le città etrusche vicine."
+    },
+    {
+      "id": "volsinii", "nome": "Volsinii", "colore": "#a0522d", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "volsinii", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Sede del santuario federale degli Etruschi, ricca e conservatrice. Cerca di essere il centro della lega etrusca e di guidare le altre città contro i nemici comuni, più con la diplomazia che con iniziative proprie."
+    },
+    {
+      "id": "chiusi", "nome": "Chiusi", "colore": "#7a4a1c", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "clusium", "difficolta": "normale",
+      "tratti": { "reclute": 0.2 },
+      "carattere": "Potente città dell'interno, con campagne fertili e molti uomini. Ha re ambiziosi pronti a grandi spedizioni verso sud, ma è anche disposta a trattare una pace vantaggiosa dopo aver mostrato la forza."
+    },
+    {
+      "id": "volterra", "nome": "Volterra", "colore": "#c06a2b", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "volaterrae", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Città su un'altura isolata, padrona di un vasto territorio collinare e minerario. Prudente e difensiva, combatte soprattutto quando i nemici arrivano vicino e si fida poco delle alleanze lontane."
+    },
+    {
+      "id": "populonia", "nome": "Populonia", "colore": "#9e6b2a", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "populonia", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Città portuale del ferro, vive di miniere e di commercio per mare. Evita le guerre di terra quando può e cerca accordi con chi controlla le rotte."
+    },
+    {
+      "id": "perugia", "nome": "Perugia", "colore": "#b04a2a", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "perusia", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Città di frontiera tra Etruschi e Umbri, solidamente murata. Guarda a oriente verso le valli umbre e alterna scontri e alleanze con i vicini a seconda di chi è più forte."
+    },
+    {
+      "id": "arezzo", "nome": "Arezzo", "colore": "#8a5a14", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "arretium", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Città di artigiani del bronzo e di agricoltori, nel nord dell'Etruria. Pragmatica, preferisce la pace e il commercio, e si schiera con il più forte quando la guerra si avvicina."
+    },
+    {
+      "id": "felsina", "nome": "Felsina", "colore": "#c47a45", "cultura": "etrusca", "governo": "monarchia",
+      "capitale": "felsina", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Avamposto etrusco nella pianura padana, ricco ma esposto, lontano dalle altre città sorelle. Si espande verso la pianura aperta e cerca accordi con i vicini, perché sa di avere pochi alleati vicini."
+    },
+    {
+      "id": "umbri", "nome": "Umbri", "colore": "#7a9a4a", "cultura": "umbra", "governo": "tribù",
+      "capitale": "iguvium", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo antico e devoto, sparso in comunità di collina sull'Appennino centrale. Più difensivo che aggressivo, teme gli Etruschi a ovest e si unisce volentieri a coalizioni contro chi diventa troppo potente."
+    },
+    {
+      "id": "piceni", "nome": "Piceni", "colore": "#4a7a6a", "cultura": "picena", "governo": "tribù",
+      "capitale": "asculum", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo guerriero della costa adriatica, armato in modo pesante e fiero della sua indipendenza. Commercia per mare ma difende con violenza le sue valli e si allea poco con gli stranieri."
+    },
+    {
+      "id": "volsci", "nome": "Volsci", "colore": "#2e6b3a", "cultura": "volsca", "governo": "tribù",
+      "capitale": "sora", "difficolta": "molto difficile",
+      "tratti": { "montagna": 1 },
+      "carattere": "Montanari aggressivi e poveri che scendono ogni anno a razziare la pianura latina. Preferiscono le incursioni rapide alle battaglie campali e si alleano volentieri con gli Equi contro Latini e Romani."
+    },
+    {
+      "id": "equi", "nome": "Equi", "colore": "#6b8e23", "cultura": "equa", "governo": "tribù",
+      "capitale": "carsioli", "difficolta": "molto difficile",
+      "tratti": { "montagna": 1 },
+      "carattere": "Piccolo popolo di montanari, famosi per le loro scorrerie dai passi appenninici verso il Lazio. Colpiscono e si ritirano sui monti, evitano gli assedi e cercano sempre un alleato contro Roma, di solito i Volsci."
+    },
+    {
+      "id": "marsi", "nome": "Marsi", "colore": "#3d6b4f", "cultura": "sabellica", "governo": "tribù",
+      "capitale": "marruvium", "difficolta": "difficile",
+      "tratti": { "montagna": 1 },
+      "carattere": "Montanari tenaci attorno al lago Fucino, guerrieri stimati e temuti. Difendono i loro valichi con ostinazione e si alleano con gli altri popoli sabellici più che con le città di pianura."
+    },
+    {
+      "id": "ernici", "nome": "Ernici", "colore": "#5e7f2a", "cultura": "ernica", "governo": "lega",
+      "capitale": "anagnia", "difficolta": "difficile",
+      "tratti": {},
+      "carattere": "Piccola lega di città nella valle del Sacco, stretta tra Latini, Volsci ed Equi. Sopravvive cercando un protettore forte e scegliendo con cura con chi allearsi, pronta a cambiare parte se il protettore la tratta male."
+    },
+    {
+      "id": "aurunci", "nome": "Aurunci", "colore": "#6a6a2a", "cultura": "aurunca", "governo": "tribù",
+      "capitale": "suessa", "difficolta": "difficile",
+      "tratti": {},
+      "carattere": "Antico popolo tra Lazio e Campania, chiuso nelle sue alture vulcaniche. Debole e difensivo, si unisce alle coalizioni dei vicini contro chi avanza verso sud."
+    },
+    {
+      "id": "sanniti", "nome": "Sanniti", "colore": "#4f7a3a", "cultura": "sannita", "governo": "lega",
+      "capitale": "bovianum", "difficolta": "normale",
+      "tratti": { "montagna": 2, "assedio": -0.5, "reclute": 0.2 },
+      "carattere": "Montanari bellicosi riuniti in lega. Diffidano delle città di pianura, preferiscono razziare e combattere sui monti piuttosto che assediare."
+    },
+    {
+      "id": "opici", "nome": "Opici", "colore": "#8a8a3a", "cultura": "osca", "governo": "tribù",
+      "capitale": "capua", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Contadini della fertile pianura campana, ricchi ma poco bellicosi. Preferiscono commerciare con Greci ed Etruschi e comprare la pace, e cercano alleati forti quando i montanari scendono a razziare."
+    },
+    {
+      "id": "cuma", "nome": "Cuma", "colore": "#2a5a9a", "cultura": "greca", "governo": "città-stato",
+      "capitale": "cumae", "difficolta": "difficile",
+      "tratti": { "stabilita": 0.2 },
+      "carattere": "La più antica colonia greca della penisola, città di mare e di commercio, con flotta e mura solide. Difende i suoi traffici dagli Etruschi e dai popoli dell'interno con la diplomazia e, se serve, chiamando in aiuto altre città greche."
+    },
+    {
+      "id": "enotri", "nome": "Enotri", "colore": "#8a6a9a", "cultura": "enotria", "governo": "tribù",
+      "capitale": "grumentum", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo di pastori e contadini sparsi nelle montagne della Basilicata. Pacifici e poco organizzati, si difendono sulle alture e trattano volentieri con i nuovi arrivati più forti."
+    },
+    {
+      "id": "itali", "nome": "Itali", "colore": "#6a4a8a", "cultura": "enotria", "governo": "tribù",
+      "capitale": "consentia", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo dell'estremo sud della penisola, legato agli Enotri, di cui ha preso il nome tutta l'Italia. Vive di terra e bestiame, preferisce la pace con i vicini e combatte soprattutto per difendere i pascoli."
+    },
+    {
+      "id": "messapi", "nome": "Messapi", "colore": "#2a7a8a", "cultura": "iapigia", "governo": "tribù",
+      "capitale": "uria", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo fiero del Salento, con città fortificate e buona cavalleria. Ostile per principio alle colonie greche che cercano terra sulle sue coste, si allea con i vicini iapigi per respingerle."
+    },
+    {
+      "id": "peucezi", "nome": "Peucezi", "colore": "#3a8a7a", "cultura": "iapigia", "governo": "tribù",
+      "capitale": "caelia", "difficolta": "difficile",
+      "tratti": {},
+      "carattere": "Popolo iapigio del centro della Puglia, diviso in piccoli centri autonomi. Debole da solo, segue i fratelli Messapi e Dauni nelle guerre comuni e cerca il favore dei vicini più forti."
+    },
+    {
+      "id": "dauni", "nome": "Dauni", "colore": "#1f6a6a", "cultura": "iapigia", "governo": "tribù",
+      "capitale": "arpi", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo della pianura del Tavoliere, ricco di grano e cavalli. Teme i Sanniti che scendono dai monti e per difendersi cerca alleati anche lontani."
+    },
+    {
+      "id": "veneti", "nome": "Veneti", "colore": "#9a3a6a", "cultura": "veneta", "governo": "tribù",
+      "capitale": "ateste", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo pacifico e commerciante dell'alto Adriatico, famoso per i cavalli. Evita le guerre di conquista, difende le sue terre e cerca amicizie con chi ha gli stessi nemici, come i Galli."
+    },
+    {
+      "id": "liguri", "nome": "Liguri", "colore": "#6a7a8a", "cultura": "ligure", "governo": "tribù",
+      "capitale": "genua", "difficolta": "normale",
+      "tratti": { "montagna": 1 },
+      "carattere": "Tribù montanare dure e frammentate, abituate alla povertà e alla guerriglia. Razziano le pianure vicine, non accettano padroni e combattono senza tregua nei loro monti."
+    },
+    {
+      "id": "orobi", "nome": "Orobi", "colore": "#6a5a4a", "cultura": "golasecchiana", "governo": "tribù",
+      "capitale": "comum", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Popolo dei laghi prealpini, intermediario nei traffici tra Etruschi e mondo d'oltralpe. Preferisce commerciare e mantenere buoni rapporti con tutti, e combatte solo per difendere le sue valli."
+    },
+    {
+      "id": "reti", "nome": "Reti", "colore": "#3a4a5a", "cultura": "retica", "governo": "tribù",
+      "capitale": "tridentum", "difficolta": "difficile",
+      "tratti": { "montagna": 2 },
+      "carattere": "Popolo delle Alpi, chiuso nelle valli e difficile da raggiungere. Si difende benissimo sui monti ma esce poco a conquistare; scende a valle solo per razzie."
+    },
+    {
+      "id": "siculi", "nome": "Siculi", "colore": "#b05a7a", "cultura": "sicula", "governo": "tribù",
+      "capitale": "henna", "difficolta": "normale",
+      "tratti": {},
+      "carattere": "Il popolo più numeroso della Sicilia orientale, legato ai suoi santuari dell'interno. Arretra davanti ai coloni greci ma prova a unirsi per respingerli, alternando resistenza e accordi."
+    },
+    {
+      "id": "sicani", "nome": "Sicani", "colore": "#8a5a7a", "cultura": "sicana", "governo": "tribù",
+      "capitale": "kamikos", "difficolta": "difficile",
+      "tratti": {},
+      "carattere": "Antico popolo della Sicilia occidentale e centrale, con piccoli centri su alture. Debole e difensivo, si tiene lontano dai conflitti e accetta la protezione di chi è più forte."
+    },
+    {
+      "id": "elimi", "nome": "Elimi", "colore": "#a07a9a", "cultura": "elima", "governo": "città-stato",
+      "capitale": "segesta", "difficolta": "difficile",
+      "tratti": {},
+      "carattere": "Popolo di poche città nella punta occidentale della Sicilia, rivale dei Greci di Selinunte. Si appoggia ai Fenici e cerca alleati potenti contro i Greci, più con la diplomazia che con le armi."
+    },
+    {
+      "id": "fenici", "nome": "Fenici", "colore": "#5a2a6a", "cultura": "fenicia", "governo": "città-stato",
+      "capitale": "motya", "difficolta": "normale",
+      "tratti": { "stabilita": 0.2 },
+      "carattere": "Mercanti e navigatori, padroni di empori sulle coste occidentali della Sicilia. Pensano prima ai commerci, stringono alleanze con gli Elimi e combattono soprattutto per difendere i porti dai Greci."
+    },
+    {
+      "id": "siracusa", "nome": "Siracusa", "colore": "#1f4e8c", "cultura": "greca", "governo": "città-stato",
+      "capitale": "syrakousai", "difficolta": "normale", "dormiente": true,
+      "tratti": { "stabilita": 0.2, "assedio": 0.2 },
+      "carattere": "La più potente colonia greca d'Occidente, ricca, popolosa e spesso guidata da tiranni ambiziosi. Vuole dominare la Sicilia e i mari vicini, combatte Fenici e Siculi e impone la sua egemonia anche alle altre città greche."
+    },
+    {
+      "id": "reggio", "nome": "Reggio", "colore": "#3a6fb0", "cultura": "greca", "governo": "città-stato",
+      "capitale": "rhegion", "difficolta": "normale", "dormiente": true,
+      "tratti": {},
+      "carattere": "Colonia greca che controlla lo stretto di Messina e i suoi traffici. Teme Siracusa e cerca alleanze con chi può frenarla, difendendo con cura il passaggio dello stretto."
+    },
+    {
+      "id": "sibari", "nome": "Sibari", "colore": "#4a7ac0", "cultura": "greca", "governo": "città-stato",
+      "capitale": "sybaris", "difficolta": "normale", "dormiente": true,
+      "tratti": { "assimilazione": 0.2 },
+      "carattere": "Colonia greca famosa per la ricchezza e il lusso, con un vasto territorio e molti popoli sottomessi. Preferisce governare con accordi e commerci, ma è in rivalità con la vicina Crotone."
+    },
+    {
+      "id": "crotone", "nome": "Crotone", "colore": "#2b4a7a", "cultura": "greca", "governo": "città-stato",
+      "capitale": "kroton", "difficolta": "normale", "dormiente": true,
+      "tratti": { "battaglia": 1 },
+      "carattere": "Colonia greca di atleti e soldati, disciplinata e orgogliosa. Cerca la supremazia tra le città greche del golfo di Taranto e non esita ad attaccare le rivali come Sibari."
+    },
+    {
+      "id": "taranto", "nome": "Taranto", "colore": "#355fa0", "cultura": "greca", "governo": "città-stato",
+      "capitale": "taras", "difficolta": "normale", "dormiente": true,
+      "tratti": { "reclute": 0.2 },
+      "carattere": "Colonia spartana, ricca e con una flotta forte, in guerra continua con i Messapi. Quando è minacciata preferisce assoldare eserciti e chiamare aiuti dalla Grecia piuttosto che combattere da sola."
+    },
+    {
+      "id": "locri", "nome": "Locri", "colore": "#5080b8", "cultura": "greca", "governo": "città-stato",
+      "capitale": "lokroi", "difficolta": "normale", "dormiente": true,
+      "tratti": {},
+      "carattere": "Colonia greca conservatrice e devota, nota per le sue antiche leggi. Si appoggia a Siracusa contro le rivali vicine, come Reggio e Crotone, e difende più che attaccare."
+    },
+    {
+      "id": "gela", "nome": "Gela", "colore": "#24599a", "cultura": "greca", "governo": "città-stato",
+      "capitale": "gela", "difficolta": "normale", "dormiente": true,
+      "tratti": {},
+      "carattere": "Colonia greca sulla costa meridionale della Sicilia, ricca di pianure e cavalli. Si espande verso l'interno a spese dei Sicani e dei Siculi e contende a Siracusa il primato in Sicilia."
+    },
+    {
+      "id": "lucani", "nome": "Lucani", "colore": "#4a6e2f", "cultura": "osca", "governo": "tribù",
+      "capitale": "potentia", "difficolta": "normale", "dormiente": true,
+      "tratti": { "montagna": 1 },
+      "carattere": "Popolo osco sceso dai monti, bellicoso e affamato di terre. Attacca le colonie greche della costa e preferisce la conquista e la razzia ai trattati."
+    },
+    {
+      "id": "bruzi", "nome": "Bruzi", "colore": "#5b6a2a", "cultura": "osca", "governo": "tribù",
+      "capitale": "consentia", "difficolta": "normale", "dormiente": true,
+      "tratti": { "montagna": 1 },
+      "carattere": "Montanari ribelli staccatisi dai Lucani, padroni delle foreste della Calabria. Fanno guerra senza sosta alle città greche della costa e combattono meglio tra boschi e monti."
+    },
+    {
+      "id": "senoni", "nome": "Galli Senoni", "colore": "#6a6a7a", "cultura": "gallica", "governo": "tribù",
+      "capitale": "sena_gallica", "difficolta": "normale", "dormiente": true,
+      "tratti": { "battaglia": 1 },
+      "carattere": "Guerrieri celti venuti dal nord, temibili nell'assalto e in cerca di bottino. Fanno grandi spedizioni di saccheggio anche lontano e si vendono come mercenari, ma sono poco adatti a lunghi assedi."
+    },
+    {
+      "id": "boi", "nome": "Galli Boi", "colore": "#7a6a8a", "cultura": "gallica", "governo": "tribù",
+      "capitale": "felsina", "difficolta": "normale", "dormiente": true,
+      "tratti": { "reclute": 0.2 },
+      "carattere": "Grande tribù celtica che ha preso le terre etrusche della pianura padana. Numerosi e bellicosi, razziano a sud dell'Appennino e si uniscono volentieri alle coalizioni contro Roma."
+    },
+    {
+      "id": "insubri", "nome": "Galli Insubri", "colore": "#5a5a6a", "cultura": "gallica", "governo": "tribù",
+      "capitale": "mediolanum", "difficolta": "normale", "dormiente": true,
+      "tratti": { "reclute": 0.2 },
+      "carattere": "La più forte tribù celtica della pianura padana occidentale. Difende con orgoglio le sue terre, attacca i vicini più deboli e guida le alleanze tra i Galli."
+    },
+    {
+      "id": "neapolis", "nome": "Neapolis", "colore": "#3a68a8", "cultura": "greca", "governo": "città-stato",
+      "capitale": "cumae", "difficolta": "normale", "dormiente": true,
+      "tratti": {},
+      "carattere": "Città greca nuova, nata da Cuma, ricca di commerci e con un ottimo porto. Preferisce la diplomazia e gli accordi con il potente di turno alla guerra aperta, pur di conservare la sua autonomia."
+    }
+  ]
+}

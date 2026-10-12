@@ -1,0 +1,17 @@
+{
+  "economia": { "tasseMese": 0.1, "stabilitaEntrate": 0.05, "uominiMese": 25, "uominiMax": 500, "mantenimento1000": 0.2, "diserzioneDebito": 0.05 },
+  "inizio": { "fanteriaPerUomo": 300, "cavalleriaPerUomo": 30, "tesoroMesi": 6, "riservaQuota": 0.5 },
+  "costi": { "fanteria1000": 2, "cavalleria1000": 5, "stabilitaBase": 10, "stabilitaPerTassa": 2 },
+  "stabilita": { "derivaAnno": 0.2 },
+  "infamia": { "soglia": 20, "caloAnno": 1, "perProvincia": 2, "culturaDiversa": 2 },
+  "movimento": { "giorni": { "pianura": 8, "collina": 10, "montagna": 14, "palude": 14 }, "stretto": 6 },
+  "combattimento": {
+    "perdite": 0.004, "morale": 0.04, "moraleMax": 3, "recuperoMorale": 0.05, "minimoUomini": 100,
+    "cavalleria": { "pianura": 1.5, "collina": 1.0, "montagna": 0.75, "palude": 0.75 },
+    "terreno": { "pianura": 0, "collina": 1, "montagna": 2, "palude": 1 }
+  },
+  "assedio": { "base": 0.02, "massimo": 0.2 },
+  "guerra": { "senzaPretesto": 2, "tregua": 1825, "puntiBattaglia": 2, "maxBattaglie": 25, "scadenzaProposta": 30 },
+  "punteggio": { "culturaPropria": 1 },
+  "ia": { "rapportoGuerra": 1.5, "pacePunteggio": 30, "resaPunteggio": -60, "paceBiancaAnni": 3, "reclutaSoglia": 1000, "riservaTesoro": 2, "esercitoObiettivo": 0.8 }
+}
