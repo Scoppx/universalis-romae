@@ -284,6 +284,7 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 
 1. Mappa, simulazione base e IA a regole, senza UI. Il bench a regole funziona.
 2. UI giocabile.
+2b. Mappa realistica e truppe animate (sezione 10).
 3. Jev e pannello Consiglio.
 4. Diplomazia, governo, cultura.
 5. Eventi e popoli dormienti.
@@ -291,3 +292,37 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 
 I valori numerici iniziali (perdite, soglie, costi) stanno in `public/data/balance.json`
 e si correggono con il bench, non nel codice.
+
+## 10. Tappa 2b: mappa realistica e truppe animate (aggiunta del 2026-10-12)
+
+Chiesta dall'utente dopo aver provato la tappa 2; inserita prima della diplomazia.
+
+### Mappa: rilievo vero con tratto da carta antica
+
+- Rilievo da dati di elevazione reali (terrain tiles AWS, SRTM, zoom 8, circa 600 m per pixel),
+  ombreggiato con luce da nord-ovest, proiettato come la mappa e colorato in seppia (pianure chiare,
+  rilievi caldi, vette quasi bianche). Generato una volta (`tools/build-relief.js`) in
+  `public/img/rilievo.jpg` (circa 3000×3600 px).
+- Fiumi e laghi veri da Natural Earth 10m (più il supplemento europeo), in `map.json`.
+- Confini tra province irregolari: ogni lato condiviso viene spostato poco (al massimo il 12% della
+  lunghezza) in modo deterministico, uguale per le due province.
+- Disegno a strati: mare color carta con linee di costa ripetute; rilievo; velatura trasparente del
+  colore del popolo (o della cultura, o delle relazioni); tratteggio sottile tra province; linea
+  spessa tra popoli diversi; fiumi e laghi a inchiostro; nomi in corsivo allo zoom alto.
+  La modalità "terreno" sparisce: il rilievo la rende superflua.
+- La mappa di base si ridisegna solo quando cambiano vista o confini; gli eserciti hanno uno strato
+  a parte, ridisegnato a ogni fotogramma.
+
+### Truppe: soldatini animati e comandi come in EU
+
+- Soldatino vettoriale (fante con elmo, scudo nel colore del popolo, lancia), numero di uomini e
+  barretta del morale sotto; alone quando è selezionato; a ventaglio se più eserciti stanno in una
+  provincia.
+- La posizione si interpola tra le province durante la marcia (giorni mancanti più la frazione di
+  giorno dell'orologio); il soldatino guarda dove va e fa il passo. In battaglia le due figure si
+  fronteggiano e colpiscono; in assedio compare una tenda.
+- Percorso a frecce con i giorni di marcia di ogni tappa.
+- Comandi: clic seleziona; Maiuscolo+clic aggiunge o toglie; Maiuscolo+trascinamento seleziona col
+  rettangolo; clic destro manda tutti i selezionati; Esc deseleziona.
+- Nuovi comandi della simulazione: `unisci` (eserciti propri, fermi, nella stessa provincia; morale
+  medio pesato sugli uomini) e `dividi` (a metà, ogni metà con almeno 100 uomini). L'IA non li usa.
