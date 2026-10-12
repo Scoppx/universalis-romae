@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "node server.js",
     "test": "node --test test/*.test.js",
     "fetch-ne": "sh tools/fetch-ne.sh",
     "build-map": "node tools/build-map.js",
