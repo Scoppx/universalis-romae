@@ -115,6 +115,44 @@ try {
   });
   check(await page.evaluate(() => window.universalis.ui.selezione.esercito === null), 'esercito scomparso: selezione azzerata');
 
+  // --- revisione finale: clic durante i ridisegni, errore di disegno che non ferma il ciclo
+  await page.click('[data-scheda="eserciti"]');
+  await page.evaluate(async () => {
+    const { createArmy } = await import('/js/sim/state.js');
+    const g = window.universalis.ui.session.game;
+    g.proposte = {};
+    createArmy(g, 'roma', 'roma', 1000, 0).morale = 0; // il morale che risale cambia il pannello ogni giorno
+    window.universalis.avanza(1);
+  });
+  await page.click('#b-pausa');
+  let presi = 0;
+  for (let i = 0; i < 8; i++) {
+    await page.evaluate(() => { window.universalis.ui.selezione.esercito = null; });
+    const b = await page.evaluate(() => {
+      const r = document.querySelector('#scheda [data-azione="seleziona-esercito"]').getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    await page.mouse.move(b.x, b.y);
+    await page.mouse.down();
+    await wait(120);
+    await page.mouse.up();
+    if (await page.evaluate(() => window.universalis.ui.selezione.esercito !== null)) presi++;
+  }
+  await page.click('#b-pausa');
+  check(presi === 8, `clic sui bottoni col gioco in corsa: ${presi}/8`);
+  const disegni = await page.evaluate(async () => {
+    const u = window.universalis.ui, p = u.session.game.province.roma, owner = p.owner;
+    p.owner = 'atlantide';
+    u.sporco = true;
+    await new Promise(r => setTimeout(r, 100));
+    p.owner = owner;
+    const prima = u.disegni;
+    u.sporco = true;
+    await new Promise(r => setTimeout(r, 100));
+    return [prima, u.disegni];
+  });
+  check(disegni[1] > disegni[0], `dopo un errore di disegno la mappa si ridisegna (${disegni.join(' → ')})`);
+
   // --- proposte, fine partita, salvataggi (task 8)
   await page.evaluate(async () => {
     const { declareWar, proposePeace } = await import('/js/sim/war.js');

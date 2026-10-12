@@ -51,3 +51,47 @@ test('storage: funziona, e se manca o esplode non rompe nulla', () => {
   assert.equal(writeStorage(null, AUTOSAVE_KEY, 'x'), false);
   assert.equal(readStorage(null, AUTOSAVE_KEY), null);
 });
+
+test('salvataggio con guerre e proposte valide: accettato', async () => {
+  const { declareWar, proposePeace } = await import('../public/js/sim/war.js');
+  const s = createSession(data, 'roma', 1);
+  const { guerra } = declareWar(s.game, 'veio', 'roma');
+  proposePeace(s.game, 'veio', guerra, { ricevente: 'veio', province: [] });
+  const r = deserialize(serialize(s), data);
+  assert.equal(r.ok, true, r.motivo);
+});
+
+test('salvataggi manipolati: rifiutati prima di toccare la partita', () => {
+  const s = createSession(data, 'roma', 1);
+  const good = () => JSON.parse(serialize(s));
+  const army = g => Object.values(g.game.eserciti)[0];
+  const casi = {
+    'owner sconosciuto': g => { g.game.province.roma.owner = 'atlantide'; },
+    'controller sconosciuto': g => { g.game.province.roma.controller = 'atlantide'; },
+    'tasse non numeriche': g => { g.game.province.roma.tasse = '5'; },
+    'vicino sconosciuto': g => { g.game.province.roma.vicini.push('atlantide'); },
+    'esercito in provincia sconosciuta': g => { army(g).prov = 'atlantide'; },
+    'percorso verso provincia sconosciuta': g => { army(g).percorso = ['atlantide']; },
+    'fanti non numerici': g => { army(g).fanteria = '<img src=x onerror=alert(1)>'; },
+    'esercito con chiave diversa dall\'id': g => { const a = army(g); delete g.game.eserciti[a.id]; g.game.eserciti.zz = a; },
+    'nazione senza capitale': g => { delete g.game.nazioni.veio.capitale; },
+    'tesoro non numerico': g => { g.game.nazioni.veio.tesoro = 'molto'; },
+    'giocatore dal prototipo': g => { g.giocatore = 'constructor'; },
+    'ordine con nazione sconosciuta': g => { g.game.ordine.push('atlantide'); },
+    'nazione fuori da ordine': g => { g.game.ordine = g.game.ordine.filter(id => id !== 'veio'); },
+    'log mancante': g => { delete g.game.log; },
+    'guerra con nazione sconosciuta': g => { g.game.guerre = { g1: { id: 'g1', attaccanti: ['atlantide'], difensori: ['roma'], inizio: 0, battaglie: 0 } }; },
+    'proposta con chiave diversa dall\'id': g => {
+      g.game.guerre = { g1: { id: 'g1', attaccanti: ['veio'], difensori: ['roma'], inizio: 0, battaglie: 0 } };
+      g.game.proposte = { k1: { id: 'p9', tipo: 'pace', guerra: 'g1', da: 'veio', a: 'roma', termini: { ricevente: 'veio', province: [] }, giorno: 0 } };
+    },
+    'id con caratteri strani': g => { g.game.guerre = { 'g"1': { id: 'g"1', attaccanti: ['veio'], difensori: ['roma'], inizio: 0, battaglie: 0 } }; }
+  };
+  for (const [nome, rompi] of Object.entries(casi)) {
+    const g = good();
+    rompi(g);
+    const r = deserialize(JSON.stringify(g), data);
+    assert.equal(r.ok, false, nome);
+    assert.match(r.motivo, /non valido/, nome);
+  }
+});

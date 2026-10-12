@@ -36,7 +36,7 @@ const ui = {
   selezione: { provincia: null, esercito: null },
   modo: 'politica', scheda: 'governo',
   clock: createClock(), camera: null, size: { w: 0, h: 0 },
-  notizie: [], sporco: true
+  notizie: [], sporco: true, disegni: 0, premuto: false
 };
 window.universalis = { ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n) };
 
@@ -88,6 +88,7 @@ function avvia(session) {
   ui.selezione = { provincia: null, esercito: null };
   ui.notizie = [];
   setPaused(ui.clock, true);
+  $('finestra').hidden = true; // una finestra della partita precedente non vale per la nuova
   $('inizio').hidden = true;
   $('barra').hidden = false;
   $('pannello').hidden = false;
@@ -138,19 +139,25 @@ function velocita(v) {
   aggiorna();
 }
 
+// Il prossimo fotogramma si prenota per primo: un errore qui non deve fermare mappa e orologio per sempre.
 function frame(now) {
-  if (ui.session) {
-    const n = tick(ui.clock, now);
-    if (n) avanza(n);
-  }
-  if (ui.sporco) {
-    renderer.draw({
-      game: game(), giocatore: ui.session?.giocatore ?? null, modo: ui.modo,
-      selezione: ui.selezione, camera: ui.camera, evidenzia: ui.session ? null : ui.scelto
-    });
-    ui.sporco = false;
-  }
   requestAnimationFrame(frame);
+  try {
+    if (ui.session) {
+      const n = tick(ui.clock, now);
+      if (n) avanza(n);
+    }
+    if (ui.sporco) {
+      ui.sporco = false;
+      renderer.draw({
+        game: game(), giocatore: ui.session?.giocatore ?? null, modo: ui.modo,
+        selezione: ui.selezione, camera: ui.camera, evidenzia: ui.session ? null : ui.scelto
+      });
+      ui.disegni++;
+    }
+  } catch (e) {
+    console.warn('fotogramma non riuscito', e);
+  }
 }
 
 // --- pannelli
@@ -180,7 +187,8 @@ function aggiorna() {
 // Ridisegna solo se l'HTML cambia, e conserva caselle spuntate, numeri scritti e focus.
 const ultimoHtml = new WeakMap();
 function setHtml(el, html) {
-  if (ultimoHtml.get(el) === html) return;
+  // con il mouse premuto sul pannello non si ridisegna: il bottone sotto il cursore deve ricevere il clic
+  if (ui.premuto || ultimoHtml.get(el) === html) return;
   const spuntate = new Set([...el.querySelectorAll('input[type=checkbox]:checked')].map(i => `${i.name}=${i.value}`));
   const numeri = Object.fromEntries([...el.querySelectorAll('input[type=number]')].map(i => [i.id, i.value]));
   const focus = el.contains(document.activeElement) ? document.activeElement.id : null;
@@ -255,6 +263,13 @@ document.addEventListener('click', e => {
     }
     case 'chiudi': $('finestra').hidden = true; break;
   }
+});
+
+$('pannello').addEventListener('pointerdown', () => { ui.premuto = true; });
+window.addEventListener('pointerup', () => {
+  if (!ui.premuto) return;
+  ui.premuto = false;
+  setTimeout(aggiorna); // dopo il clic, che arriva subito dopo il rilascio
 });
 
 $('schede').addEventListener('click', e => {

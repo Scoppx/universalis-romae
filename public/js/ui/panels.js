@@ -18,7 +18,7 @@ export function provinceHtml(v) {
   const righe = [['Proprietario', v.proprietario.nome], ...(v.occupante ? [['Occupata da', v.occupante.nome]] : []),
     ['Cultura', v.cultura], ['Terreno', v.terreno], ['Tasse', v.tasse], ['Uomini', v.uomini], ['Fortificazione', v.fort]];
   const eserciti = v.eserciti.length
-    ? v.eserciti.map(e => `<div class="riga"><span>${esc(e.nazione)}: ${e.uomini} uomini, morale ${esc(e.morale)}</span>` +
+    ? v.eserciti.map(e => `<div class="riga"><span>${esc(e.nazione)}: ${esc(e.uomini)} uomini, morale ${esc(e.morale)}</span>` +
       (e.mio ? `<button data-azione="seleziona-esercito" data-id="${esc(e.id)}">Seleziona</button>` : '') + '</div>').join('')
     : '<p class="muto">Nessun esercito.</p>';
   const recluta = v.puoReclutare
@@ -45,7 +45,7 @@ export function diplomaziaHtml(list) {
     const stato = d.stato === 'guerra' ? '<span class="guerra">in guerra</span>'
       : d.stato === 'tregua' ? `tregua fino al ${esc(d.finoA)}` : 'in pace';
     const bottone = d.puoDichiarare
-      ? `<button data-azione="dichiara" data-id="${esc(d.id)}">Dichiara guerra${d.costo ? ` (−${d.costo} stab.)` : ''}</button>` : '';
+      ? `<button data-azione="dichiara" data-id="${esc(d.id)}">Dichiara guerra${d.costo ? ` (−${esc(d.costo)} stab.)` : ''}</button>` : '';
     return `<div class="riga"><span>${esc(d.nome)} <span class="muto">${stato}</span></span>${bottone}</div>`;
   }).join('');
 }
@@ -53,7 +53,7 @@ export function diplomaziaHtml(list) {
 export function esercitiHtml(list, selezionato) {
   if (!list.length) return '<p class="muto">Nessun esercito. Recluta da una tua provincia.</p>';
   return list.map(a => `<div class="riga${a.id === selezionato ? ' scelta' : ''}"><span>${esc(a.provincia)}: ` +
-    `${a.fanteria} fanti, ${a.cavalleria} cavalieri, morale ${esc(a.morale)}` +
+    `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
     (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +
     (a.inBattaglia ? ' <span class="guerra">in battaglia</span>' : '') +
     `</span><button data-azione="seleziona-esercito" data-id="${esc(a.id)}">Seleziona</button></div>`).join('') +
@@ -62,12 +62,12 @@ export function esercitiHtml(list, selezionato) {
 
 function caselle(nome, list) {
   return list.map(p => `<label class="riga"><span><input type="checkbox" name="${esc(nome)}" value="${esc(p.id)}"> ${esc(p.nome)}</span>` +
-    `<span class="muto">costo ${p.costo}</span></label>`).join('');
+    `<span class="muto">costo ${esc(p.costo)}</span></label>`).join('');
 }
 
 export function guerreHtml(list) {
   if (!list.length) return '<p class="muto">Nessuna guerra.</p>';
-  return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${w.ruolo}. Punteggio: <b>${w.punteggio}</b></div>` +
+  return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
     (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere:</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
     (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere:</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
     '<div class="comandi">' + (w.propostaInAttesa
@@ -86,7 +86,7 @@ export function proposalHtml(p) {
 
 export function rankingHtml(titolo, list) {
   return `<h2>${esc(titolo)}</h2><table>` +
-    list.map(r => `<tr${r.tu ? ' style="font-weight:bold"' : ''}><td>${r.pos}</td>` +
-      `<td>${esc(r.nome)}${r.vivo ? '' : ' <span class="muto">(scomparso)</span>'}</td><td>${r.punteggio}</td></tr>`).join('') +
+    list.map(r => `<tr${r.tu ? ' style="font-weight:bold"' : ''}><td>${esc(r.pos)}</td>` +
+      `<td>${esc(r.nome)}${r.vivo ? '' : ' <span class="muto">(scomparso)</span>'}</td><td>${esc(r.punteggio)}</td></tr>`).join('') +
     '</table><div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
 }
