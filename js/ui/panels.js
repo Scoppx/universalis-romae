@@ -90,3 +90,16 @@ export function rankingHtml(titolo, list) {
       `<td>${esc(r.nome)}${r.vivo ? '' : ' <span class="muto">(scomparso)</span>'}</td><td>${esc(r.punteggio)}</td></tr>`).join('') +
     '</table><div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
 }
+
+const FONTI = { jev: 'Jev', prudenza: 'Jev incerto: prudenza', regola: 'regola (Jev non disponibile)', superata: 'superata dagli eventi' };
+
+export function consiglioHtml(list, nazioni, filtro) {
+  const scelta = `<label class="muto">Popolo <select id="consiglio-filtro"><option value="">tutti</option>` +
+    nazioni.map(n => `<option value="${esc(n.id)}"${n.id === filtro ? ' selected' : ''}>${esc(n.nome)}</option>`).join('') +
+    '</select></label>';
+  if (!list.length) return `${scelta}<p class="muto">Ancora nessuna decisione.</p>`;
+  return scelta + list.map(d => `<div class="voto"><div><b>${esc(d.nazione)}</b> · ${esc(d.domanda)} <span class="muto">${esc(d.data)}</span></div>` +
+    d.opzioni.map(o => `<div class="barra-voto${o.nome === d.scelta ? ' scelta' : ''}"><span>${esc(o.nome)}</span>` +
+      `<span class="riempi" style="width:${esc(o.p)}%"></span><span class="pct">${esc(o.p)}%</span></div>`).join('') +
+    `<div class="muto">scelta: ${esc(d.scelta ?? '—')} · ${esc(FONTI[d.fonte] ?? d.fonte)}</div></div>`).join('');
+}
