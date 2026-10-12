@@ -123,7 +123,7 @@ export function makePeace(game, warId, receiver, termini) {
       a.percorso = [];
     }
   }
-  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, province: [...termini.province] });
+  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province] });
   return { ok: true };
 }
 
