@@ -28,3 +28,9 @@ export function tick(clock, now) {
   if (n > MAX_PER_FRAME) { clock.accumulo = 0; return MAX_PER_FRAME; }
   return n;
 }
+
+// Quanto del giorno in corso è già passato: serve a muovere i soldatini senza scatti.
+export function frazione(clock) {
+  if (clock.pausa) return 0;
+  return Math.min(1, clock.accumulo / SPEEDS[clock.velocita - 1]);
+}
