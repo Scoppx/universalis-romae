@@ -1,6 +1,6 @@
 // IA con Jev: le decisioni strategiche si chiedono a Jev in modo asincrono e diventano comandi quando
 // la risposta arriva. Il lavoro di fino resta alle regole. Se Jev non risponde, decidono le regole.
-import { isReviewDay, peaceProposals, warDecision, answerProposals, routine } from './rules.js';
+import { isReviewDay, peaceProposals, warDecision, answerProposals, routine, legalWarTargets } from './rules.js';
 import { buildReview, buildPeaceQuestion, interpretChoice } from './questions.js';
 import { sideOf } from '../sim/war.js';
 
@@ -31,7 +31,8 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
     pump();
   }
 
-  function applica(game, { job, res, err }) {
+  // stato.guerra: il popolo è già in guerra, o lo sarà con i comandi già decisi oggi
+  function applica(game, { job, res, err }, stato) {
     const id = job.nazione;
     const scaduta = game.day - job.giorno > scadenza;
     const usabile = !err && !scaduta && game.nazioni[id].vivo;
@@ -49,16 +50,23 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
         record.domande.push({ domanda: 'pace', scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
         continue;
       }
-      if (meta.tipo === 'guerra' && inGuerra(game, id)) {
+      if (meta.tipo === 'guerra' && stato.guerra) {
         record.domande.push({ domanda: 'guerra', scelta: null, fonte: 'superata', probabilita: null });
         continue;
       }
       const v = usabile ? interpretChoice(ans, meta) : null;
       if (meta.tipo === 'guerra') {
-        if (v) { if (v.valore) record.comandi.push({ tipo: 'dichiara_guerra', nazione: id, contro: v.valore }); }
-        else record.comandi.push(...warDecision(game, id));
-      } else if (meta.tipo === 'obiettivo' && v) {
-        record.comandi.push({ tipo: 'obiettivo', nazione: id, provincia: v.valore });
+        // la risposta può essere vecchia: il bersaglio deve essere ancora legale adesso
+        if (v?.valore && !legalWarTargets(game, id).some(c => c.id === v.valore)) {
+          record.domande.push({ domanda: 'guerra', scelta: v.scelta, fonte: 'superata', probabilita: v.probabilita });
+          continue;
+        }
+        const dichiarazioni = v ? (v.valore ? [{ tipo: 'dichiara_guerra', nazione: id, contro: v.valore }] : []) : warDecision(game, id);
+        if (dichiarazioni.length) stato.guerra = true;
+        record.comandi.push(...dichiarazioni);
+      } else if (meta.tipo === 'obiettivo') {
+        // senza una risposta valida l'obiettivo vecchio non deve continuare a guidare gli eserciti
+        record.comandi.push({ tipo: 'obiettivo', nazione: id, provincia: v ? v.valore : null });
       }
       record.domande.push({ domanda: meta.tipo, scelta: v ? v.scelta : 'regola', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
     }
@@ -69,9 +77,10 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
   function controller(game, id) {
     const cmds = [];
     const mie = pronte.filter(r => r.job.nazione === id).sort((a, b) => a.job.seq - b.job.seq);
+    const stato = { guerra: inGuerra(game, id) };
     for (const r of mie) {
       pronte.splice(pronte.indexOf(r), 1);
-      cmds.push(...applica(game, r));
+      cmds.push(...applica(game, r, stato));
     }
     for (const p of Object.values(game.proposte)) {
       if (p.a !== id || chieste.has(p.id)) continue;
