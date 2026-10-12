@@ -79,8 +79,12 @@ try {
   check(giorno >= 10, `il tempo scorre (giorno ${giorno})`);
   await wait(300);
   check(await page.evaluate(() => window.universalis.ui.session.game.day) === giorno, 'la pausa ferma il tempo');
-  await page.click('[data-modo="terreno"]');
-  check(await page.evaluate(() => window.universalis.ui.modo) === 'terreno', 'modalità terreno');
+  await page.click('[data-modo="cultura"]');
+  check(await page.evaluate(() => window.universalis.ui.modo) === 'cultura', 'modalità cultura');
+  check((await page.locator('[data-modo="terreno"]').count()) === 0, 'la modalità terreno non c\'è più');
+  await page.waitForFunction(() => window.universalis.rilievoPronto(), null, { timeout: 10000 }).catch(() => {});
+  check(await page.evaluate(() => window.universalis.rilievoPronto()), 'rilievo caricato e disegnato');
+  check(await page.evaluate(() => window.universalis.markers().length > 30), 'un soldatino per ogni esercito');
   await page.click('[data-modo="politica"]');
 
   // --- pannelli, eserciti e comandi (task 7)
@@ -98,11 +102,11 @@ try {
   check((await page.textContent('#scheda')).includes('Contro Veio'), 'guerra a Veio nella scheda Guerre');
   await page.click('[data-scheda="eserciti"]');
   await page.click('#scheda [data-azione="seleziona-esercito"]');
-  check(await page.evaluate(() => Boolean(window.universalis.ui.selezione.esercito)), 'esercito selezionato');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length > 0), 'esercito selezionato');
   await clickProvince('veio', 'right');
   check(await page.evaluate(() => {
     const u = window.universalis.ui;
-    return u.session.game.eserciti[u.selezione.esercito].percorso.at(-1) === 'veio';
+    return u.session.game.eserciti[u.selezione.eserciti[0]].percorso.at(-1) === 'veio';
   }), 'clic destro su Veio: esercito in marcia');
   await clickProvince('tarquinia', 'right'); // visibile e non in guerra con Roma
   check((await page.textContent('#avviso')) === 'nessun percorso', 'destinazione irraggiungibile: avviso');
@@ -121,10 +125,10 @@ try {
   // esercito selezionato che scompare
   await page.evaluate(() => {
     const u = window.universalis.ui;
-    delete u.session.game.eserciti[u.selezione.esercito];
+    delete u.session.game.eserciti[u.selezione.eserciti[0]];
     window.universalis.avanza(1);
   });
-  check(await page.evaluate(() => window.universalis.ui.selezione.esercito === null), 'esercito scomparso: selezione azzerata');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length === 0), 'esercito scomparso: selezione azzerata');
 
   // --- revisione finale: clic durante i ridisegni, errore di disegno che non ferma il ciclo
   await page.click('[data-scheda="eserciti"]');
@@ -138,7 +142,7 @@ try {
   await page.click('#b-pausa');
   let presi = 0;
   for (let i = 0; i < 8; i++) {
-    await page.evaluate(() => { window.universalis.ui.selezione.esercito = null; });
+    await page.evaluate(() => { window.universalis.ui.selezione.eserciti = []; });
     const b = await page.evaluate(() => {
       const r = document.querySelector('#scheda [data-azione="seleziona-esercito"]').getBoundingClientRect();
       return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
@@ -147,7 +151,7 @@ try {
     await page.mouse.down();
     await wait(120);
     await page.mouse.up();
-    if (await page.evaluate(() => window.universalis.ui.selezione.esercito !== null)) presi++;
+    if (await page.evaluate(() => window.universalis.ui.selezione.eserciti.length > 0)) presi++;
   }
   await page.click('#b-pausa');
   check(presi === 8, `clic sui bottoni col gioco in corsa: ${presi}/8`);
