@@ -33,26 +33,43 @@ export function warCandidates(game, id) {
     .sort((a, b) => b.rapporto - a.rapporto || a.id.localeCompare(b.id));
 }
 
-export function rulesController(game, id) {
-  const cmds = [...answerProposals(game, id)];
-  if (isReviewDay(game, id)) cmds.push(...strategy(game, id));
+// Lavoro di fino, uguale per regole e Jev: eserciti ogni 7 giorni (sfalsati) e reclute il primo del mese.
+export function routine(game, id) {
+  const cmds = [];
   if ((game.day + hashId(id)) % 7 === 0) cmds.push(...armyOrders(game, id));
   if (isFirstOfMonth(game.day)) cmds.push(...recruitment(game, id));
   return cmds;
 }
 
+export function rulesController(game, id) {
+  const cmds = [...answerProposals(game, id)];
+  if (isReviewDay(game, id)) cmds.push(...strategy(game, id));
+  cmds.push(...routine(game, id));
+  return cmds;
+}
+
 export function strategy(game, id) {
-  const n = game.nazioni[id], ia = game.balance.ia;
-  const wars = Object.values(game.guerre).filter(w => sideOf(w, id));
-  if (!wars.length) {
-    const best = warCandidates(game, id)[0];
-    if (!best || best.rapporto < ia.rapportoGuerra) return [];
-    if (n.infamia >= game.balance.infamia.soglia) return [];
-    if (!hasPretext(game, id, best.id) && n.stabilita < 0) return [];
-    return [{ tipo: 'dichiara_guerra', nazione: id, contro: best.id }];
-  }
+  const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
+  return inWar ? peaceProposals(game, id) : warDecision(game, id);
+}
+
+// Vicini che il codice permette di attaccare: sotto la soglia d'infamia, e con pretesto o stabilità non negativa.
+export function legalWarTargets(game, id) {
+  const n = game.nazioni[id];
+  if (n.infamia >= game.balance.infamia.soglia) return [];
+  return warCandidates(game, id).filter(c => hasPretext(game, id, c.id) || n.stabilita >= 0);
+}
+
+export function warDecision(game, id) {
+  const best = legalWarTargets(game, id)[0];
+  if (!best || best.rapporto < game.balance.ia.rapportoGuerra) return [];
+  return [{ tipo: 'dichiara_guerra', nazione: id, contro: best.id }];
+}
+
+export function peaceProposals(game, id) {
+  const ia = game.balance.ia;
   const cmds = [];
-  for (const war of wars) {
+  for (const war of Object.values(game.guerre).filter(w => sideOf(w, id))) {
     const side = sideOf(war, id);
     if (war[side][0] !== id) continue; // decide il capofila
     if (Object.values(game.proposte).some(p => p.guerra === war.id && p.da === id)) continue;
@@ -111,12 +128,18 @@ export function armyOrders(game, id) {
     const targets = Object.values(game.province).filter(p =>
       enemies.includes(p.controller) && (p.owner === id || enemies.includes(p.owner)));
     const { dist } = distancesFrom(game, id, a.prov);
-    let best = null;
-    for (const p of targets) {
-      if (dist[p.id] === undefined) continue;
-      if (best === null || dist[p.id] < dist[best] || (dist[p.id] === dist[best] && p.id < best)) best = p.id;
+    // obiettivo deciso dal consiglio: un bersaglio nemico, oppure una provincia propria da presidiare
+    const ob = game.nazioni[id].obiettivo;
+    const obValido = ob && dist[ob] !== undefined && (targets.some(p => p.id === ob) ||
+      (game.province[ob].owner === id && game.province[ob].controller === id));
+    let best = obValido ? ob : null;
+    if (!best) {
+      for (const p of targets) {
+        if (dist[p.id] === undefined) continue;
+        if (best === null || dist[p.id] < dist[best] || (dist[p.id] === dist[best] && p.id < best)) best = p.id;
+      }
     }
-    if (best) cmds.push({ tipo: 'muovi', nazione: id, esercito: a.id, verso: best });
+    if (best && best !== a.prov) cmds.push({ tipo: 'muovi', nazione: id, esercito: a.id, verso: best });
   }
   return cmds;
 }

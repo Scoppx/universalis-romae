@@ -50,6 +50,7 @@ function validateGame(s, data) {
     if (![n.tesoro, n.uomini, n.stabilita, n.infamia].every(isNum) || typeof n.vivo !== 'boolean') return `popolo ${k}`;
     if (!isObj(n.tratti) || !Object.values(n.tratti).every(isNum)) return `popolo ${k}`;
     if (!isObj(n.tregue) || !Object.entries(n.tregue).every(([t, d]) => nazione(t) && isInt(d))) return `popolo ${k}`;
+    if (n.obiettivo !== undefined && n.obiettivo !== null && !provincia(n.obiettivo)) return `popolo ${k}`;
   }
   for (const [k, p] of Object.entries(g.province)) {
     if (!isObj(p) || p.id !== k || !nazione(p.owner) || !nazione(p.controller)) return `provincia ${k}`;
