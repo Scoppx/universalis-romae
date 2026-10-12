@@ -88,3 +88,35 @@ export function recruit(game, nationId, provId, fanteria, cavalleria) {
   }
   return { ok: true, esercito: createArmy(game, nationId, provId, fanteria, cavalleria).id };
 }
+
+export function mergeArmies(game, nationId, ids) {
+  if (!Array.isArray(ids) || ids.length < 2 || new Set(ids).size !== ids.length) return { ok: false, motivo: 'servono almeno due eserciti' };
+  const armies = ids.map(id => game.eserciti[id]);
+  if (armies.some(a => !a || a.owner !== nationId)) return { ok: false, motivo: 'esercito non tuo' };
+  if (armies.some(a => a.prov !== armies[0].prov)) return { ok: false, motivo: 'non sono nella stessa provincia' };
+  if (armies.some(a => a.inBattaglia || a.percorso.length)) return { ok: false, motivo: 'eserciti in marcia o in battaglia' };
+  const men = a => a.fanteria + a.cavalleria;
+  const tot = armies.reduce((s, a) => s + men(a), 0);
+  const [first, ...rest] = armies;
+  if (tot > 0) first.morale = armies.reduce((s, a) => s + a.morale * men(a), 0) / tot;
+  for (const a of rest) {
+    first.fanteria += a.fanteria;
+    first.cavalleria += a.cavalleria;
+    delete game.eserciti[a.id];
+  }
+  return { ok: true, esercito: first.id };
+}
+
+export function splitArmy(game, nationId, id) {
+  const a = game.eserciti[id];
+  if (!a || a.owner !== nationId) return { ok: false, motivo: 'esercito non tuo' };
+  if (a.inBattaglia) return { ok: false, motivo: 'esercito in battaglia' };
+  const fanti = Math.floor(a.fanteria / 2), cavalieri = Math.floor(a.cavalleria / 2);
+  const min = game.balance.combattimento.minimoUomini;
+  if (fanti + cavalieri < min || a.fanteria - fanti + a.cavalleria - cavalieri < min) return { ok: false, motivo: 'esercito troppo piccolo' };
+  a.fanteria -= fanti;
+  a.cavalleria -= cavalieri;
+  const b = createArmy(game, nationId, a.prov, fanti, cavalieri);
+  b.morale = a.morale;
+  return { ok: true, esercito: b.id };
+}
