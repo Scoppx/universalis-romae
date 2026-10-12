@@ -5,7 +5,7 @@ import { esercitiHtml, provinceHtml, rankingHtml } from '../public/js/ui/panels.
 const evil = '<img src=x onerror=alert(1)>';
 
 test('ogni valore inserito nell\'HTML è protetto, anche i "numeri"', () => {
-  const a = esercitiHtml([{ id: 'e1', provincia: 'Roma', fanteria: evil, cavalleria: evil, morale: '3.0', destinazione: null, inBattaglia: false }], null);
+  const a = esercitiHtml([{ id: 'e1', provincia: 'Roma', fanteria: evil, cavalleria: evil, morale: '3.0', destinazione: null, inBattaglia: false }], { puoUnire: false, puoDividere: false });
   assert.equal(a.includes('<img'), false);
   const p = provinceHtml({
     id: 'roma', nome: 'Roma', proprietario: { id: 'roma', nome: 'Roma' }, occupante: null, cultura: 'latina',

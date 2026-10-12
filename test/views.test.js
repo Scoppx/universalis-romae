@@ -130,3 +130,15 @@ test('consiglio: decisioni recenti con probabilità ordinate, filtro per popolo'
   assert.equal(v[0].domanda, 'Accettare la pace?');
   assert.deepEqual(V.councilView(records, g, 'roma').map(x => x.nazione), ['roma']);
 });
+
+test('azioni sulla selezione: unire e dividere', () => {
+  const g = makeGame();
+  const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
+  const b = createArmy(g, 'roma', 'a', 500, 0);
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true });
+  b.prov = 'b';
+  assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).puoUnire, false);
+  assert.equal(V.selectionActions(g, 'roma', []).puoDividere, false);
+  assert.deepEqual(V.armiesView(g, 'roma', [b.id]).map(a => a.scelto), [false, true]);
+});
