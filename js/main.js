@@ -7,6 +7,7 @@ import { buildIndex, provinceAt, armyAt } from './ui/hit.js';
 import { attachInput } from './ui/input.js';
 import { createClock, tick, setSpeed, setPaused } from './ui/clock.js';
 import { createSession, runDays, pausaNecessaria } from './ui/session.js';
+import { serialize, deserialize, writeStorage, readStorage, AUTOSAVE_KEY } from './ui/save.js';
 import * as V from './ui/views.js';
 import * as H from './ui/panels.js';
 
@@ -40,6 +41,10 @@ const ui = {
 window.universalis = { ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n) };
 
 const game = () => (ui.session ? ui.session.game : ui.anteprima);
+
+function storage() {
+  try { return window.localStorage; } catch { return null; }
+}
 
 function resize() {
   ui.size = renderer.resize();
@@ -97,15 +102,33 @@ function avvia(session) {
 
 function avanza(n) {
   if (!ui.session) return;
-  const r = runDays(ui.session, n);
+  const r = runDays(ui.session, n, { onYear: s => writeStorage(storage(), AUTOSAVE_KEY, serialize(s)) });
   if (r.notizie.length) ui.notizie = [...ui.notizie, ...r.notizie].slice(-8);
-  if (r.motivo) setPaused(ui.clock, true);
+  if (r.motivo) {
+    setPaused(ui.clock, true);
+    mostraPausa(r.motivo);
+  }
   aggiorna();
+}
+
+function mostraPausa(motivo) {
+  const { game: g, giocatore } = ui.session;
+  if (motivo === 'proposta') finestra(H.proposalHtml(V.pendingProposals(g, giocatore)[0]));
+  else if (motivo === 'fine') finestra(H.rankingHtml('Fine della partita: 264 a.C.', V.rankingView(g, giocatore)));
+  else if (motivo === 'sconfitta') finestra(H.rankingHtml('Il tuo popolo è scomparso', V.rankingView(g, giocatore)));
+}
+
+function finestra(html) {
+  $('finestra-corpo').innerHTML = html;
+  $('finestra').hidden = false;
 }
 
 function togglePausa() {
   if (!ui.session) return;
-  if (ui.clock.pausa && pausaNecessaria(ui.session)) return;
+  if (ui.clock.pausa) {
+    const motivo = pausaNecessaria(ui.session);
+    if (motivo) { mostraPausa(motivo); return; }
+  }
   setPaused(ui.clock, !ui.clock.pausa);
   aggiorna();
 }
@@ -223,6 +246,14 @@ document.addEventListener('click', e => {
       break;
     }
     case 'pace-bianca': proponi(id, ui.session.giocatore, []); break;
+    case 'rispondi': {
+      $('finestra').hidden = true;
+      comando({ tipo: 'rispondi', proposta: id, accetta: el.dataset.accetta === '1' });
+      const motivo = pausaNecessaria(ui.session);
+      if (motivo) mostraPausa(motivo);
+      break;
+    }
+    case 'chiudi': $('finestra').hidden = true; break;
   }
 });
 
@@ -275,6 +306,35 @@ attachInput(canvas, {
     return false;
   }
 });
+
+// --- salvataggi
+
+function carica(text) {
+  const r = deserialize(text, data);
+  if (!r.ok) { avviso(r.motivo); return; }
+  avvia(r.session);
+  avviso('Partita caricata.');
+}
+
+if (readStorage(storage(), AUTOSAVE_KEY)) $('inizio-continua').hidden = false;
+$('inizio-continua').addEventListener('click', () => carica(readStorage(storage(), AUTOSAVE_KEY)));
+
+$('b-esporta').addEventListener('click', () => {
+  if (!ui.session) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([serialize(ui.session)], { type: 'application/json' }));
+  a.download = `universalis-romae-${ui.session.giocatore}-giorno-${ui.session.game.day}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+for (const input of document.querySelectorAll('input.importa')) {
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    input.value = '';
+    if (file) carica(await file.text());
+  });
+}
 
 renderInizio();
 requestAnimationFrame(frame);

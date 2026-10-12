@@ -77,3 +77,16 @@ export function guerreHtml(list) {
         `<button data-azione="pace-bianca" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Pace bianca</button>`) +
     '</div></div>').join('');
 }
+
+export function proposalHtml(p) {
+  return `<h3>Proposta di pace</h3><p>${esc(p.testo)}</p><div class="comandi">` +
+    `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="1">Accetta</button>` +
+    `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="0">Rifiuta</button></div>`;
+}
+
+export function rankingHtml(titolo, list) {
+  return `<h2>${esc(titolo)}</h2><table>` +
+    list.map(r => `<tr${r.tu ? ' style="font-weight:bold"' : ''}><td>${r.pos}</td>` +
+      `<td>${esc(r.nome)}${r.vivo ? '' : ' <span class="muto">(scomparso)</span>'}</td><td>${r.punteggio}</td></tr>`).join('') +
+    '</table><div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
+}
