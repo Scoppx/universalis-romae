@@ -54,3 +54,11 @@ test('punteggio e classifica', () => {
   assert.equal(score(g, 'roma'), 6 + 2 + 1);
   assert.deepEqual(ranking(g).map(r => r.id), ['roma', 'latini', 'siculi', 'volsci']);
 });
+
+test('un controller non può dare ordini per un\'altra nazione', () => {
+  const g = makeGame();
+  const t = g.nazioni.latini.tesoro;
+  advanceDay(g, { roma: () => [{ tipo: 'recluta', nazione: 'latini', provincia: 'd', fanteria: 100, cavalleria: 0 }] });
+  assert.equal(g.nazioni.latini.tesoro, t);
+  assert.equal(armiesOf(g, 'latini')[0].fanteria, 1200);
+});

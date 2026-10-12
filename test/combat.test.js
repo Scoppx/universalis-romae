@@ -76,3 +76,18 @@ test('il morale si recupera fuori dalla battaglia, con tetto', () => {
   recoverMorale(g);
   assert.equal(a.morale, 3);
 });
+
+test('con tre nazioni nella provincia combattono le due in guerra', () => {
+  const { g } = setup();
+  for (const w of Object.keys(g.guerre)) delete g.guerre[w];
+  declareWar(g, 'roma', 'latini');
+  declareWar(g, 'volsci', 'latini');
+  declareWar(g, 'siculi', 'volsci');
+  const r = createArmy(g, 'roma', 'e', 1000, 0);
+  const v = createArmy(g, 'volsci', 'e', 1000, 0);
+  const s = createArmy(g, 'siculi', 'e', 1000, 0);
+  resolveBattles(g);
+  assert.equal(r.inBattaglia, false);
+  assert.equal(v.inBattaglia, true);
+  assert.equal(s.inBattaglia, true);
+});

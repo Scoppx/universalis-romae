@@ -86,3 +86,13 @@ test('proposte: proporre, rifiutare, accettare, scadere', () => {
   assert.deepEqual(answerProposal(g, 'volsci', p3, true), { ok: true, accettata: true });
   assert.equal(g.province.c.owner, 'roma');
 });
+
+test('termini di pace malformati: rifiutati senza eccezioni', () => {
+  const { g, w } = warGame();
+  g.province.c.controller = 'roma';
+  for (const termini of [undefined, null, {}, { ricevente: 'roma' }, { ricevente: 'roma', province: 'c' }, { ricevente: 'roma', province: ['c', 'c'] }, { ricevente: 'roma', province: [1] }]) {
+    assert.deepEqual(proposePeace(g, 'roma', w.id, termini), { ok: false, motivo: 'termini non validi' });
+  }
+  assert.equal(makePeace(g, w.id, 'roma', { province: ['c', 'c'] }).motivo, 'termini non validi');
+  assert.equal(g.nazioni.roma.infamia, 0);
+});

@@ -12,7 +12,9 @@ export function advanceDay(game, controllers = {}) {
   game.log = [];
   for (const id of game.ordine) {
     if (!game.nazioni[id].vivo || !controllers[id]) continue;
-    for (const cmd of controllers[id](game, id)) applyCommand(game, cmd);
+    for (const cmd of controllers[id](game, id)) {
+      if (cmd.nazione === id) applyCommand(game, cmd); // ognuno comanda solo per sé
+    }
   }
   advanceMovement(game);
   resolveBattles(game);

@@ -94,3 +94,13 @@ test('invarianti dopo 50 anni', () => {
   }
   for (const n of Object.values(g.nazioni)) assert.ok(Number.isFinite(n.tesoro) && Number.isFinite(n.infamia));
 });
+
+test('eserciti: non restano fermi in una provincia nemica tenuta da un terzo', () => {
+  const g = makeGame();
+  declareWar(g, 'roma', 'volsci');
+  declareWar(g, 'latini', 'volsci');
+  g.province.c.controller = 'latini';
+  const [r] = armiesOf(g, 'roma');
+  r.prov = 'c';
+  assert.deepEqual(armyOrders(g, 'roma'), [{ tipo: 'muovi', nazione: 'roma', esercito: r.id, verso: 'f' }]);
+});

@@ -70,7 +70,15 @@ export function peaceCost(game, war, receiver, termini) {
   return termini.province.reduce((s, id) => s + 100 * game.province[id].tasse / total, 0);
 }
 
+// Forma dei termini: elenco di id di provincia, senza ripetizioni.
+function malformed(termini) {
+  return !termini || !Array.isArray(termini.province) ||
+    termini.province.some(id => typeof id !== 'string') ||
+    new Set(termini.province).size !== termini.province.length;
+}
+
 export function validTerms(game, war, receiver, termini) {
+  if (malformed(termini)) return 'termini non validi';
   const side = sideOf(war, receiver);
   if (!side) return 'non partecipa';
   const mine = war[side], losers = enemiesOf(war, side);
@@ -150,6 +158,7 @@ function eliminate(game, id) {
 export function proposePeace(game, from, warId, termini) {
   const war = game.guerre[warId];
   if (!war) return { ok: false, motivo: 'guerra inesistente' };
+  if (malformed(termini)) return { ok: false, motivo: 'termini non validi' };
   const side = sideOf(war, from);
   if (!side) return { ok: false, motivo: 'non partecipa' };
   const to = enemiesOf(war, side)[0];
