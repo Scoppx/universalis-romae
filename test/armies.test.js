@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
-import { armiesOf } from '../public/js/sim/state.js';
+import { armiesOf, createArmy } from '../public/js/sim/state.js';
+import { applyCommand } from '../public/js/sim/commands.js';
 import { declareWar, atWar } from '../public/js/sim/war.js';
-import { travelDays, findPath, orderMove, advanceMovement, recruit } from '../public/js/sim/armies.js';
+import { travelDays, findPath, orderMove, advanceMovement, recruit, mergeArmies, splitArmy } from '../public/js/sim/armies.js';
 
 test('dichiarare guerra: regole e costo senza pretesto', () => {
   const g = makeGame();
@@ -72,4 +73,45 @@ test('reclutamento: costi, unione con esercito fermo, errori', () => {
   g.nazioni.roma.tesoro = 100;
   assert.equal(recruit(g, 'roma', 'b', 500, 0).ok, true);
   assert.equal(armiesOf(g, 'roma').length, 2);
+});
+
+test('unisci: stessi uomini, morale medio pesato, un solo esercito', () => {
+  const g = makeGame();
+  const [r] = armiesOf(g, 'roma');
+  const b = createArmy(g, 'roma', 'a', 1000, 100);
+  r.morale = 3; b.morale = 1;
+  const tot = r.fanteria + r.cavalleria + 1100;
+  const res = mergeArmies(g, 'roma', [r.id, b.id]);
+  assert.deepEqual(res, { ok: true, esercito: r.id });
+  assert.equal(armiesOf(g, 'roma').length, 1);
+  assert.equal(r.fanteria + r.cavalleria, tot);
+  assert.ok(Math.abs(r.morale - (3 * (tot - 1100) + 1 * 1100) / tot) < 1e-9);
+});
+
+test('unisci: rifiuti', () => {
+  const g = makeGame();
+  const [r] = armiesOf(g, 'roma');
+  const b = createArmy(g, 'roma', 'b', 1000, 0);
+  const [v] = armiesOf(g, 'volsci');
+  assert.equal(mergeArmies(g, 'roma', [r.id]).motivo, 'servono almeno due eserciti');
+  assert.equal(mergeArmies(g, 'roma', [r.id, b.id]).motivo, 'non sono nella stessa provincia');
+  assert.equal(mergeArmies(g, 'roma', [r.id, v.id]).motivo, 'esercito non tuo');
+  b.prov = 'a'; b.percorso = ['b'];
+  assert.equal(mergeArmies(g, 'roma', [r.id, b.id]).motivo, 'eserciti in marcia o in battaglia');
+});
+
+test('dividi: due metà con lo stesso morale; troppo piccolo no', () => {
+  const g = makeGame();
+  const [r] = armiesOf(g, 'roma');
+  r.morale = 2;
+  const res = splitArmy(g, 'roma', r.id);
+  assert.equal(res.ok, true);
+  const n = g.eserciti[res.esercito];
+  assert.deepEqual([r.fanteria, n.fanteria, r.cavalleria, n.cavalleria], [1170, 1170, 117, 117]);
+  assert.equal(n.morale, 2);
+  assert.equal(n.prov, r.prov);
+  const p = createArmy(g, 'roma', 'b', 150, 0);
+  assert.equal(splitArmy(g, 'roma', p.id).motivo, 'esercito troppo piccolo');
+  assert.equal(applyCommand(g, { tipo: 'dividi', nazione: 'roma', esercito: r.id }).ok, true);
+  assert.equal(applyCommand(g, { tipo: 'unisci', nazione: 'roma', eserciti: [r.id, res.esercito] }).ok, true);
 });
