@@ -1,0 +1,95 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeGame } from './fixtures.js';
+import { advanceDay } from '../public/js/sim/loop.js';
+import { createJevAi, createReplayAi } from '../public/js/ai/jev.js';
+import { buildControllers } from '../public/js/ai/modes.js';
+import { rulesController } from '../public/js/ai/rules.js';
+
+const caratteri = { roma: 'Ambiziosa.', latini: 'Prudenti.', volsci: 'Predoni.', siculi: 'Isolani.' };
+
+// Jev finto e deterministico: preferisce la prima opzione che non è quella prudente; accetta le paci.
+async function stubAsk({ questions }) {
+  const answers = {};
+  for (const [k, q] of Object.entries(questions)) {
+    if (q.type === 'noul') { answers[k] = { type: 'noul', noul: 0.8 }; continue; }
+    const keys = Object.keys(q.criteria);
+    const pick = keys.find(o => o !== 'nessuna guerra' && o !== 'difendi') ?? keys[0];
+    answers[k] = { type: 'choice', choice: pick, probabilities: Object.fromEntries(keys.map(o => [o, o === pick ? 0.8 : 0.2 / (keys.length - 1)])), confidence: 0.7 };
+  }
+  return { answers, usage: { input_tokens: 100, output_tokens: 10 } };
+}
+
+async function play(game, controllers, ai, giorni) {
+  for (let i = 0; i < giorni; i++) {
+    advanceDay(game, controllers);
+    if (ai) await ai.flush();
+  }
+}
+
+test('Jev decide: guerre dichiarate da Jev, registro completo', async () => {
+  const g = makeGame(5);
+  const records = [];
+  const ai = createJevAi({ ask: stubAsk, caratteri, onRecord: r => records.push(r) });
+  await play(g, buildControllers(g, 'jev', ai), ai, 365 * 3);
+  assert.ok(records.length > 0);
+  assert.ok(records.some(r => r.domande.some(d => d.domanda === 'guerra' && d.fonte === 'jev' && d.scelta !== 'nessuna guerra')));
+  assert.ok(records.every(r => Number.isInteger(r.giorno) && r.applicato >= r.giorno && Array.isArray(r.comandi)));
+  assert.equal(ai.inAttesa(), 0);
+});
+
+test('rigioco dal registro: stesso stato finale', async () => {
+  const a = makeGame(9);
+  const records = [];
+  const ai = createJevAi({ ask: stubAsk, caratteri, onRecord: r => records.push(r) });
+  await play(a, buildControllers(a, 'jev', ai), ai, 365 * 4);
+  const b = makeGame(9);
+  const replay = createReplayAi(records);
+  await play(b, buildControllers(b, 'jev', replay), null, 365 * 4);
+  assert.deepEqual(b, a);
+});
+
+test('Jev in errore: decidono le regole e il gioco va avanti', async () => {
+  const g = makeGame(5);
+  const records = [];
+  const ai = createJevAi({ ask: async () => { throw new Error('Jev 529: occupato'); }, caratteri, onRecord: r => records.push(r) });
+  await play(g, buildControllers(g, 'jev', ai), ai, 365 * 2);
+  assert.ok(records.length > 0);
+  assert.ok(records.every(r => r.errore && r.domande.every(d => d.fonte === 'regola' || d.fonte === 'superata')));
+  assert.equal(g.day, 730);
+});
+
+test('risposta oltre i 60 giorni: scartata, decide la regola', async () => {
+  const g = makeGame(1);
+  const records = [];
+  let rilascia;
+  const ai = createJevAi({ ask: () => new Promise(r => { rilascia = r; }), caratteri, onRecord: r => records.push(r) });
+  // la richiesta parte in un microtask: si cede il turno dopo ogni giorno
+  while (!rilascia) { advanceDay(g, { roma: ai.controller }); await new Promise(r => setImmediate(r)); }
+  g.day += 61;
+  rilascia(await stubAsk({ questions: { guerra: { type: 'choice', criteria: { 'nessuna guerra': null, volsci: null, latini: null } } } }));
+  await ai.flush();
+  ai.controller(g, 'roma');
+  assert.equal(records.length, 1);
+  assert.equal(records[0].domande[0].fonte, 'regola');
+  assert.match(records[0].errore, /60 giorni/);
+});
+
+test('coda limitata: le richieste in eccesso ricadono sulle regole', async () => {
+  const records = [];
+  const ai = createJevAi({ ask: () => new Promise(() => {}), caratteri, maxParallel: 1, maxCoda: 2, onRecord: r => records.push(r) });
+  const g = makeGame(1);
+  for (let i = 0; i < 400; i++) advanceDay(g, buildControllers(g, 'jev', ai));
+  assert.ok(ai.inAttesa() <= 3);
+  assert.ok(records.some(r => r.errore === 'coda piena'));
+});
+
+test('modalità: regole, jev, misto', () => {
+  const g = makeGame();
+  const ai = { controller: () => [] };
+  assert.equal(buildControllers(g, 'regole', null).roma, rulesController);
+  assert.equal(buildControllers(g, 'jev', ai).latini, ai.controller);
+  const m = buildControllers(g, 'misto', ai);
+  assert.deepEqual(g.ordine.map(id => m[id] === ai.controller), [true, false, true, false]);
+  assert.equal(buildControllers(g, 'jev', ai, 'roma').roma, undefined);
+});
