@@ -56,3 +56,12 @@ test('sessione: richiamo a ogni capodanno e notizie', () => {
   }
   assert.equal(anni, 1); // il 1 gennaio 752 a.C. è il giorno 255
 });
+
+test('sessione con modalità IA: il giocatore escluso, metà a Jev in misto', async () => {
+  const { createSession: cs } = await import('../public/js/ui/session.js');
+  const ai = { controller: () => [] };
+  const s = cs(data, 'roma', 1, 'misto', ai);
+  assert.equal(s.ia, 'misto');
+  assert.equal(s.controllers.roma, undefined);
+  assert.equal(Object.values(s.controllers).filter(c => c === ai.controller).length, 18); // roma è in posizione pari
+});

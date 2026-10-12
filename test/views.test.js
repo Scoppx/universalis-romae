@@ -116,3 +116,17 @@ test('colori per modalità', () => {
   assert.equal(provinceFill(g, c, 'relazioni', 'roma'), RELAZIONE.guerra);
   assert.equal(provinceFill(g, c, 'relazioni', null), RELAZIONE.neutrale);
 });
+
+test('consiglio: decisioni recenti con probabilità ordinate, filtro per popolo', () => {
+  const g = makeGame();
+  const records = [
+    { seq: 0, giorno: 0, applicato: 1, nazione: 'roma', domande: [{ domanda: 'guerra', scelta: 'volsci', fonte: 'jev', probabilita: { 'nessuna guerra': 0.2, volsci: 0.7, latini: 0.1 } }] },
+    { seq: 1, giorno: 2, applicato: 3, nazione: 'volsci', domande: [{ domanda: 'pace', scelta: 'rifiuta', fonte: 'jev', probabilita: 0.3 }] }
+  ];
+  const v = V.councilView(records, g, null);
+  assert.deepEqual(v.map(x => x.nazione), ['volsci', 'roma']);
+  assert.deepEqual(v[1].opzioni, [{ nome: 'volsci', p: 70 }, { nome: 'nessuna guerra', p: 20 }, { nome: 'latini', p: 10 }]);
+  assert.deepEqual(v[0].opzioni, [{ nome: 'sì', p: 30 }, { nome: 'no', p: 70 }]);
+  assert.equal(v[0].domanda, 'Accettare la pace?');
+  assert.deepEqual(V.councilView(records, g, 'roma').map(x => x.nazione), ['roma']);
+});

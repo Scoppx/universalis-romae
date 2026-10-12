@@ -26,7 +26,18 @@ function check(cond, msg) {
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-const server = await startServer(0);
+// Jev finto e deterministico, per provare l'interfaccia senza rete né chiave.
+async function fakeAsk({ questions }) {
+  const answers = {};
+  for (const [k, q] of Object.entries(questions)) {
+    if (q.type === 'noul') { answers[k] = { type: 'noul', noul: 0.8 }; continue; }
+    const keys = Object.keys(q.criteria);
+    answers[k] = { type: 'choice', choice: keys.at(-1), probabilities: Object.fromEntries(keys.map((o, i) => [o, i === keys.length - 1 ? 0.75 : 0.25 / (keys.length - 1)])), confidence: 0.6 };
+  }
+  return { answers, usage: { input_tokens: 10, output_tokens: 1 } };
+}
+
+const server = await startServer(0, { ask: fakeAsk });
 const url = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch({ executablePath: chromePath() });
 const context = await browser.newContext({ viewport: { width: 1400, height: 900 }, acceptDownloads: true });
@@ -203,6 +214,38 @@ try {
   });
   check((await page.textContent('#finestra')).includes('Fine della partita'), 'al 264 a.C. compare la classifica');
   await page.click('[data-azione="chiudi"]');
+
+  // --- Jev nell'interfaccia (tappa 3)
+  await page.goto(url);
+  await page.waitForSelector('#inizio-lista .carta');
+  // isDisabled di Playwright non vede la proprietà disabled delle <option>: si legge dal DOM
+  const opzione = (pg, v) => pg.evaluate(val => document.querySelector(`#inizio-ia option[value="${val}"]`).disabled, v);
+  await page.waitForFunction(() => document.getElementById('inizio-ia-nota').textContent.length > 0);
+  check(!(await opzione(page, 'misto')), 'Jev disponibile: modalità misto selezionabile');
+  await page.click('[data-popolo="volsci"]');
+  await page.selectOption('#inizio-ia', 'misto');
+  await page.click('#inizio-via');
+  await page.waitForSelector('#barra:not([hidden])');
+  check(await page.isVisible('[data-scheda="consiglio"]'), 'scheda Consiglio presente');
+  await page.keyboard.press('5');
+  await page.click('#b-pausa');
+  await page.waitForFunction(() => window.universalis.ui.consiglio.length > 0, null, { timeout: 15000 }).catch(() => {});
+  await page.click('#b-pausa').catch(() => {});
+  await page.evaluate(() => { document.getElementById('finestra').hidden = true; });
+  await page.click('[data-scheda="consiglio"]');
+  check((await page.locator('#scheda .voto').count()) > 0, 'il Consiglio mostra le decisioni di Jev');
+  check((await page.textContent('#scheda')).includes('%'), 'con le probabilità');
+  await page.selectOption('#consiglio-filtro', 'roma');
+  check(await page.evaluate(() => window.universalis.ui.filtroConsiglio === 'roma'), 'filtro per popolo');
+
+  const senza = await startServer(0, { ask: null });
+  const p2 = await context.newPage();
+  await p2.goto(`http://127.0.0.1:${senza.address().port}/`);
+  await p2.waitForSelector('#inizio-lista .carta');
+  await p2.waitForFunction(() => document.getElementById('inizio-ia-nota').textContent.length > 0);
+  check(await opzione(p2, 'jev'), 'senza chiave: modalità Jev disattivata');
+  await p2.close();
+  senza.close();
 
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });

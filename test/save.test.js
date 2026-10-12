@@ -103,3 +103,16 @@ test('salvataggi della tappa 2 senza obiettivo: accettati', () => {
   for (const n of Object.values(g.game.nazioni)) delete n.obiettivo;
   assert.equal(deserialize(JSON.stringify(g), data).ok, true);
 });
+
+test('la modalità IA si salva e si ricarica', () => {
+  const s = createSession(data, 'roma', 1, 'misto', { controller: () => [] });
+  const fatta = { controller: () => [] };
+  const r = deserialize(serialize(s), data, { creaAi: () => fatta });
+  assert.equal(r.session.ia, 'misto');
+  assert.equal(r.session.ai, fatta);
+  const vecchio = JSON.parse(serialize(s));
+  delete vecchio.ia;
+  assert.equal(deserialize(JSON.stringify(vecchio), data).session.ia, 'regole');
+  vecchio.ia = 'oracolo';
+  assert.equal(deserialize(JSON.stringify(vecchio), data).ok, false);
+});

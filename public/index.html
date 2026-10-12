@@ -19,6 +19,7 @@
       <span id="b-vel"></span>
       <button id="b-piu" title="Più veloce: tasto +">+</button>
     </span>
+    <span id="b-jev" hidden></span>
     <span id="b-modi">
       <button data-modo="politica" class="attivo">Politica</button>
       <button data-modo="cultura">Cultura</button>
@@ -39,6 +40,7 @@
         <button data-scheda="diplomazia">Diplomazia</button>
         <button data-scheda="eserciti">Eserciti</button>
         <button data-scheda="guerre">Guerre</button>
+        <button data-scheda="consiglio" hidden>Consiglio</button>
       </div>
       <div id="scheda"></div>
     </aside>
@@ -49,10 +51,16 @@
       <div id="inizio-scheda"><p class="muto">Nessun popolo scelto.</p></div>
       <div class="comandi">
         <label>Seme <input id="inizio-seme" type="number" min="1" value="1"></label>
+        <label>IA <select id="inizio-ia">
+          <option value="regole">regole</option>
+          <option value="misto">misto (metà Jev)</option>
+          <option value="jev">Jev</option>
+        </select></label>
         <button id="inizio-via" disabled>Inizia</button>
         <button id="inizio-continua" hidden>Continua</button>
         <label class="bottone">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
       </div>
+      <div id="inizio-ia-nota" class="muto"></div>
     </section>
     <div id="notizie"></div>
     <div id="avviso" hidden></div>

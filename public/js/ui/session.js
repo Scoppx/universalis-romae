@@ -2,19 +2,15 @@
 import { createGame } from '../sim/setup.js';
 import { advanceDay, isOver } from '../sim/loop.js';
 import { isNewYear } from '../sim/calendar.js';
-import { rulesController } from '../ai/rules.js';
+import { buildControllers } from '../ai/modes.js';
 import { formatLogEntry } from './views.js';
 
-export function controllersFor(game, giocatore) {
-  return Object.fromEntries(game.ordine.filter(id => id !== giocatore).map(id => [id, rulesController]));
+export function createSessionFrom(game, giocatore, seme, ia = 'regole', ai = null) {
+  return { game, giocatore, seme, ia, ai, controllers: buildControllers(game, ia, ai, giocatore) };
 }
 
-export function createSessionFrom(game, giocatore, seme) {
-  return { game, giocatore, seme, controllers: controllersFor(game, giocatore) };
-}
-
-export function createSession(data, giocatore, seme) {
-  return createSessionFrom(createGame({ ...data, seed: seme }), giocatore, seme);
+export function createSession(data, giocatore, seme, ia = 'regole', ai = null) {
+  return createSessionFrom(createGame({ ...data, seed: seme }), giocatore, seme, ia, ai);
 }
 
 // Perché il gioco deve fermarsi adesso, se deve.

@@ -147,3 +147,18 @@ export function formatLogEntry(e, game, g) {
 export function rankingView(game, g) {
   return ranking(game).map((r, i) => ({ pos: i + 1, nome: nome(game, r.id), punteggio: r.punteggio, vivo: r.vivo, tu: r.id === g }));
 }
+
+const DOMANDE = { guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?' };
+
+export function councilView(records, game, filtro) {
+  return records.filter(r => !filtro || r.nazione === filtro).slice(-50).reverse().flatMap(r => r.domande.map(d => ({
+    nazione: nome(game, r.nazione),
+    data: formatDate(r.applicato),
+    domanda: DOMANDE[d.domanda] ?? d.domanda,
+    scelta: d.scelta, fonte: d.fonte,
+    opzioni: d.probabilita === null ? []
+      : typeof d.probabilita === 'number'
+        ? [{ nome: 'sì', p: Math.round(d.probabilita * 100) }, { nome: 'no', p: Math.round((1 - d.probabilita) * 100) }]
+        : Object.entries(d.probabilita).sort((a, b) => b[1] - a[1]).map(([k, p]) => ({ nome: k, p: Math.round(p * 100) }))
+  })));
+}

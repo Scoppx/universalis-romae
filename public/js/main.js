@@ -1,6 +1,7 @@
 // Regia dell'interfaccia: schermata iniziale, ciclo di gioco, barra, mappa e comandi del giocatore.
 import { createGame } from './sim/setup.js';
 import { applyCommand } from './sim/commands.js';
+import { createJevAi } from './ai/jev.js';
 import { createRenderer } from './ui/renderer.js';
 import { createCamera, toWorld, toScreen, zoomAt, pan, centerOn } from './ui/camera.js';
 import { buildIndex, provinceAt, armyAt } from './ui/hit.js';
@@ -27,6 +28,27 @@ const canvas = $('mappa');
 const renderer = createRenderer(canvas, data.map);
 const index = buildIndex(data.map);
 const cards = V.peopleCards(data.popoli);
+const caratteri = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p.carattere]));
+
+// Jev passa dal server, che tiene la chiave; nel browser non c'è mai.
+async function askJev(body) {
+  const r = await fetch('api/jev', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(out.errore || `HTTP ${r.status}`);
+  return out;
+}
+
+function creaAi() {
+  ui.consiglio = [];
+  return createJevAi({
+    ask: askJev, caratteri,
+    onRecord: r => {
+      ui.consiglio.push(r);
+      if (ui.consiglio.length > 300) ui.consiglio.shift();
+      if (r.errore && !ui.jevAvvisato) { ui.jevAvvisato = true; avviso(`Jev non risponde (${r.errore}): decidono le regole.`); }
+    }
+  });
+}
 const centroDi = id => data.map.province.find(p => p.id === id).centro;
 
 const ui = {
@@ -36,7 +58,8 @@ const ui = {
   selezione: { provincia: null, esercito: null },
   modo: 'politica', scheda: 'governo',
   clock: createClock(), camera: null, size: { w: 0, h: 0 },
-  notizie: [], sporco: true, disegni: 0, premuto: false
+  notizie: [], sporco: true, disegni: 0, premuto: false,
+  consiglio: [], filtroConsiglio: null, jevAvvisato: false
 };
 window.universalis = { ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n) };
 
@@ -79,14 +102,25 @@ $('inizio-lista').addEventListener('click', e => {
 
 $('inizio-via').addEventListener('click', () => {
   const seme = Math.max(1, Math.floor(Number($('inizio-seme').value) || 1));
-  avvia(createSession(data, ui.scelto, seme));
+  const ia = $('inizio-ia').value;
+  avvia(createSession(data, ui.scelto, seme, ia, ia === 'regole' ? null : creaAi()));
 });
+
+fetch('api/jev').then(r => r.json()).then(({ disponibile }) => {
+  if (disponibile) { $('inizio-ia-nota').textContent = 'Jev disponibile.'; return; }
+  for (const v of ['jev', 'misto']) $('inizio-ia').querySelector(`option[value="${v}"]`).disabled = true;
+  $('inizio-ia-nota').textContent = 'Jev non disponibile: avvia il server con TYPESAFE_API_KEY per usarlo.';
+}).catch(() => { $('inizio-ia-nota').textContent = 'Jev non disponibile.'; });
 
 function avvia(session) {
   ui.session = session;
   ui.scelto = null;
   ui.selezione = { provincia: null, esercito: null };
   ui.notizie = [];
+  ui.jevAvvisato = false;
+  if (!session.ai) ui.consiglio = [];
+  document.querySelector('[data-scheda="consiglio"]').hidden = !session.ai;
+  if (!session.ai && ui.scheda === 'consiglio') ui.scheda = 'governo';
   setPaused(ui.clock, true);
   $('finestra').hidden = true; // una finestra della partita precedente non vale per la nuova
   $('inizio').hidden = true;
@@ -171,6 +205,9 @@ function aggiorna() {
   for (const k of ['data', 'tesoro', 'entrate', 'uomini', 'stabilita', 'infamia']) $(`b-${k}`).textContent = b[k];
   $('b-pausa').textContent = ui.clock.pausa ? '▶' : '❚❚';
   $('b-vel').textContent = `velocità ${ui.clock.velocita}`;
+  const attesa = ui.session.ai?.inAttesa?.() ?? 0;
+  $('b-jev').hidden = !ui.session.ai;
+  $('b-jev').textContent = attesa ? `Jev: ${attesa} in attesa` : 'Jev';
   $('notizie').innerHTML = ui.notizie.map(t => `<div>${H.esc(t)}</div>`).join('');
   setHtml($('provincia'), ui.selezione.provincia
     ? H.provinceHtml(V.provinceInfo(g, ui.selezione.provincia, giocatore))
@@ -179,7 +216,9 @@ function aggiorna() {
     governo: () => H.governoHtml(V.governmentView(g, giocatore)),
     diplomazia: () => H.diplomaziaHtml(V.diplomacyView(g, giocatore)),
     eserciti: () => H.esercitiHtml(V.armiesView(g, giocatore), ui.selezione.esercito),
-    guerre: () => H.guerreHtml(V.warsView(g, giocatore))
+    guerre: () => H.guerreHtml(V.warsView(g, giocatore)),
+    consiglio: () => H.consiglioHtml(V.councilView(ui.consiglio, g, ui.filtroConsiglio),
+      g.ordine.filter(id => id !== giocatore).map(id => ({ id, nome: g.nazioni[id].nome })), ui.filtroConsiglio)
   };
   setHtml($('scheda'), schede[ui.scheda]());
 }
@@ -272,6 +311,12 @@ window.addEventListener('pointerup', () => {
   setTimeout(aggiorna); // dopo il clic, che arriva subito dopo il rilascio
 });
 
+document.addEventListener('change', e => {
+  if (e.target.id !== 'consiglio-filtro') return;
+  ui.filtroConsiglio = e.target.value || null;
+  aggiorna();
+});
+
 $('schede').addEventListener('click', e => {
   const b = e.target.closest('[data-scheda]');
   if (!b) return;
@@ -325,7 +370,7 @@ attachInput(canvas, {
 // --- salvataggi
 
 function carica(text) {
-  const r = deserialize(text, data);
+  const r = deserialize(text, data, { creaAi });
   if (!r.ok) { avviso(r.motivo); return; }
   avvia(r.session);
   avviso('Partita caricata.');
