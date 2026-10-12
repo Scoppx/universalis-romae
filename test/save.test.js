@@ -85,6 +85,7 @@ test('salvataggi manipolati: rifiutati prima di toccare la partita', () => {
       g.game.guerre = { g1: { id: 'g1', attaccanti: ['veio'], difensori: ['roma'], inizio: 0, battaglie: 0 } };
       g.game.proposte = { k1: { id: 'p9', tipo: 'pace', guerra: 'g1', da: 'veio', a: 'roma', termini: { ricevente: 'veio', province: [] }, giorno: 0 } };
     },
+    'obiettivo sconosciuto': g => { g.game.nazioni.veio.obiettivo = 'atlantide'; },
     'id con caratteri strani': g => { g.game.guerre = { 'g"1': { id: 'g"1', attaccanti: ['veio'], difensori: ['roma'], inizio: 0, battaglie: 0 } }; }
   };
   for (const [nome, rompi] of Object.entries(casi)) {
@@ -94,4 +95,11 @@ test('salvataggi manipolati: rifiutati prima di toccare la partita', () => {
     assert.equal(r.ok, false, nome);
     assert.match(r.motivo, /non valido/, nome);
   }
+});
+
+test('salvataggi della tappa 2 senza obiettivo: accettati', () => {
+  const s = createSession(data, 'roma', 1);
+  const g = JSON.parse(serialize(s));
+  for (const n of Object.values(g.game.nazioni)) delete n.obiettivo;
+  assert.equal(deserialize(JSON.stringify(g), data).ok, true);
 });

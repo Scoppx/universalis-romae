@@ -33,7 +33,7 @@ export function createGame({ map, popoli, balance, seed }) {
     game.nazioni[n.id] = {
       id: n.id, nome: n.nome, colore: n.colore, cultura: n.cultura, governo: n.governo,
       capitale: n.capitale, tesoro: 0, uomini: 0, stabilita: 0, infamia: 0,
-      tratti: { ...n.tratti }, vivo: true, tregue: {}
+      tratti: { ...n.tratti }, vivo: true, tregue: {}, obiettivo: null
     };
   }
   for (const id of game.ordine) {

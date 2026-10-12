@@ -5,7 +5,7 @@ import { armiesOf } from '../public/js/sim/state.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import {
-  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment
+  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision
 } from '../public/js/ai/rules.js';
 
 const allRules = g => Object.fromEntries(g.ordine.map(id => [id, rulesController]));
@@ -103,4 +103,31 @@ test('eserciti: non restano fermi in una provincia nemica tenuta da un terzo', (
   const [r] = armiesOf(g, 'roma');
   r.prov = 'c';
   assert.deepEqual(armyOrders(g, 'roma'), [{ tipo: 'muovi', nazione: 'roma', esercito: r.id, verso: 'f' }]);
+});
+
+test('obiettivo: gli eserciti lo seguono se è valido', () => {
+  const g = makeGame();
+  const [r] = armiesOf(g, 'roma');
+  declareWar(g, 'roma', 'volsci');
+  g.nazioni.roma.obiettivo = 'f';
+  assert.deepEqual(armyOrders(g, 'roma'), [{ tipo: 'muovi', nazione: 'roma', esercito: r.id, verso: 'f' }]);
+  g.nazioni.roma.obiettivo = 'd'; // dei latini, non in guerra: non valido
+  assert.deepEqual(armyOrders(g, 'roma'), [{ tipo: 'muovi', nazione: 'roma', esercito: r.id, verso: 'c' }]);
+  r.prov = 'b';
+  g.nazioni.roma.obiettivo = 'a'; // presidio della capitale
+  assert.deepEqual(armyOrders(g, 'roma'), [{ tipo: 'muovi', nazione: 'roma', esercito: r.id, verso: 'a' }]);
+  r.prov = 'a';
+  assert.deepEqual(armyOrders(g, 'roma'), []);
+});
+
+test('bersagli legali e decisione di guerra', () => {
+  const g = makeGame();
+  assert.deepEqual(legalWarTargets(g, 'roma').map(c => c.id), ['volsci', 'latini']);
+  g.nazioni.roma.stabilita = -1;
+  assert.deepEqual(legalWarTargets(g, 'roma'), []);
+  g.nazioni.latini.infamia = 25; // pretesto contro i latini
+  assert.deepEqual(legalWarTargets(g, 'roma').map(c => c.id), ['latini']);
+  assert.deepEqual(warDecision(g, 'roma'), [{ tipo: 'dichiara_guerra', nazione: 'roma', contro: 'latini' }]);
+  g.nazioni.roma.infamia = 20;
+  assert.deepEqual(legalWarTargets(g, 'roma'), []);
 });
