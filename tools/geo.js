@@ -2,20 +2,14 @@
 // Coordinate già proiettate (pixel). Poligono = [anello esterno, ...buchi]; multipoligono = [poligono, ...].
 import { Delaunay } from 'd3-delaunay';
 import polygonClipping from 'polygon-clipping';
+import { pointInRing, bboxOf } from '../public/js/ui/geom.js';
+
+export { pointInRing };
 
 export function ringArea(ring) {
   let s = 0;
   for (let i = 0; i < ring.length - 1; i++) s += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
   return s / 2;
-}
-
-export function pointInRing([x, y], ring) {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
 }
 
 function segmentDistance(p, a, b) {
@@ -82,19 +76,11 @@ export function buildProvinces({ pieces, centers, width, height }) {
   return cells;
 }
 
-function bbox(multi) {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const poly of multi) for (const [x, y] of poly[0]) {
-    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
-  }
-  return [x0, y0, x1, y1];
-}
-
 // Confinano due celle sulla stessa terra che condividono un lato (almeno due vertici).
 export function buildAdjacency(cells, { collegamenti, tagli }) {
   const adj = Object.fromEntries(cells.map(c => [c.id, new Set()]));
   const cut = new Set(tagli.map(([a, b]) => [a, b].sort().join('|')));
-  const boxes = cells.map(c => bbox(c.poligoni));
+  const boxes = cells.map(c => bboxOf(c.poligoni));
   for (let i = 0; i < cells.length; i++) for (let j = i + 1; j < cells.length; j++) {
     const c = cells[i], d = cells[j], a = boxes[i], b = boxes[j];
     if (c.piece !== d.piece || cut.has([c.id, d.id].sort().join('|'))) continue;
