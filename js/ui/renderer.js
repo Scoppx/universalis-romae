@@ -1,6 +1,7 @@
 // Disegno della mappa a due strati. La base (mare, rilievo, popoli, confini, acque, nomi) sta in una tela nascosta
 // e si ridisegna solo quando cambiano vista o confini; selezione, percorsi e soldatini a ogni fotogramma.
 import { provinceFill } from './colors.js';
+import { atWar } from '../sim/war.js';
 import { toScreen } from './camera.js';
 import { drawSoldier, drawLabel, drawArrow } from './soldier.js';
 import { armyWorldPos, pathSteps, stackOffset, soldierScale } from './armies-view.js';
@@ -68,7 +69,8 @@ export function createRenderer(canvas, map, { onReady } = {}) {
     g.fillRect(0, 0, size.w, size.h);
     g.setTransform(dpr * camera.scale, 0, 0, dpr * camera.scale, dpr * camera.x, dpr * camera.y);
     // linee di costa ripetute sul mare, come nelle carte incise
-    g.strokeStyle = 'rgba(59, 42, 26, 0.10)';
+    // angoli arrotondati: con gli spigoli vivi le isolette avevano ombre a punta
+    g.strokeStyle = 'rgba(59, 42, 26, 0.06)'; g.lineJoin = 'round';
     for (const w of [26, 18, 11, 5]) { g.lineWidth = w * lw; g.stroke(terra); }
     g.fillStyle = TERRA;
     g.fill(terra);
@@ -126,11 +128,18 @@ export function createRenderer(canvas, map, { onReady } = {}) {
     const perProv = {};
     for (const a of Object.values(game.eserciti)) (perProv[a.prov] ??= []).push(a);
     for (const list of Object.values(perProv)) {
-      list.forEach((a, i) => {
+      const pos = list.map((a, i) => {
         const p = armyWorldPos(game, a, centri, fraz);
         const [sx, sy] = scr([p.x, p.y]);
-        const x = sx + stackOffset(i, list.length) * scala, y = sy + 6;
-        const dir = a.inBattaglia ? (i % 2 === 0 ? 1 : -1) : p.dir;
+        return { p, x: sx + stackOffset(i, list.length) * scala, y: sy + 6 };
+      });
+      list.forEach((a, i) => {
+        const { p, x, y } = pos[i];
+        // in battaglia ognuno guarda verso i nemici che ha accanto
+        const nemici = pos.filter((_, j) => list[j].inBattaglia && atWar(game, a.owner, list[j].owner));
+        const dir = a.inBattaglia && nemici.length
+          ? (nemici.reduce((s, n) => s + n.x, 0) / nemici.length >= x ? 1 : -1)
+          : p.dir;
         const assedio = !a.inBattaglia && !a.percorso.length && game.province[a.prov].controller !== a.owner;
         const fase = inPausa ? 0 : now / 1000 * (a.inBattaglia ? 6 : 9);
         drawSoldier(ctx, {
