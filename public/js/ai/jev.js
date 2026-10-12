@@ -1,7 +1,7 @@
 // IA con Jev: le decisioni strategiche si chiedono a Jev in modo asincrono e diventano comandi quando
 // la risposta arriva. Il lavoro di fino resta alle regole. Se Jev non risponde, decidono le regole.
 import { isReviewDay, peaceProposals, warDecision, answerProposals, routine } from './rules.js';
-import { buildReview, buildPeaceQuestion, interpretChoice, interpretNoul } from './questions.js';
+import { buildReview, buildPeaceQuestion, interpretChoice } from './questions.js';
 import { sideOf } from '../sim/war.js';
 
 const inGuerra = (game, id) => Object.values(game.guerre).some(w => sideOf(w, id));
@@ -43,10 +43,10 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
       const ans = res?.answers?.[q];
       if (meta.tipo === 'pace') {
         if (!game.proposte[meta.proposta]) { record.domande.push({ domanda: 'pace', scelta: null, fonte: 'superata', probabilita: null }); continue; }
-        const v = usabile ? interpretNoul(ans) : null;
-        const accetta = v ? v.accetta : answerProposals(game, id).find(c => c.proposta === meta.proposta).accetta;
+        const v = usabile ? interpretChoice(ans, meta) : null;
+        const accetta = v ? v.valore : answerProposals(game, id).find(c => c.proposta === meta.proposta).accetta;
         record.comandi.push({ tipo: 'rispondi', nazione: id, proposta: meta.proposta, accetta });
-        record.domande.push({ domanda: 'pace', scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? 'jev' : 'regola', probabilita: v ? v.probabilita : null });
+        record.domande.push({ domanda: 'pace', scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
         continue;
       }
       if (meta.tipo === 'guerra' && inGuerra(game, id)) {
