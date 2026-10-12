@@ -1,6 +1,6 @@
 // Partite headless. Uso:
 //   node bench.js [anni=100] [semi=5] [regole|jev|misto] [registro.jsonl]
-//   node bench.js [anni] 1 rigioca registro.jsonl
+//   node bench.js [anni] [semi] rigioca registro.jsonl
 // Le modalità jev e misto chiamano TypeSafe e richiedono TYPESAFE_API_KEY.
 import { writeFileSync, appendFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -19,17 +19,20 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
   const info = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p]));
   const caratteri = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p.carattere]));
   const totali = { richieste: 0, tokenInput: 0, fonti: { jev: 0, prudenza: 0, regola: 0, superata: 0 } };
+  let semeCorrente = 1;
   const onRecord = r => {
     totali.richieste++;
     totali.tokenInput += r.usage?.input_tokens ?? 0;
     for (const d of r.domande) totali.fonti[d.fonte]++;
-    if (registro) registro(r);
+    if (registro) registro({ ...r, seme: semeCorrente });
   };
   const acc = {};
   let tipo = {};
   for (let seed = 1; seed <= semi; seed++) {
+    semeCorrente = seed;
     const game = createGame({ ...data, seed });
-    const ai = records ? createReplayAi(records)
+    // ogni seme rigioca solo le sue decisioni (i registri vecchi, senza seme, valgono per il seme 1)
+    const ai = records ? createReplayAi(records.filter(r => (r.seme ?? 1) === seed))
       : ia === 'regole' ? null
       : createJevAi({ ask, caratteri, onRecord });
     const controllers = buildControllers(game, ia, ai);

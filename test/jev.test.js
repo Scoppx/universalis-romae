@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { advanceDay } from '../public/js/sim/loop.js';
+import { declareWar } from '../public/js/sim/war.js';
 import { createJevAi, createReplayAi } from '../public/js/ai/jev.js';
 import { buildControllers } from '../public/js/ai/modes.js';
 import { rulesController } from '../public/js/ai/rules.js';
@@ -92,4 +93,49 @@ test('modalità: regole, jev, misto', () => {
   const m = buildControllers(g, 'misto', ai);
   assert.deepEqual(g.ordine.map(id => m[id] === ai.controller), [true, false, true, false]);
   assert.equal(buildControllers(g, 'jev', ai, 'roma').roma, undefined);
+});
+
+// Jev controllabile: le risposte partono quando il test lo decide.
+function rinviato() {
+  const rilasci = [];
+  return { ask: () => new Promise(r => rilasci.push(r)), rilasci };
+}
+const risposta = (q, scelta, chiavi) => ({ answers: { [q]: { choice: scelta, probabilities: Object.fromEntries(chiavi.map(k => [k, k === scelta ? 0.8 : 0.2 / (chiavi.length - 1)])) } } });
+const GUERRA = ['nessuna guerra', 'volsci', 'latini'];
+
+test('due risposte di guerra lo stesso giorno: una sola dichiarazione', async () => {
+  const g = makeGame(1);
+  const records = [];
+  const { ask, rilasci } = rinviato();
+  const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
+  while (rilasci.length < 2) { advanceDay(g, { roma: ai.controller }); await new Promise(r => setImmediate(r)); }
+  rilasci[0](risposta('guerra', 'volsci', GUERRA));
+  rilasci[1](risposta('guerra', 'latini', GUERRA));
+  await ai.flush();
+  const cmds = ai.controller(g, 'roma');
+  assert.equal(cmds.filter(c => c.tipo === 'dichiara_guerra').length, 1);
+  assert.ok(records.some(r => r.domande.some(d => d.fonte === 'superata')));
+});
+
+test('guerra diventata illegale prima della risposta: niente dichiarazione', async () => {
+  const g = makeGame(1);
+  const records = [];
+  const { ask, rilasci } = rinviato();
+  const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
+  while (!rilasci.length) { advanceDay(g, { roma: ai.controller }); await new Promise(r => setImmediate(r)); }
+  g.nazioni.roma.tregue.latini = g.day + 1000;
+  rilasci[0](risposta('guerra', 'latini', GUERRA));
+  await ai.flush();
+  const cmds = ai.controller(g, 'roma');
+  assert.equal(cmds.filter(c => c.tipo === 'dichiara_guerra').length, 0);
+  assert.equal(records[0].domande[0].fonte, 'superata');
+});
+
+test('obiettivo senza risposta di Jev: azzerato, decidono le regole', async () => {
+  const g = makeGame(1);
+  declareWar(g, 'roma', 'volsci');
+  g.nazioni.roma.obiettivo = 'f';
+  const ai = createJevAi({ ask: async () => { throw new Error('Jev 529'); }, caratteri });
+  for (let i = 0; i < 200; i++) { advanceDay(g, { roma: ai.controller }); await ai.flush(); }
+  assert.equal(g.nazioni.roma.obiettivo, null);
 });

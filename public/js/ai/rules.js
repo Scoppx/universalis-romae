@@ -36,6 +36,9 @@ export function warCandidates(game, id) {
 // Lavoro di fino, uguale per regole e Jev: eserciti ogni 7 giorni (sfalsati) e reclute il primo del mese.
 export function routine(game, id) {
   const cmds = [];
+  // in pace un obiettivo di guerra non vale più
+  const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
+  if (!inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });
   if ((game.day + hashId(id)) % 7 === 0) cmds.push(...armyOrders(game, id));
   if (isFirstOfMonth(game.day)) cmds.push(...recruitment(game, id));
   return cmds;
@@ -43,6 +46,9 @@ export function routine(game, id) {
 
 export function rulesController(game, id) {
   const cmds = [...answerProposals(game, id)];
+  // le regole non usano obiettivi: uno rimasto da Jev (o da un salvataggio) si azzera; in pace lo fa la routine
+  const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
+  if (inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });
   if (isReviewDay(game, id)) cmds.push(...strategy(game, id));
   cmds.push(...routine(game, id));
   return cmds;
@@ -128,10 +134,10 @@ export function armyOrders(game, id) {
     const targets = Object.values(game.province).filter(p =>
       enemies.includes(p.controller) && (p.owner === id || enemies.includes(p.owner)));
     const { dist } = distancesFrom(game, id, a.prov);
-    // obiettivo deciso dal consiglio: un bersaglio nemico, oppure una provincia propria da presidiare
+    // obiettivo deciso dal consiglio: un bersaglio nemico, oppure la capitale da presidiare
     const ob = game.nazioni[id].obiettivo;
     const obValido = ob && dist[ob] !== undefined && (targets.some(p => p.id === ob) ||
-      (game.province[ob].owner === id && game.province[ob].controller === id));
+      (ob === capital && game.province[ob].owner === id && game.province[ob].controller === id));
     let best = obValido ? ob : null;
     if (!best) {
       for (const p of targets) {

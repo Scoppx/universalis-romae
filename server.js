@@ -28,8 +28,22 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+// Solo la pagina del gioco: JSON (così il browser chiede il permesso prima di un invio da altri siti),
+// host e origine locali (contro le pagine di altri siti e il DNS rebinding).
+function richiestaLocale(req) {
+  const port = req.socket.localPort;
+  const ammessi = [`127.0.0.1:${port}`, `localhost:${port}`];
+  if (!ammessi.includes(req.headers.host)) return 403;
+  const origin = req.headers.origin;
+  if (origin && !ammessi.some(h => origin === `http://${h}`)) return 403;
+  if (!(req.headers['content-type'] || '').startsWith('application/json')) return 415;
+  return 200;
+}
+
 async function proxyJev(req, res, ask) {
   const text = await readBody(req, 256 * 1024);
+  const locale = richiestaLocale(req);
+  if (locale !== 200) return sendJson(res, locale, { errore: 'richiesta non ammessa' });
   if (!ask) return sendJson(res, 503, { errore: 'Jev non disponibile: avvia il server con TYPESAFE_API_KEY' });
   if (text === null) return sendJson(res, 413, { errore: 'richiesta troppo grande' });
   let body;

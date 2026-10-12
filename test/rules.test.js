@@ -5,7 +5,7 @@ import { armiesOf } from '../public/js/sim/state.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import {
-  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision
+  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine
 } from '../public/js/ai/rules.js';
 
 const allRules = g => Object.fromEntries(g.ordine.map(id => [id, rulesController]));
@@ -130,4 +130,22 @@ test('bersagli legali e decisione di guerra', () => {
   assert.deepEqual(warDecision(g, 'roma'), [{ tipo: 'dichiara_guerra', nazione: 'roma', contro: 'latini' }]);
   g.nazioni.roma.infamia = 20;
   assert.deepEqual(legalWarTargets(g, 'roma'), []);
+});
+
+test('obiettivo: una provincia propria vale solo se è la capitale', () => {
+  const g = makeGame();
+  const [r] = armiesOf(g, 'roma');
+  declareWar(g, 'roma', 'volsci');
+  r.prov = 'a';
+  g.nazioni.roma.obiettivo = 'b'; // propria e controllata, ma non capitale: già liberata, non è più un obiettivo
+  assert.deepEqual(armyOrders(g, 'roma'), [{ tipo: 'muovi', nazione: 'roma', esercito: r.id, verso: 'c' }]);
+});
+
+test('obiettivo azzerato: dalle regole sempre, dalla routine in pace', () => {
+  const g = makeGame();
+  g.nazioni.roma.obiettivo = 'a';
+  assert.ok(rulesController(g, 'roma').some(c => c.tipo === 'obiettivo' && c.provincia === null));
+  assert.deepEqual(routine(g, 'roma').filter(c => c.tipo === 'obiettivo'), [{ tipo: 'obiettivo', nazione: 'roma', provincia: null }]);
+  declareWar(g, 'roma', 'volsci');
+  assert.deepEqual(routine(g, 'roma').filter(c => c.tipo === 'obiettivo'), []);
 });

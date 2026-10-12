@@ -69,3 +69,26 @@ test('proxy Jev: senza chiave 503, errore di Jev 502', async () => {
   assert.match((await r.json()).errore, /529/);
   b.server.close();
 });
+
+test('proxy Jev: niente richieste da altre pagine o altri host', async () => {
+  const { server, url } = await setupJev(async () => ({ answers: {} }));
+  try {
+  const body = JSON.stringify({ state: {}, questions: {} });
+  const testo = await fetch(`${url}/api/jev`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body });
+  assert.equal(testo.status, 415); // un "simple request" cross-site non passa
+  const origine = await fetch(`${url}/api/jev`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example' }, body });
+  assert.equal(origine.status, 403);
+  const port = new URL(url).port;
+  const stessa = await fetch(`${url}/api/jev`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: `http://localhost:${port}` }, body });
+  assert.equal(stessa.status, 200);
+  const http = await import('node:http');
+  const status = await new Promise(resolve => {
+    const req = http.request({ host: '127.0.0.1', port, path: '/api/jev', method: 'POST', headers: { Host: 'evil.example', 'Content-Type': 'application/json' } }, res => resolve(res.statusCode));
+    req.end(body);
+  });
+  assert.equal(status, 403); // DNS rebinding
+  } finally {
+    server.closeAllConnections();
+    server.close();
+  }
+});
