@@ -46,3 +46,9 @@ td { padding: 2px 4px; border-bottom: 1px solid var(--riga); vertical-align: top
 #finestra[hidden] { display: none; }
 #finestra-corpo { background: var(--pannello); border: 2px solid var(--bordo); border-radius: 6px; padding: 16px 20px; max-width: 520px; max-height: 80vh; overflow-y: auto; }
 input[type=number] { width: 80px; font: inherit; }
+.voto { padding: 6px 0; border-bottom: 1px solid var(--riga); }
+.barra-voto { position: relative; display: flex; justify-content: space-between; padding: 1px 6px; margin: 2px 0; font-size: 12px; background: #efe5cc; border-radius: 3px; overflow: hidden; }
+.barra-voto span { position: relative; z-index: 1; }
+.barra-voto .riempi { position: absolute; left: 0; top: 0; bottom: 0; background: #c9b27e; z-index: 0; }
+.barra-voto.scelta { font-weight: bold; outline: 1px solid var(--accento); }
+#b-jev { font-size: 12px; color: #e8d39b; }

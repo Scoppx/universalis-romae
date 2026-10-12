@@ -62,3 +62,13 @@ test('un controller non può dare ordini per un\'altra nazione', () => {
   assert.equal(g.nazioni.latini.tesoro, t);
   assert.equal(armiesOf(g, 'latini')[0].fanteria, 1200);
 });
+
+test('comando obiettivo', () => {
+  const g = makeGame();
+  assert.equal(g.nazioni.roma.obiettivo, null);
+  assert.equal(applyCommand(g, { tipo: 'obiettivo', nazione: 'roma', provincia: 'c' }).ok, true);
+  assert.equal(g.nazioni.roma.obiettivo, 'c');
+  assert.equal(applyCommand(g, { tipo: 'obiettivo', nazione: 'roma', provincia: 'zz' }).motivo, 'provincia inesistente');
+  assert.equal(applyCommand(g, { tipo: 'obiettivo', nazione: 'roma', provincia: null }).ok, true);
+  assert.equal(g.nazioni.roma.obiettivo, null);
+});

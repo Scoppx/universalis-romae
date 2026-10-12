@@ -20,6 +20,13 @@ export function applyCommand(game, cmd) {
       return proposePeace(game, cmd.nazione, cmd.guerra, cmd.termini);
     case 'rispondi':
       return answerProposal(game, cmd.nazione, cmd.proposta, cmd.accetta);
+    case 'obiettivo': {
+      const n = game.nazioni[cmd.nazione];
+      if (!n?.vivo) return { ok: false, motivo: 'nazione inesistente' };
+      if (cmd.provincia !== null && !game.province[cmd.provincia]) return { ok: false, motivo: 'provincia inesistente' };
+      n.obiettivo = cmd.provincia;
+      return { ok: true };
+    }
     default:
       return { ok: false, motivo: `comando sconosciuto: ${cmd.tipo}` };
   }

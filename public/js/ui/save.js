@@ -8,19 +8,23 @@ export const AUTOSAVE_KEY = 'universalis-romae:autosave';
 // Il bilanciamento non si salva: al caricamento vale quello corrente.
 export function serialize(session) {
   const { balance, ...game } = session.game;
-  return JSON.stringify({ versione: SAVE_VERSION, giocatore: session.giocatore, seme: session.seme, game });
+  return JSON.stringify({ versione: SAVE_VERSION, giocatore: session.giocatore, seme: session.seme, ia: session.ia, game });
 }
 
-export function deserialize(text, data) {
+export function deserialize(text, data, { creaAi } = {}) {
   let s;
   try { s = JSON.parse(text); } catch { return { ok: false, motivo: 'file non valido: non è un salvataggio' }; }
   if (!s || s.versione !== SAVE_VERSION || typeof s.game !== 'object' || !s.game) {
     return { ok: false, motivo: 'file non valido: non è un salvataggio di Universalis Romae (o è di un\'altra versione)' };
   }
+  const ia = s.ia ?? 'regole';
+  if (!['regole', 'jev', 'misto'].includes(ia)) return { ok: false, motivo: 'salvataggio non valido: modalità IA sconosciuta' };
   const errore = validateGame(s, data);
   if (errore) return { ok: false, motivo: `salvataggio non valido: ${errore}` };
   const g = s.game;
-  return { ok: true, session: createSessionFrom({ ...g, balance: data.balance }, s.giocatore, s.seme) };
+  // senza creaAi una partita Jev riparte con le regole
+  const ai = ia !== 'regole' && creaAi ? creaAi() : null;
+  return { ok: true, session: createSessionFrom({ ...g, balance: data.balance }, s.giocatore, s.seme, ai ? ia : 'regole', ai) };
 }
 
 // Un file importato è input non fidato: ogni id, riferimento e numero letto dalla simulazione
@@ -50,6 +54,7 @@ function validateGame(s, data) {
     if (![n.tesoro, n.uomini, n.stabilita, n.infamia].every(isNum) || typeof n.vivo !== 'boolean') return `popolo ${k}`;
     if (!isObj(n.tratti) || !Object.values(n.tratti).every(isNum)) return `popolo ${k}`;
     if (!isObj(n.tregue) || !Object.entries(n.tregue).every(([t, d]) => nazione(t) && isInt(d))) return `popolo ${k}`;
+    if (n.obiettivo !== undefined && n.obiettivo !== null && !provincia(n.obiettivo)) return `popolo ${k}`;
   }
   for (const [k, p] of Object.entries(g.province)) {
     if (!isObj(p) || p.id !== k || !nazione(p.owner) || !nazione(p.controller)) return `provincia ${k}`;
