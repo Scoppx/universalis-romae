@@ -115,6 +115,57 @@ try {
   });
   check(await page.evaluate(() => window.universalis.ui.selezione.esercito === null), 'esercito scomparso: selezione azzerata');
 
+  // --- proposte, fine partita, salvataggi (task 8)
+  await page.evaluate(async () => {
+    const { declareWar, proposePeace } = await import('/js/sim/war.js');
+    const g = window.universalis.ui.session.game;
+    g.proposte = {};
+    const { guerra } = declareWar(g, 'caere', 'roma');
+    proposePeace(g, 'caere', guerra, { ricevente: 'caere', province: [] });
+    window.universalis.avanza(1);
+  });
+  check(await page.isVisible('#finestra'), 'proposta al giocatore: finestra aperta');
+  check((await page.textContent('#finestra')).includes('pace bianca'), 'testo della proposta');
+  await page.click('[data-azione="rispondi"][data-accetta="1"]');
+  check(await page.isHidden('#finestra'), 'risposta data: finestra chiusa');
+  check(await page.evaluate(() => !Object.values(window.universalis.ui.session.game.guerre).some(w => w.attaccanti.includes('caere'))), 'pace con Caere firmata');
+
+  await page.evaluate(() => {
+    const u = window.universalis.ui;
+    const fine = u.session.game.day + 400;
+    while (u.session.game.day < fine) {
+      u.session.game.proposte = {};
+      window.universalis.avanza(fine - u.session.game.day);
+    }
+    document.getElementById('finestra').hidden = true;
+  });
+  check(await page.evaluate(() => Boolean(localStorage.getItem('universalis-romae:autosave'))), 'salvataggio automatico a capodanno');
+
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#b-esporta')]);
+  check(/^universalis-romae-roma-giorno-\d+\.json$/.test(download.suggestedFilename()), `esporta: ${download.suggestedFilename()}`);
+
+  const dataPrima = await page.textContent('#b-data');
+  await page.setInputFiles('#barra input.importa', { name: 'rotto.json', mimeType: 'application/json', buffer: Buffer.from('boh') });
+  // la lettura del file è asincrona: si aspetta l'avviso
+  const avvisato = await page.waitForFunction(() => document.getElementById('avviso').textContent.includes('non valido'), null, { timeout: 2000 }).then(() => true, () => false);
+  check(avvisato, `importazione di un file rotto: avviso (${await page.textContent('#avviso')})`);
+  check((await page.textContent('#b-data')) === dataPrima, 'importazione fallita: la partita resta');
+
+  await page.reload();
+  await page.waitForSelector('#inizio-continua:not([hidden])');
+  await page.click('#inizio-continua');
+  await page.waitForSelector('#barra:not([hidden])');
+  check((await page.textContent('#b-data')) !== '21 aprile 753 a.C. (AUC 1)', 'Continua riprende la partita salvata');
+
+  await page.evaluate(async () => {
+    const { END_DAY } = await import('/js/sim/calendar.js');
+    window.universalis.ui.session.game.proposte = {};
+    window.universalis.ui.session.game.day = END_DAY - 1;
+    window.universalis.avanza(1);
+  });
+  check((await page.textContent('#finestra')).includes('Fine della partita'), 'al 264 a.C. compare la classifica');
+  await page.click('[data-azione="chiudi"]');
+
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
 } catch (e) {
