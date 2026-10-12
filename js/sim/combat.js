@@ -9,8 +9,12 @@ export function resolveBattles(game) {
   for (const a of Object.values(game.eserciti)) (byProv[a.prov] ??= []).push(a);
   for (const [provId, armies] of Object.entries(byProv)) {
     if (armies.length < 2) continue;
-    const first = armies[0];
-    const enemy = armies.find(x => atWar(game, first.owner, x.owner));
+    // la prima coppia in guerra, in ordine stabile: un terzo neutrale non blocca la battaglia
+    let first = null, enemy = null;
+    for (const x of armies) {
+      enemy = armies.find(y => atWar(game, x.owner, y.owner));
+      if (enemy) { first = x; break; }
+    }
     if (!enemy) continue;
     battleDay(game, provId,
       armies.filter(x => x.owner === first.owner),

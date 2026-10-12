@@ -107,8 +107,9 @@ export function armyOrders(game, id) {
     const here = game.province[a.prov];
     if (here.controller !== id && enemies.includes(here.controller)) continue; // sta assediando
     if (a.morale < game.balance.combattimento.moraleMax / 2) continue; // si riprende
+    // solo province tenute da un nemico: quelle occupate da un terzo non si possono assediare
     const targets = Object.values(game.province).filter(p =>
-      (p.owner === id && enemies.includes(p.controller)) || (enemies.includes(p.owner) && p.controller !== id));
+      enemies.includes(p.controller) && (p.owner === id || enemies.includes(p.owner)));
     const { dist } = distancesFrom(game, id, a.prov);
     let best = null;
     for (const p of targets) {
