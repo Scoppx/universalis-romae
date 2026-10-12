@@ -5,7 +5,6 @@ import { armiesOf } from '../sim/state.js';
 import { sideOf, enemiesOf, scoreFor, hasPretext, peaceCost } from '../sim/war.js';
 import { formatDate } from '../sim/calendar.js';
 
-export const SOGLIA_SI = 0.6;
 const round2 = x => Math.round(x * 100) / 100;
 const nome = (game, id) => game.nazioni[id]?.nome ?? id;
 
@@ -107,8 +106,10 @@ export function buildPeaceQuestion(game, propId, carattere) {
   const p = game.proposte[propId], war = game.guerre[p.guerra], id = p.a;
   const state = statoPopolo(game, id, carattere);
   const cediamo = p.termini.ricevente !== id;
+  const punteggio = Math.round(scoreFor(game, war, id));
   state.guerra = {
-    contro: nome(game, p.da), punteggio: Math.round(scoreFor(game, war, id)),
+    contro: nome(game, p.da), punteggio,
+    situazione: punteggio >= 10 ? 'la stiamo vincendo' : punteggio <= -10 ? 'la stiamo perdendo' : 'in equilibrio',
     durata_anni: Math.round((game.day - war.inizio) / 36.5) / 10
   };
   state.proposta = {
@@ -120,12 +121,17 @@ export function buildPeaceQuestion(game, propId, carattere) {
   return {
     state,
     questions: {
+      // Una scelta con due significati chiari: come domanda sì/no Jev dava sempre un no tiepido, qualunque fossero i termini.
       pace: {
-        type: 'noul',
-        instructions: 'Il consiglio di `popolo.nome`, che decide secondo `popolo.carattere`, accetta `proposta` per chiudere `guerra`?'
+        type: 'choice',
+        instructions: 'Sei il consiglio di `popolo.nome` e decidi secondo `popolo.carattere`. Guardando `guerra.situazione` e i termini di `proposta`, cosa rispondi?',
+        criteria: {
+          accetta: 'Accettare la pace: la guerra va male per noi, oppure i termini costano poco e conviene chiudere ora.',
+          rifiuta: 'Rifiutare la pace: la guerra va bene per noi, oppure i termini sono troppo duri e conviene continuare a combattere.'
+        }
       }
     },
-    meta: { pace: { tipo: 'pace', proposta: propId } }
+    meta: { pace: { tipo: 'pace', proposta: propId, mappa: { accetta: true, rifiuta: false }, prudente: 'rifiuta' } }
   };
 }
 
@@ -138,10 +144,4 @@ export function interpretChoice(answer, meta) {
   const incerto = p1 < 0.5 && p1 - p2 < 0.15;
   const scelta = incerto ? meta.prudente : top;
   return { scelta, valore: meta.mappa[scelta], incerto, probabilita: probs };
-}
-
-export function interpretNoul(answer) {
-  const v = answer?.noul;
-  if (typeof v !== 'number' || !Number.isFinite(v)) return null;
-  return { accetta: v >= SOGLIA_SI, probabilita: v };
 }
