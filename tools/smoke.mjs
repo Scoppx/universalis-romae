@@ -72,6 +72,49 @@ try {
   check(await page.evaluate(() => window.universalis.ui.modo) === 'terreno', 'modalità terreno');
   await page.click('[data-modo="politica"]');
 
+  // --- pannelli, eserciti e comandi (task 7)
+  await clickProvince('roma');
+  check((await page.textContent('#provincia h2')) === 'Roma', 'clic su Roma apre la sua scheda');
+  const prima = await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(a => a.owner === 'roma').reduce((s, a) => s + a.fanteria, 0));
+  await page.fill('#r-fanti', '100');
+  await page.fill('#r-cavalieri', '0');
+  await page.click('[data-azione="recluta"]');
+  const dopo = await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(a => a.owner === 'roma').reduce((s, a) => s + a.fanteria, 0));
+  check(dopo === prima + 100, `reclutamento: fanti ${prima} → ${dopo}`);
+  await page.click('[data-scheda="diplomazia"]');
+  await page.click('[data-azione="dichiara"][data-id="veio"]');
+  await page.click('[data-scheda="guerre"]');
+  check((await page.textContent('#scheda')).includes('Contro Veio'), 'guerra a Veio nella scheda Guerre');
+  await page.click('[data-scheda="eserciti"]');
+  await page.click('#scheda [data-azione="seleziona-esercito"]');
+  check(await page.evaluate(() => Boolean(window.universalis.ui.selezione.esercito)), 'esercito selezionato');
+  await clickProvince('veio', 'right');
+  check(await page.evaluate(() => {
+    const u = window.universalis.ui;
+    return u.session.game.eserciti[u.selezione.esercito].percorso.at(-1) === 'veio';
+  }), 'clic destro su Veio: esercito in marcia');
+  await clickProvince('tarquinia', 'right'); // visibile e non in guerra con Roma
+  check((await page.textContent('#avviso')) === 'nessun percorso', 'destinazione irraggiungibile: avviso');
+  // il pannello si ridisegna mentre il gioco scorre: le scelte restano
+  await page.evaluate(() => {
+    const g = window.universalis.ui.session.game;
+    g.province.fidenae.controller = 'roma';
+  });
+  await page.click('[data-scheda="guerre"]');
+  await page.check('input[name^="chiedi-"][value="fidenae"]');
+  // pausa con il bottone: la barra spaziatrice su una casella la toglierebbe
+  await page.click('#b-pausa');
+  await wait(400);
+  await page.click('#b-pausa');
+  check(await page.isChecked('input[name^="chiedi-"][value="fidenae"]'), 'la casella spuntata resta spuntata mentre il tempo scorre');
+  // esercito selezionato che scompare
+  await page.evaluate(() => {
+    const u = window.universalis.ui;
+    delete u.session.game.eserciti[u.selezione.esercito];
+    window.universalis.avanza(1);
+  });
+  check(await page.evaluate(() => window.universalis.ui.selezione.esercito === null), 'esercito scomparso: selezione azzerata');
+
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
 } catch (e) {

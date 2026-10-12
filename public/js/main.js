@@ -1,5 +1,6 @@
 // Regia dell'interfaccia: schermata iniziale, ciclo di gioco, barra, mappa e comandi del giocatore.
 import { createGame } from './sim/setup.js';
+import { applyCommand } from './sim/commands.js';
 import { createRenderer } from './ui/renderer.js';
 import { createCamera, toWorld, toScreen, zoomAt, pan, centerOn } from './ui/camera.js';
 import { buildIndex, provinceAt, armyAt } from './ui/hit.js';
@@ -135,12 +136,103 @@ function aggiorna() {
   ui.sporco = true;
   if (!ui.session) return;
   const { game: g, giocatore } = ui.session;
+  if (ui.selezione.esercito && !g.eserciti[ui.selezione.esercito]) ui.selezione.esercito = null;
   const b = V.topBar(g, giocatore);
   for (const k of ['data', 'tesoro', 'entrate', 'uomini', 'stabilita', 'infamia']) $(`b-${k}`).textContent = b[k];
   $('b-pausa').textContent = ui.clock.pausa ? '▶' : '❚❚';
   $('b-vel').textContent = `velocità ${ui.clock.velocita}`;
   $('notizie').innerHTML = ui.notizie.map(t => `<div>${H.esc(t)}</div>`).join('');
+  setHtml($('provincia'), ui.selezione.provincia
+    ? H.provinceHtml(V.provinceInfo(g, ui.selezione.provincia, giocatore))
+    : '<p class="muto">Clic su una provincia per vederla.</p>');
+  const schede = {
+    governo: () => H.governoHtml(V.governmentView(g, giocatore)),
+    diplomazia: () => H.diplomaziaHtml(V.diplomacyView(g, giocatore)),
+    eserciti: () => H.esercitiHtml(V.armiesView(g, giocatore), ui.selezione.esercito),
+    guerre: () => H.guerreHtml(V.warsView(g, giocatore))
+  };
+  setHtml($('scheda'), schede[ui.scheda]());
 }
+
+// Ridisegna solo se l'HTML cambia, e conserva caselle spuntate, numeri scritti e focus.
+const ultimoHtml = new WeakMap();
+function setHtml(el, html) {
+  if (ultimoHtml.get(el) === html) return;
+  const spuntate = new Set([...el.querySelectorAll('input[type=checkbox]:checked')].map(i => `${i.name}=${i.value}`));
+  const numeri = Object.fromEntries([...el.querySelectorAll('input[type=number]')].map(i => [i.id, i.value]));
+  const focus = el.contains(document.activeElement) ? document.activeElement.id : null;
+  el.innerHTML = html;
+  ultimoHtml.set(el, html);
+  for (const i of el.querySelectorAll('input[type=checkbox]')) if (spuntate.has(`${i.name}=${i.value}`)) i.checked = true;
+  for (const i of el.querySelectorAll('input[type=number]')) if (numeri[i.id] !== undefined) i.value = numeri[i.id];
+  if (focus) document.getElementById(focus)?.focus();
+}
+
+// --- comandi del giocatore
+
+let avvisoTimer = null;
+function avviso(testo) {
+  const el = $('avviso');
+  el.textContent = testo;
+  el.hidden = false;
+  clearTimeout(avvisoTimer);
+  avvisoTimer = setTimeout(() => { el.hidden = true; }, 3000);
+}
+
+function comando(cmd) {
+  const r = applyCommand(ui.session.game, { ...cmd, nazione: ui.session.giocatore });
+  if (!r.ok) avviso(r.motivo);
+  aggiorna();
+  return r;
+}
+
+function selezionaEsercito(id, centra) {
+  const a = ui.session.game.eserciti[id];
+  if (!a) return;
+  ui.selezione.esercito = a.owner === ui.session.giocatore ? id : null;
+  ui.selezione.provincia = a.prov;
+  if (centra) centerOn(ui.camera, ui.size.w, ui.size.h, ...centroDi(a.prov));
+  aggiorna();
+}
+
+function proponi(guerra, ricevente, province) {
+  const r = comando({ tipo: 'proponi_pace', guerra, termini: { ricevente, province } });
+  if (r.ok) avviso('Proposta inviata.');
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-azione]');
+  if (!el || !ui.session) return;
+  const id = el.dataset.id;
+  switch (el.dataset.azione) {
+    case 'recluta':
+      comando({
+        tipo: 'recluta', provincia: id,
+        fanteria: Math.floor(Number($('r-fanti').value) || 0),
+        cavalleria: Math.floor(Number($('r-cavalieri').value) || 0)
+      });
+      break;
+    case 'alza-stabilita': comando({ tipo: 'alza_stabilita' }); break;
+    case 'dichiara': comando({ tipo: 'dichiara_guerra', contro: id }); break;
+    case 'seleziona-esercito': selezionaEsercito(id, true); break;
+    case 'chiedi':
+    case 'cedi': {
+      const province = [...document.querySelectorAll(`input[name="${el.dataset.azione}-${id}"]:checked`)].map(i => i.value);
+      if (!province.length) { avviso('Scegli almeno una provincia.'); break; }
+      proponi(id, el.dataset.azione === 'chiedi' ? ui.session.giocatore : el.dataset.nemico, province);
+      break;
+    }
+    case 'pace-bianca': proponi(id, ui.session.giocatore, []); break;
+  }
+});
+
+$('schede').addEventListener('click', e => {
+  const b = e.target.closest('[data-scheda]');
+  if (!b) return;
+  ui.scheda = b.dataset.scheda;
+  for (const x of $('schede').children) x.classList.toggle('attivo', x === b);
+  aggiorna();
+});
 
 // --- comandi della barra
 
@@ -161,12 +253,18 @@ attachInput(canvas, {
   onPan: (dx, dy) => { pan(ui.camera, dx, dy); ui.sporco = true; },
   onZoom: (x, y, f) => { zoomAt(ui.camera, x, y, f); ui.sporco = true; },
   onClick: (x, y) => {
+    const army = ui.session && armyAt(renderer.markers(), x, y);
+    if (army) { selezionaEsercito(army, false); return; }
     const prov = provinceAt(index, ...toWorld(ui.camera, x, y));
     if (!ui.session) { if (prov) scegli(game().province[prov].owner); return; }
     ui.selezione.provincia = prov;
     aggiorna();
   },
-  onRightClick: () => {},
+  onRightClick: (x, y) => {
+    if (!ui.session || !ui.selezione.esercito) return;
+    const prov = provinceAt(index, ...toWorld(ui.camera, x, y));
+    if (prov) comando({ tipo: 'muovi', esercito: ui.selezione.esercito, verso: prov });
+  },
   onKey: k => {
     if (!ui.session) return false;
     if (k === ' ') { togglePausa(); return true; }
