@@ -103,12 +103,12 @@ export function warsView(game, g) {
   });
 }
 
-export function armiesView(game, g) {
+export function armiesView(game, g, scelti = []) {
   return armiesOf(game, g).map(a => ({
     id: a.id, provincia: game.province[a.prov].nome, fanteria: a.fanteria, cavalleria: a.cavalleria,
     morale: a.morale.toFixed(1),
     destinazione: a.percorso.length ? game.province[a.percorso[a.percorso.length - 1]].nome : null,
-    inBattaglia: a.inBattaglia
+    inBattaglia: a.inBattaglia, scelto: scelti.includes(a.id)
   }));
 }
 
@@ -161,4 +161,17 @@ export function councilView(records, game, filtro) {
         ? [{ nome: 'sì', p: Math.round(d.probabilita * 100) }, { nome: 'no', p: Math.round((1 - d.probabilita) * 100) }]
         : Object.entries(d.probabilita).sort((a, b) => b[1] - a[1]).map(([k, p]) => ({ nome: k, p: Math.round(p * 100) }))
   })));
+}
+
+export function selectionActions(game, g, ids) {
+  const armies = ids.map(id => game.eserciti[id]).filter(a => a && a.owner === g);
+  const fermi = armies.every(a => !a.percorso.length && !a.inBattaglia);
+  const min = game.balance.combattimento.minimoUomini;
+  const uno = armies.length === 1 ? armies[0] : null;
+  return {
+    puoUnire: armies.length >= 2 && armies.length === ids.length && fermi && armies.every(a => a.prov === armies[0].prov),
+    puoDividere: Boolean(uno) && !uno.inBattaglia &&
+      Math.floor(uno.fanteria / 2) + Math.floor(uno.cavalleria / 2) >= min &&
+      Math.ceil(uno.fanteria / 2) + Math.ceil(uno.cavalleria / 2) >= min
+  };
 }

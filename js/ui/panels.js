@@ -50,14 +50,17 @@ export function diplomaziaHtml(list) {
   }).join('');
 }
 
-export function esercitiHtml(list, selezionato) {
+export function esercitiHtml(list, azioni) {
   if (!list.length) return '<p class="muto">Nessun esercito. Recluta da una tua provincia.</p>';
-  return list.map(a => `<div class="riga${a.id === selezionato ? ' scelta' : ''}"><span>${esc(a.provincia)}: ` +
-    `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
-    (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +
-    (a.inBattaglia ? ' <span class="guerra">in battaglia</span>' : '') +
-    `</span><button data-azione="seleziona-esercito" data-id="${esc(a.id)}">Seleziona</button></div>`).join('') +
-    '<p class="muto">Seleziona un esercito, poi clic destro sulla destinazione.</p>';
+  return '<div class="comandi">' +
+    `<button data-azione="unisci"${azioni.puoUnire ? '' : ' disabled'}>Unisci</button>` +
+    `<button data-azione="dividi"${azioni.puoDividere ? '' : ' disabled'}>Dividi</button></div>` +
+    list.map(a => `<div class="riga${a.scelto ? ' scelta' : ''}"><span>${esc(a.provincia)}: ` +
+      `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
+      (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +
+      (a.inBattaglia ? ' <span class="guerra">in battaglia</span>' : '') +
+      `</span><button data-azione="seleziona-esercito" data-id="${esc(a.id)}">Seleziona</button></div>`).join('') +
+    '<p class="muto">Clic sul soldatino per selezionarlo, Maiuscolo+clic o Maiuscolo+trascina per sceglierne più d\'uno, clic destro sulla destinazione.</p>';
 }
 
 function caselle(nome, list) {
