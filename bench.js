@@ -72,7 +72,7 @@ function table({ righe, totali }, anni, semi, ia, ms) {
   lines.push('');
   lines.push('popolo'.padEnd(16) + 'ia'.padEnd(8) + 'difficoltà'.padEnd(17) + 'vivo'.padStart(6) + 'prov. inizio'.padStart(14) + 'prov. fine'.padStart(12) + 'punteggio'.padStart(11));
   for (const r of righe) {
-    lines.push(r.nome.padEnd(16) + r.ia.padEnd(8) + r.difficolta.padEnd(17) + `${Math.round(r.vivo * 100)}%`.padStart(6) +
+    lines.push(r.nome.slice(0, 15).padEnd(16) + r.ia.padEnd(8) + r.difficolta.padEnd(17) + `${Math.round(r.vivo * 100)}%`.padStart(6) +
       r.provinceInizio.toFixed(1).padStart(14) + r.provinceFine.toFixed(1).padStart(12) + r.punteggio.toFixed(1).padStart(11));
   }
   return lines.join('\n');

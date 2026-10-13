@@ -24,6 +24,10 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Eserciti**: clic sul soldatino per selezionarlo; **Maiuscolo+clic** o **Maiuscolo+trascina** per sceglierne più d'uno; **clic destro** sulla destinazione. Nella scheda Eserciti: **Unisci** e **Dividi**.
 - **Diplomazia**: dichiara guerra ai vicini. **Guerre**: chiedi le province occupate, cedi le tue o proponi la pace bianca.
 - **Diplomazia**: per ogni popolo vedi la relazione e cosa puoi fare (il motivo, se un bottone è spento): ambasceria, alleanza, foedus, tributo, ultimatum, guerra. Quando dichiari guerra i tuoi alleati vengono chiamati alle armi; quelli del nemico entrano da soli. Da un foedus si può uscire, ma costa stabilità e dà al protettore un pretesto di guerra.
+- **Governo**: ogni governo ha i suoi effetti (tribù: +20% reclute, −20% tasse; monarchia: la stabilità tende a +1; repubblica: +10% tasse, riforme ogni 15 anni; lega: foedus già con forza doppia; città-stato: +20% tasse, −20% reclute). Tre **riforme** da −5 a +5, una mossa ogni 10 anni: società (patrizi +2% tasse per punto, plebe +3% reclute), dottrina (oltre ±4, +1 al dado in difesa o in attacco), province (accentramento: assimilazione più veloce ma più malcontento; autonomia: il contrario).
+- **Stabilità in battaglia**: con stabilità +2 o più +1 al dado, con −2 o meno −1. Una guerra senza pretesto costa 2 di stabilità: chi attacca così combatte peggio finché la stabilità non risale.
+- **Province**: il malcontento (0–10) sale con la cultura diversa, la stabilità negativa e l'accentramento. Le province straniere si assimilano in circa 15 anni; una **colonia** (denaro e 1000 uomini) raddoppia l'assimilazione e toglie 1 di malcontento. Le **fortificazioni** salgono fino al livello 3. Mappa **Malcontento** per vedere dove c'è rischio.
+- **Rivolte**: oltre 3 di malcontento ogni mese può nascere un esercito ribelle, in guerra con tutti, che assedia la provincia. Se la tiene un anno la provincia diventa indipendente: va al vicino della stessa cultura o nasce un popolo nuovo.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
 
 ## Struttura
