@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
-import { buildReview, buildPeaceQuestion, interpretChoice } from '../public/js/ai/questions.js';
+import { buildReview, buildPeaceQuestion, interpretChoice, buildProposalQuestion } from '../public/js/ai/questions.js';
 
 test('in pace: domanda di guerra con i soli bersagli legali e la scelta di restare in pace', () => {
   const g = makeGame();
@@ -56,4 +56,16 @@ test('interpretazione: più probabile, prudenza se incerto, null se inutilizzabi
   assert.equal(bassaMaStaccata.scelta, 'veio');
   assert.equal(interpretChoice({ choice: 'atlantide', probabilities: { atlantide: 1 } }, meta), null);
   assert.equal(interpretChoice(undefined, meta), null);
+});
+
+test('proposte non di pace: scelta accetta/rifiuta con i fatti nello stato', async () => {
+  const { propose } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  const { proposta } = propose(g, 'roma', 'alleanza', 'latini');
+  const q = buildProposalQuestion(g, proposta, 'Prudenti.');
+  assert.equal(q.questions.alleanza.type, 'choice');
+  assert.deepEqual(Object.keys(q.questions.alleanza.criteria), ['accetta', 'rifiuta']);
+  assert.equal(q.state.proposta.da, 'roma');
+  assert.equal(q.state.proposta.relazione, 30);
+  assert.deepEqual(q.meta.alleanza, { tipo: 'proposta', genere: 'alleanza', proposta, mappa: { accetta: true, rifiuta: false }, prudente: 'rifiuta' });
 });

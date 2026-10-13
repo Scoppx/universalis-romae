@@ -1,8 +1,11 @@
 // IA a regole. Legge lo stato e restituisce comandi; non modifica mai lo stato.
 // Fa il lavoro di fino (eserciti, reclute) per tutti, e le scelte strategiche quando Jev non c'è.
-import { armiesOf, maxManpower, bordersNation } from '../sim/state.js';
+import { armiesOf, maxManpower, bordersNation, power } from '../sim/state.js';
+
+export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
 import { distancesFrom } from '../sim/armies.js';
+import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { stabilityCost } from '../sim/economy.js';
 import { isFirstOfMonth } from '../sim/calendar.js';
 
@@ -20,15 +23,10 @@ export function enemiesOfNation(game, id) {
   return game.ordine.filter(o => game.nazioni[o].vivo && atWar(game, id, o));
 }
 
-export function power(game, id) {
-  const men = armiesOf(game, id).reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
-  return men + game.nazioni[id].uomini * 0.5;
-}
-
 export function warCandidates(game, id) {
   const mine = power(game, id);
   return game.ordine
-    .filter(o => o !== id && game.nazioni[o].vivo && !inTruce(game, id, o) && !atWar(game, id, o) && bordersNation(game, id, o))
+    .filter(o => o !== id && game.nazioni[o].vivo && !inTruce(game, id, o) && !atWar(game, id, o) && !friendly(game, id, o) && bordersNation(game, id, o))
     .map(o => ({ id: o, rapporto: mine / Math.max(1, power(game, o)) }))
     .sort((a, b) => b.rapporto - a.rapporto || a.id.localeCompare(b.id));
 }
@@ -56,12 +54,49 @@ export function rulesController(game, id) {
 
 export function strategy(game, id) {
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
-  return inWar ? peaceProposals(game, id) : warDecision(game, id);
+  if (inWar) return peaceProposals(game, id);
+  const ult = ultimatumDecision(game, id);
+  if (ult.length) return ult;
+  const war = warDecision(game, id);
+  return war.length ? war : diplomacyInitiatives(game, id);
+}
+
+// Contro un vicino molto più debole prima si chiede una provincia: se rifiuta, la guerra avrà un pretesto.
+export function ultimatumDecision(game, id) {
+  const d = game.balance.diplomazia;
+  const best = legalWarTargets(game, id)[0];
+  if (!best || best.rapporto < d.ultimatumRapporto || hasPretext(game, id, best.id)) return [];
+  const prov = Object.values(game.province)
+    .filter(p => !checkProposal(game, id, 'ultimatum', best.id, { provincia: p.id }))
+    .sort((a, b) => b.tasse - a.tasse || (a.id < b.id ? -1 : 1))[0];
+  return prov ? [{ tipo: 'proponi', nazione: id, genere: 'ultimatum', verso: best.id, provincia: prov.id }] : [];
+}
+
+export function diplomacyInitiatives(game, id) {
+  const n = game.nazioni[id], d = game.balance.diplomazia, mine = power(game, id);
+  // un federato che è diventato più forte del suo protettore se ne va
+  if (n.protettore) return mine > power(game, n.protettore) && !checkLeaveFoedus(game, id) ? [{ tipo: 'esci_foedus', nazione: id }] : [];
+  const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  const vicini = game.ordine.filter(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && !atWar(game, id, o));
+  const foedus = vicini.filter(o => !checkProposal(game, id, 'foedus', o)).sort(byId)[0];
+  if (foedus) return [{ tipo: 'proponi', nazione: id, genere: 'foedus', verso: foedus }];
+  if (vicini.some(o => power(game, o) > mine * 1.2 && !friendly(game, id, o))) {
+    const amico = vicini
+      .filter(o => power(game, o) <= mine * 1.2 && relation(game, id, o) >= d.alleanzaMinRelazione && !checkProposal(game, id, 'alleanza', o))
+      .sort((a, b) => power(game, b) - power(game, a) || byId(a, b))[0];
+    if (amico) return [{ tipo: 'proponi', nazione: id, genere: 'alleanza', verso: amico }];
+  }
+  const forte = vicini.filter(o => relation(game, id, o) < 50).sort((a, b) => power(game, b) - power(game, a) || byId(a, b))[0];
+  if (forte && !checkEmbassy(game, id, forte) && n.tesoro >= d.ambasceriaCosto + game.balance.ia.riservaTesoro) {
+    return [{ tipo: 'ambasceria', nazione: id, verso: forte }];
+  }
+  return [];
 }
 
 // Vicini che il codice permette di attaccare: sotto la soglia d'infamia, e con pretesto o stabilità non negativa.
 export function legalWarTargets(game, id) {
   const n = game.nazioni[id];
+  if (n.protettore) return [];
   if (n.infamia >= game.balance.infamia.soglia) return [];
   return warCandidates(game, id).filter(c => hasPretext(game, id, c.id) || n.stabilita >= 0);
 }
@@ -102,15 +137,27 @@ export function peaceProposals(game, id) {
   return cmds;
 }
 
-// Accetta ciò che riceve; cede solo se il costo non supera di 10 il vantaggio del nemico.
+// Pace: accetta ciò che riceve, cede solo se il costo non supera di 10 il vantaggio del nemico.
+// Altri tipi: relazioni e rapporti di forze.
 export function answerProposals(game, id) {
+  const d = game.balance.diplomazia;
   const cmds = [];
   for (const p of Object.values(game.proposte)) {
     if (p.a !== id) continue;
-    const war = game.guerre[p.guerra];
-    let accetta = true;
-    if (p.termini.ricevente !== id) {
-      accetta = peaceCost(game, war, p.termini.ricevente, p.termini) <= -scoreFor(game, war, id) + 10;
+    let accetta;
+    switch (p.tipo) {
+      case 'pace': {
+        const war = game.guerre[p.guerra];
+        accetta = p.termini.ricevente === id ||
+          peaceCost(game, war, p.termini.ricevente, p.termini) <= -scoreFor(game, war, id) + 10;
+        break;
+      }
+      case 'alleanza': accetta = relation(game, id, p.da) >= d.alleanzaMinRelazione; break;
+      case 'foedus': accetta = relation(game, id, p.da) >= d.foedusMinRelazione; break;
+      case 'tributo': accetta = power(game, p.da) >= 2 * power(game, id); break;
+      case 'ultimatum': accetta = power(game, p.da) >= d.ultimatumRapporto * power(game, id); break;
+      case 'chiamata': accetta = relation(game, id, p.da) >= d.chiamataMinRelazione; break;
+      default: accetta = false;
     }
     cmds.push({ tipo: 'rispondi', nazione: id, proposta: p.id, accetta });
   }

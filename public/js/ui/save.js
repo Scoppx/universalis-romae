@@ -1,6 +1,7 @@
 // Salvataggi: file JSON esportabili e salvataggio automatico nel browser.
 import { END_DAY } from '../sim/calendar.js';
 import { createSessionFrom } from './session.js';
+import { initDiplomacy } from '../sim/diplomacy.js';
 
 export const SAVE_VERSION = 1;
 export const AUTOSAVE_KEY = 'universalis-romae:autosave';
@@ -21,10 +22,11 @@ export function deserialize(text, data, { creaAi } = {}) {
   if (!['regole', 'jev', 'misto'].includes(ia)) return { ok: false, motivo: 'salvataggio non valido: modalità IA sconosciuta' };
   const errore = validateGame(s, data);
   if (errore) return { ok: false, motivo: `salvataggio non valido: ${errore}` };
-  const g = s.game;
+  const g = { ...s.game, balance: data.balance };
+  initDiplomacy(g); // i salvataggi precedenti alla diplomazia ricevono i valori iniziali
   // senza creaAi una partita Jev riparte con le regole
   const ai = ia !== 'regole' && creaAi ? creaAi() : null;
-  return { ok: true, session: createSessionFrom({ ...g, balance: data.balance }, s.giocatore, s.seme, ai ? ia : 'regole', ai) };
+  return { ok: true, session: createSessionFrom(g, s.giocatore, s.seme, ai ? ia : 'regole', ai) };
 }
 
 // Un file importato è input non fidato: ogni id, riferimento e numero letto dalla simulazione
@@ -55,6 +57,13 @@ function validateGame(s, data) {
     if (!isObj(n.tratti) || !Object.values(n.tratti).every(isNum)) return `popolo ${k}`;
     if (!isObj(n.tregue) || !Object.entries(n.tregue).every(([t, d]) => nazione(t) && isInt(d))) return `popolo ${k}`;
     if (n.obiettivo !== undefined && n.obiettivo !== null && !provincia(n.obiettivo)) return `popolo ${k}`;
+    if (n.relazioni !== undefined && (!isObj(n.relazioni) || !Object.entries(n.relazioni).every(([o, v]) => nazione(o) && isNum(v)))) return `popolo ${k}`;
+    if (n.alleati !== undefined && (!Array.isArray(n.alleati) || !n.alleati.every(nazione))) return `popolo ${k}`;
+    if (n.protettore !== undefined && n.protettore !== null && !nazione(n.protettore)) return `popolo ${k}`;
+    if (n.tributo !== undefined && n.tributo !== null && !(isObj(n.tributo) && nazione(n.tributo.a) && isInt(n.tributo.fine))) return `popolo ${k}`;
+    for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati']) {
+      if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => nazione(o) && isInt(v)))) return `popolo ${k}`;
+    }
   }
   for (const [k, p] of Object.entries(g.province)) {
     if (!isObj(p) || p.id !== k || !nazione(p.owner) || !nazione(p.controller)) return `provincia ${k}`;
@@ -72,10 +81,16 @@ function validateGame(s, data) {
     if (!ID.test(k) || !isObj(w) || w.id !== k || !isInt(w.inizio) || !isNum(w.battaglie)) return `guerra ${k}`;
     if (![w.attaccanti, w.difensori].every(l => Array.isArray(l) && l.length > 0 && l.every(nazione))) return `guerra ${k}`;
   }
+  const TIPI = ['pace', 'alleanza', 'foedus', 'tributo', 'ultimatum', 'chiamata'];
   for (const [k, p] of Object.entries(g.proposte)) {
-    if (!ID.test(k) || !isObj(p) || p.id !== k || p.tipo !== 'pace' || !own(g.guerre, p.guerra) || !isInt(p.giorno)) return `proposta ${k}`;
-    if (!nazione(p.da) || !nazione(p.a) || !isObj(p.termini) || !nazione(p.termini.ricevente)) return `proposta ${k}`;
-    if (!Array.isArray(p.termini.province) || !p.termini.province.every(provincia)) return `proposta ${k}`;
+    if (!ID.test(k) || !isObj(p) || p.id !== k || !TIPI.includes(p.tipo) || !isInt(p.giorno)) return `proposta ${k}`;
+    if (!nazione(p.da) || !nazione(p.a)) return `proposta ${k}`;
+    if ((p.tipo === 'pace' || p.tipo === 'chiamata') && !own(g.guerre, p.guerra)) return `proposta ${k}`;
+    if (p.tipo === 'pace') {
+      if (!isObj(p.termini) || !nazione(p.termini.ricevente)) return `proposta ${k}`;
+      if (!Array.isArray(p.termini.province) || !p.termini.province.every(provincia)) return `proposta ${k}`;
+    }
+    if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;
   }
   return null;
 }

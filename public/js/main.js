@@ -234,12 +234,15 @@ function setHtml(el, html) {
   // con il mouse premuto sul pannello non si ridisegna: il bottone sotto il cursore deve ricevere il clic
   if (ui.premuto || ultimoHtml.get(el) === html) return;
   const spuntate = new Set([...el.querySelectorAll('input[type=checkbox]:checked')].map(i => `${i.name}=${i.value}`));
-  const numeri = Object.fromEntries([...el.querySelectorAll('input[type=number]')].map(i => [i.id, i.value]));
+  const numeri = Object.fromEntries([...el.querySelectorAll('input[type=number], select')].map(i => [i.id, i.value]));
   const focus = el.contains(document.activeElement) ? document.activeElement.id : null;
   el.innerHTML = html;
   ultimoHtml.set(el, html);
   for (const i of el.querySelectorAll('input[type=checkbox]')) if (spuntate.has(`${i.name}=${i.value}`)) i.checked = true;
-  for (const i of el.querySelectorAll('input[type=number]')) if (numeri[i.id] !== undefined) i.value = numeri[i.id];
+  for (const i of el.querySelectorAll('input[type=number], select')) {
+    // un menu torna alla scelta fatta solo se quell'opzione c'è ancora
+    if (numeri[i.id] !== undefined && (i.tagName !== 'SELECT' || [...i.options].some(o => o.value === numeri[i.id]))) i.value = numeri[i.id];
+  }
   if (focus) document.getElementById(focus)?.focus();
 }
 
@@ -292,6 +295,21 @@ document.addEventListener('click', e => {
       break;
     case 'alza-stabilita': comando({ tipo: 'alza_stabilita' }); break;
     case 'dichiara': comando({ tipo: 'dichiara_guerra', contro: id }); break;
+    case 'ambasceria': comando({ tipo: 'ambasceria', verso: id }); break;
+    case 'alleanza':
+    case 'foedus':
+    case 'tributo': {
+      const r = comando({ tipo: 'proponi', genere: el.dataset.azione, verso: id });
+      if (r.ok) avviso('Proposta inviata.');
+      break;
+    }
+    case 'ultimatum': {
+      const r = comando({ tipo: 'proponi', genere: 'ultimatum', verso: id, provincia: $(`ult-${id}`).value });
+      if (r.ok) avviso('Ultimatum inviato.');
+      break;
+    }
+    case 'rompi': comando({ tipo: 'rompi_alleanza', con: id }); break;
+    case 'esci': comando({ tipo: 'esci_foedus' }); break;
     case 'seleziona-esercito': selezionaEsercito(id, { centra: true, aggiungi: e.shiftKey }); break;
     case 'unisci': {
       const r = comando({ tipo: 'unisci', eserciti: ui.selezione.eserciti });

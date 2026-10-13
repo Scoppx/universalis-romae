@@ -6,6 +6,7 @@ import { resolveBattles, recoverMorale } from './combat.js';
 import { advanceSieges } from './siege.js';
 import { expireProposals } from './war.js';
 import { monthlyEconomy, yearlyUpdate } from './economy.js';
+import { monthlyDiplomacy } from './diplomacy.js';
 import { isFirstOfMonth, isNewYear, END_DAY } from './calendar.js';
 
 export function advanceDay(game, controllers = {}) {
@@ -22,7 +23,7 @@ export function advanceDay(game, controllers = {}) {
   recoverMorale(game);
   expireProposals(game);
   game.day += 1;
-  if (isFirstOfMonth(game.day)) monthlyEconomy(game);
+  if (isFirstOfMonth(game.day)) { monthlyEconomy(game); monthlyDiplomacy(game); }
   if (isNewYear(game.day)) yearlyUpdate(game);
   return game.log;
 }

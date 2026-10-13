@@ -1,5 +1,6 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
 import { newId, log, bordersNation, provincesOf, sumOf } from './state.js';
+import { friendly, answerDiplomatic, onWarDeclared, cleanupDead } from './diplomacy.js';
 
 export function sideOf(war, id) {
   if (war.attaccanti.includes(id)) return 'attaccanti';
@@ -23,22 +24,33 @@ export function atWar(game, a, b) {
 }
 
 export function hasPretext(game, attacker, defender) {
-  return game.nazioni[defender].infamia > game.balance.infamia.soglia;
+  return game.nazioni[defender].infamia > game.balance.infamia.soglia ||
+    (game.nazioni[attacker].pretesti?.[defender] ?? -1) > game.day;
 }
 
 export function inTruce(game, a, b) {
   return (game.nazioni[a].tregue[b] ?? -1) > game.day;
 }
 
-export function declareWar(game, attacker, defender) {
+export function checkWar(game, attacker, defender) {
   const A = game.nazioni[attacker], D = game.nazioni[defender];
-  if (!A?.vivo || !D?.vivo || attacker === defender) return { ok: false, motivo: 'nazione non valida' };
-  if (atWar(game, attacker, defender)) return { ok: false, motivo: 'già in guerra' };
-  if (inTruce(game, attacker, defender)) return { ok: false, motivo: 'tregua in corso' };
-  if (!bordersNation(game, attacker, defender)) return { ok: false, motivo: 'nessun confine' };
+  if (!A?.vivo || !D?.vivo || attacker === defender) return 'nazione non valida';
+  if (A.protettore) return 'un federato non dichiara guerre';
+  if (friendly(game, attacker, defender)) return 'siete alleati';
+  if (atWar(game, attacker, defender)) return 'già in guerra';
+  if (inTruce(game, attacker, defender)) return 'tregua in corso';
+  if (!bordersNation(game, attacker, defender)) return 'nessun confine';
+  return null;
+}
+
+export function declareWar(game, attacker, defender) {
+  const err = checkWar(game, attacker, defender);
+  if (err) return { ok: false, motivo: err };
+  const A = game.nazioni[attacker];
   if (!hasPretext(game, attacker, defender)) A.stabilita = Math.max(-3, A.stabilita - game.balance.guerra.senzaPretesto);
   const id = newId(game, 'g');
   game.guerre[id] = { id, attaccanti: [attacker], difensori: [defender], inizio: game.day, battaglie: 0 };
+  onWarDeclared(game, game.guerre[id]);
   log(game, { tipo: 'guerra', guerra: id, attaccante: attacker, difensore: defender });
   return { ok: true, guerra: id };
 }
@@ -115,16 +127,20 @@ export function makePeace(game, warId, receiver, termini) {
   delete game.guerre[warId];
   for (const p of Object.values(game.proposte)) if (p.guerra === warId) delete game.proposte[p.id];
   checkSurvival(game);
-  // eserciti rimasti in terra ora straniera tornano nella capitale
+  sendStrandedHome(game);
+  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province] });
+  return { ok: true };
+}
+
+// Eserciti rimasti in terra straniera (né in guerra con il padrone né amici suoi) tornano nella capitale.
+export function sendStrandedHome(game) {
   for (const a of Object.values(game.eserciti)) {
     const p = game.province[a.prov];
-    if (p.owner !== a.owner && p.controller !== a.owner && !atWar(game, a.owner, p.owner)) {
+    if (p.owner !== a.owner && p.controller !== a.owner && !atWar(game, a.owner, p.owner) && !friendly(game, a.owner, p.owner)) {
       a.prov = game.nazioni[a.owner].capitale;
       a.percorso = [];
     }
   }
-  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province] });
-  return { ok: true };
 }
 
 // Capitale persa: passa alla provincia più ricca. Nessuna provincia: nazione eliminata.
@@ -142,6 +158,7 @@ export function checkSurvival(game) {
 
 function eliminate(game, id) {
   game.nazioni[id].vivo = false;
+  cleanupDead(game, id);
   for (const a of Object.values(game.eserciti)) if (a.owner === id) delete game.eserciti[a.id];
   for (const w of Object.values(game.guerre)) {
     w.attaccanti = w.attaccanti.filter(x => x !== id);
@@ -150,7 +167,7 @@ function eliminate(game, id) {
   }
   for (const p of Object.values(game.province)) if (p.controller === id) p.controller = p.owner;
   for (const pr of Object.values(game.proposte)) {
-    if (pr.da === id || pr.a === id || !game.guerre[pr.guerra]) delete game.proposte[pr.id];
+    if (pr.da === id || pr.a === id || (pr.guerra && !game.guerre[pr.guerra])) delete game.proposte[pr.id];
   }
   log(game, { tipo: 'eliminata', nazione: id });
 }
@@ -161,6 +178,7 @@ export function proposePeace(game, from, warId, termini) {
   if (malformed(termini)) return { ok: false, motivo: 'termini non validi' };
   const side = sideOf(war, from);
   if (!side) return { ok: false, motivo: 'non partecipa' };
+  if (war[side][0] !== from) return { ok: false, motivo: 'solo il capofila firma la pace' };
   const to = enemiesOf(war, side)[0];
   if (termini.ricevente !== from && termini.ricevente !== to) return { ok: false, motivo: 'ricevente non valido' };
   const err = validTerms(game, war, termini.ricevente, termini);
@@ -178,6 +196,7 @@ export function answerProposal(game, nationId, propId, accetta) {
   const p = game.proposte[propId];
   if (!p || p.a !== nationId) return { ok: false, motivo: 'proposta inesistente' };
   delete game.proposte[propId];
+  if (p.tipo !== 'pace') return answerDiplomatic(game, p, accetta);
   if (!accetta) {
     log(game, { tipo: 'rifiutata', proposta: propId, da: p.da, a: p.a });
     return { ok: true, accettata: false };

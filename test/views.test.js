@@ -47,17 +47,51 @@ test('governo', () => {
   });
 });
 
-test('diplomazia: vicini, stato, tregua', () => {
+test('diplomazia: tutti i popoli, confinanti prima, stato, relazione, motivi', () => {
   const g = makeGame();
-  assert.deepEqual(V.diplomacyView(g, 'roma').map(d => [d.id, d.stato, d.puoDichiarare, d.costo]),
-    [['latini', 'pace', true, 2], ['volsci', 'pace', true, 2]]);
+  let d = V.diplomacyView(g, 'roma');
+  assert.deepEqual(d.map(x => [x.id, x.confina, x.stato, x.relazione]),
+    [['latini', true, 'pace', 30], ['volsci', true, 'pace', 0], ['siculi', false, 'pace', 0]]);
+  assert.equal(d[0].azioni.guerra, null);
+  assert.equal(d[0].costoGuerra, 2);
+  assert.equal(d[2].azioni.guerra, 'nessun confine');
+  assert.equal(d[0].azioni.foedus, 'non abbastanza più forte');
+  assert.deepEqual(d[0].azioni.ultimatum.province.map(p => p.id), ['d', 'e']);
   const { guerra } = declareWar(g, 'roma', 'volsci');
   assert.equal(V.diplomacyView(g, 'roma')[1].stato, 'guerra');
   makePeace(g, guerra, 'roma', { province: [] });
-  const d = V.diplomacyView(g, 'roma')[1];
-  assert.equal(d.stato, 'tregua');
-  assert.equal(d.finoA, '21 aprile 748 a.C. (AUC 6)');
-  assert.equal(d.puoDichiarare, false);
+  d = V.diplomacyView(g, 'roma');
+  assert.equal(d[1].stato, 'tregua');
+  assert.equal(d[1].azioni.guerra, 'tregua in corso');
+  g.nazioni.roma.protettore = 'latini';
+  d = V.diplomacyView(g, 'roma');
+  assert.equal(d[0].stato, 'protettore');
+  assert.equal(d[1].azioni.guerra, 'un federato non dichiara guerre');
+  assert.equal(d[0].azioni.esci, null);
+  assert.equal(d[1].azioni.esci, 'non è il tuo protettore');
+});
+
+test('proposte ricevute: titolo e testo per tipo', async () => {
+  const { propose } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  propose(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' });
+  propose(g, 'siculi', 'alleanza', 'latini');
+  assert.deepEqual(V.pendingProposals(g, 'latini').map(p => [p.titolo, p.testo]), [
+    ['Ultimatum', 'roma chiede la provincia di E. Se rifiuti avrà un pretesto per attaccarti.'],
+    ['Alleanza', 'siculi propone un\'alleanza.']
+  ]);
+});
+
+test('relazioni sulla mappa: alleati, federati, coalizione', async () => {
+  const { changeRelation } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  g.nazioni.roma.alleati = ['latini']; g.nazioni.latini.alleati = ['roma'];
+  g.nazioni.siculi.protettore = 'roma';
+  assert.equal(provinceFill(g, g.province.d, 'relazioni', 'roma'), RELAZIONE.alleato);
+  assert.equal(provinceFill(g, g.province.g, 'relazioni', 'roma'), RELAZIONE.federato);
+  g.nazioni.roma.infamia = 25;
+  changeRelation(g, 'roma', 'volsci', -20);
+  assert.equal(provinceFill(g, g.province.c, 'relazioni', 'roma'), RELAZIONE.coalizione);
 });
 
 test('guerre: punteggio, province da chiedere e da cedere', () => {
@@ -158,4 +192,38 @@ test('firma dei colori: in modalità relazioni cambia con guerre e tregue', asyn
   assert.notEqual(fillSignature(g, 'relazioni', 'roma'), inTregua);
   g.province.c.controller = 'roma';
   assert.notEqual(fillSignature(g, 'politica', 'roma'), pol); // le occupazioni contano sempre
+  const prima = fillSignature(g, 'relazioni', 'roma');
+  g.nazioni.roma.alleati = ['latini'];
+  assert.notEqual(fillSignature(g, 'relazioni', 'roma'), prima);
+});
+
+test('la proposta di foedus avverte che non si torna indietro', async () => {
+  const { propose, changeRelation } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  createArmy(g, 'roma', 'a', 20000, 0);
+  changeRelation(g, 'roma', 'volsci', 60);
+  propose(g, 'roma', 'foedus', 'volsci');
+  assert.match(V.pendingProposals(g, 'volsci')[0].testo, /uscirne costerà/);
+});
+
+test('revisione: alleato in tregua resta "alleato" (si può rompere), e la mappa delle relazioni calcola la coalizione una volta', async () => {
+  const { relazioneStato } = await import('../public/js/ui/colors.js');
+  const { coalition } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  g.nazioni.roma.alleati = ['latini']; g.nazioni.latini.alleati = ['roma'];
+  g.nazioni.roma.tregue.latini = 9999; g.nazioni.latini.tregue.roma = 9999;
+  const d = V.diplomacyView(g, 'roma');
+  assert.equal(d[0].stato, 'alleato');
+  assert.equal(d[0].azioni.rompi, null);
+  g.nazioni.roma.infamia = 30;
+  const coal = coalition(g, 'roma');
+  for (const id of g.ordine) assert.equal(relazioneStato(g, 'roma', id, coal), relazioneStato(g, 'roma', id));
+});
+
+test('revisione: il modulo di pace è solo per il capofila', () => {
+  const g = makeGame();
+  g.nazioni.volsci.alleati = ['siculi']; g.nazioni.siculi.alleati = ['volsci'];
+  declareWar(g, 'roma', 'volsci');
+  assert.equal(V.warsView(g, 'volsci')[0].capofila, true);
+  assert.equal(V.warsView(g, 'siculi')[0].capofila, false);
 });

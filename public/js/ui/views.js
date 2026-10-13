@@ -2,7 +2,8 @@
 import { formatDate } from '../sim/calendar.js';
 import { maxManpower, armiesOf, bordersNation } from '../sim/state.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
-import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
+import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar } from '../sim/war.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
 const DIFFICOLTA = ['facile', 'normale', 'difficile', 'molto difficile'];
@@ -69,19 +70,35 @@ export function governmentView(game, g) {
 }
 
 export function diplomacyView(game, g) {
+  const me = game.nazioni[g];
+  const ostili = coalition(game, g);
   return game.ordine
-    .filter(id => id !== g && game.nazioni[id].vivo && bordersNation(game, g, id))
+    .filter(id => id !== g && game.nazioni[id].vivo)
     .map(id => {
-      const guerra = atWar(game, g, id), tregua = !guerra && inTruce(game, g, id);
-      const pretesto = hasPretext(game, g, id);
+      const altro = game.nazioni[id];
+      // la tregua per ultima: un alleato o un protettore in tregua resta tale (si può rompere o uscirne)
+      const stato = atWar(game, g, id) ? 'guerra' : allied(game, g, id) ? 'alleato'
+        : altro.protettore === g ? 'federato' : me.protettore === id ? 'protettore' : inTruce(game, g, id) ? 'tregua' : 'pace';
+      const province = Object.values(game.province)
+        .filter(p => !checkProposal(game, g, 'ultimatum', id, { provincia: p.id }))
+        .map(p => ({ id: p.id, nome: p.nome }));
       return {
-        id, nome: nome(game, id), stato: guerra ? 'guerra' : tregua ? 'tregua' : 'pace',
-        finoA: tregua ? formatDate(game.nazioni[g].tregue[id]) : null,
-        pretesto, costo: pretesto ? 0 : game.balance.guerra.senzaPretesto,
-        puoDichiarare: !guerra && !tregua
+        id, nome: nome(game, id), relazione: relation(game, g, id), confina: bordersNation(game, g, id), stato,
+        coalizione: ostili.includes(id),
+        costoGuerra: hasPretext(game, g, id) ? 0 : game.balance.guerra.senzaPretesto,
+        azioni: {
+          ambasceria: checkEmbassy(game, g, id),
+          alleanza: checkProposal(game, g, 'alleanza', id),
+          rompi: allied(game, g, id) ? null : 'non siete alleati',
+          esci: me.protettore === id ? checkLeaveFoedus(game, g) : 'non è il tuo protettore',
+          foedus: checkProposal(game, g, 'foedus', id),
+          tributo: checkProposal(game, g, 'tributo', id),
+          guerra: checkWar(game, g, id),
+          ultimatum: { motivo: province.length ? null : 'nessuna provincia da chiedere', province }
+        }
       };
     })
-    .sort(byNome);
+    .sort((a, b) => Number(b.confina) - Number(a.confina) || byNome(a, b));
 }
 
 export function warsView(game, g) {
@@ -93,6 +110,7 @@ export function warsView(game, g) {
       id: w.id,
       nemico: { id: nemici[0], nome: nome(game, nemici[0]) },
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
+      capofila: w[side][0] === g,
       punteggio: Math.round(scoreFor(game, w, g)),
       daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller))
         .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id) })),
@@ -112,14 +130,27 @@ export function armiesView(game, g, scelti = []) {
   }));
 }
 
+const TITOLI = { pace: 'Proposta di pace', alleanza: 'Alleanza', foedus: 'Foedus', tributo: 'Tributo', ultimatum: 'Ultimatum', chiamata: 'Chiamata alle armi' };
+
 export function pendingProposals(game, g) {
   return Object.values(game.proposte).filter(p => p.a === g).map(p => {
-    const nomi = p.termini.province.map(id => game.province[id].nome).join(', ');
+    const da = nome(game, p.da);
     let testo;
-    if (!p.termini.province.length) testo = `${nome(game, p.da)} propone una pace bianca.`;
-    else if (p.termini.ricevente === g) testo = `${nome(game, p.da)} offre la pace e ti cede: ${nomi}.`;
-    else testo = `${nome(game, p.da)} chiede la pace e vuole: ${nomi}.`;
-    return { id: p.id, da: nome(game, p.da), testo };
+    if (p.tipo === 'pace') {
+      const nomi = p.termini.province.map(id => game.province[id].nome).join(', ');
+      if (!p.termini.province.length) testo = `${da} propone una pace bianca.`;
+      else if (p.termini.ricevente === g) testo = `${da} offre la pace e ti cede: ${nomi}.`;
+      else testo = `${da} chiede la pace e vuole: ${nomi}.`;
+    } else if (p.tipo === 'alleanza') testo = `${da} propone un'alleanza.`;
+    else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e uscirne costerà stabilità e darà al protettore un pretesto di guerra.`;
+    else if (p.tipo === 'tributo') testo = `${da} chiede un tributo: il 20% delle entrate per 10 anni. Se rifiuti avrà un pretesto per attaccarti.`;
+    else if (p.tipo === 'ultimatum') testo = `${da} chiede la provincia di ${game.province[p.provincia].nome}. Se rifiuti avrà un pretesto per attaccarti.`;
+    else {
+      const w = game.guerre[p.guerra];
+      const contro = w ? enemiesOf(w, sideOf(w, p.da)).map(n => nome(game, n)).join(', ') : '';
+      testo = `${da} ti chiama alle armi contro ${contro}. Se rifiuti l'alleanza si rompe.`;
+    }
+    return { id: p.id, da, titolo: TITOLI[p.tipo], testo };
   });
 }
 
@@ -135,6 +166,12 @@ export function formatLogEntry(e, game, g) {
         : `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
     }
     case 'eliminata': return `${N(e.nazione)} scompare dalla storia.`;
+    case 'accordo':
+      return e.genere === 'ultimatum'
+        ? `${N(e.a)} cede ${P(e.provincia)} a ${N(e.da)}.`
+        : `${N(e.da)} e ${N(e.a)}: ${e.genere === 'alleanza' ? 'alleanza' : e.genere === 'foedus' ? 'foedus' : 'tributo'}.`;
+    case 'chiamata': return `${N(e.nazione)} entra in guerra al fianco di ${N(e.alleato)}.`;
+    case 'uscita': return `${N(e.nazione)} esce dal foedus di ${N(e.protettore)}.`;
     case 'battaglia':
       return [e.vincitore, e.sconfitto].includes(g) ? `Battaglia a ${P(e.prov)}: vince ${N(e.vincitore)}.` : null;
     case 'assedio':
@@ -148,7 +185,11 @@ export function rankingView(game, g) {
   return ranking(game).map((r, i) => ({ pos: i + 1, nome: nome(game, r.id), punteggio: r.punteggio, vivo: r.vivo, tu: r.id === g }));
 }
 
-const DOMANDE = { guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?' };
+const DOMANDE = {
+  guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?',
+  alleanza: 'Accettare l\'alleanza?', foedus: 'Accettare il foedus?', tributo: 'Pagare il tributo?',
+  ultimatum: 'Cedere la provincia?', chiamata: 'Rispondere alla chiamata?'
+};
 
 export function councilView(records, game, filtro) {
   return records.filter(r => !filtro || r.nazione === filtro).slice(-50).reverse().flatMap(r => r.domande.map(d => ({

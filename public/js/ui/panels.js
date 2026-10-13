@@ -39,15 +39,36 @@ export function governoHtml(v) {
     `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? '' : ' disabled'}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>`;
 }
 
+const STATI = { guerra: 'in guerra', tregua: 'tregua', alleato: 'alleato', federato: 'tuo federato', protettore: 'tuo protettore', pace: 'in pace' };
+
+function bottone(azione, id, testo, motivo) {
+  return `<button class="piccolo" data-azione="${azione}" data-id="${esc(id)}"${motivo ? ` disabled title="${esc(motivo)}"` : ''}>${esc(testo)}</button>`;
+}
+
 export function diplomaziaHtml(list) {
-  if (!list.length) return '<p class="muto">Nessun vicino.</p>';
-  return list.map(d => {
-    const stato = d.stato === 'guerra' ? '<span class="guerra">in guerra</span>'
-      : d.stato === 'tregua' ? `tregua fino al ${esc(d.finoA)}` : 'in pace';
-    const bottone = d.puoDichiarare
-      ? `<button data-azione="dichiara" data-id="${esc(d.id)}">Dichiara guerra${d.costo ? ` (−${esc(d.costo)} stab.)` : ''}</button>` : '';
-    return `<div class="riga"><span>${esc(d.nome)} <span class="muto">${stato}</span></span>${bottone}</div>`;
-  }).join('');
+  if (!list.length) return '<p class="muto">Nessun altro popolo.</p>';
+  const riga = d => {
+    const pct = Math.round((d.relazione + 200) / 4);
+    return `<div class="dipl"><div class="riga"><span><b>${esc(d.nome)}</b> <span class="muto">${esc(STATI[d.stato])}` +
+      `${d.coalizione ? ' · <span class="guerra">coalizione contro di te</span>' : ''}</span></span>` +
+      `<span class="rel" title="relazione ${esc(d.relazione)}"><span style="width:${pct}%"></span></span></div>` +
+      '<div class="comandi">' +
+      bottone('ambasceria', d.id, 'Ambasceria', d.azioni.ambasceria) +
+      (d.stato === 'alleato' ? bottone('rompi', d.id, 'Rompi alleanza', d.azioni.rompi)
+        : d.stato === 'protettore' ? bottone('esci', d.id, 'Esci dal foedus (−2 stab.)', d.azioni.esci)
+        : bottone('alleanza', d.id, 'Alleanza', d.azioni.alleanza)) +
+      bottone('foedus', d.id, 'Foedus', d.azioni.foedus) +
+      bottone('tributo', d.id, 'Tributo', d.azioni.tributo) +
+      (d.azioni.ultimatum.province.length
+        ? `<select id="ult-${esc(d.id)}">${d.azioni.ultimatum.province.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')}</select>` +
+          bottone('ultimatum', d.id, 'Ultimatum', null)
+        : '') +
+      bottone('dichiara', d.id, `Guerra${d.costoGuerra ? ` (−${d.costoGuerra} stab.)` : ''}`, d.azioni.guerra) +
+      '</div></div>';
+  };
+  const vicini = list.filter(d => d.confina), altri = list.filter(d => !d.confina);
+  return (vicini.length ? `<h3>Confinanti</h3>${vicini.map(riga).join('')}` : '') +
+    (altri.length ? `<h3>Altri popoli</h3>${altri.map(riga).join('')}` : '');
 }
 
 export function esercitiHtml(list, azioni) {
@@ -73,7 +94,9 @@ export function guerreHtml(list) {
   return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
     (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere:</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
     (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere:</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
-    '<div class="comandi">' + (w.propostaInAttesa
+    '<div class="comandi">' + (!w.capofila
+      ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
+      : w.propostaInAttesa
       ? '<span class="muto">Proposta in attesa di risposta.</span>'
       : `<button data-azione="chiedi" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Chiedi le province</button>` +
         `<button data-azione="cedi" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Cedi e fai la pace</button>` +
@@ -82,7 +105,7 @@ export function guerreHtml(list) {
 }
 
 export function proposalHtml(p) {
-  return `<h3>Proposta di pace</h3><p>${esc(p.testo)}</p><div class="comandi">` +
+  return `<h3>${esc(p.titolo)}</h3><p>${esc(p.testo)}</p><div class="comandi">` +
     `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="1">Accetta</button>` +
     `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="0">Rifiuta</button></div>`;
 }

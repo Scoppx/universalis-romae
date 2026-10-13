@@ -5,7 +5,7 @@ import { armiesOf } from '../public/js/sim/state.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import {
-  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine
+  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
 } from '../public/js/ai/rules.js';
 
 const allRules = g => Object.fromEntries(g.ordine.map(id => [id, rulesController]));
@@ -148,4 +148,59 @@ test('obiettivo azzerato: dalle regole sempre, dalla routine in pace', () => {
   assert.deepEqual(routine(g, 'roma').filter(c => c.tipo === 'obiettivo'), [{ tipo: 'obiettivo', nazione: 'roma', provincia: null }]);
   declareWar(g, 'roma', 'volsci');
   assert.deepEqual(routine(g, 'roma').filter(c => c.tipo === 'obiettivo'), []);
+});
+
+test('regole: rispondono a ogni tipo di proposta', async () => {
+  const { propose } = await import('../public/js/sim/diplomacy.js');
+  const { createArmy } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  const risposte = id => Object.fromEntries(answerProposals(g, id).map(c => [g.proposte[c.proposta].tipo, c.accetta]));
+  propose(g, 'roma', 'alleanza', 'latini');       // relazione 30 ≥ 25: sì
+  propose(g, 'siculi', 'alleanza', 'volsci');     // relazione 0: no
+  assert.deepEqual(risposte('latini'), { alleanza: true });
+  assert.deepEqual(risposte('volsci'), { alleanza: false });
+  createArmy(g, 'roma', 'a', 20000, 0);
+  propose(g, 'roma', 'tributo', 'volsci');        // roma molto più forte: paga
+  propose(g, 'roma', 'ultimatum', 'volsci', { provincia: 'c' });
+  assert.deepEqual(risposte('volsci'), { alleanza: false, tributo: true, ultimatum: true });
+});
+
+test('regole: ultimatum invece della guerra contro un vicino molto più debole, poi guerra col pretesto', async () => {
+  const { createArmy } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  createArmy(g, 'roma', 'a', 20000, 0);
+  const [cmd] = ultimatumDecision(g, 'roma');
+  assert.equal(cmd.tipo, 'proponi');
+  assert.equal(cmd.genere, 'ultimatum');
+  assert.ok(['c', 'd', 'e', 'f'].includes(cmd.provincia));
+  g.nazioni.roma.pretesti[cmd.verso] = g.day + 100;
+  assert.deepEqual(ultimatumDecision(g, 'roma'), []);
+  assert.equal(strategy(g, 'roma')[0].tipo, 'dichiara_guerra');
+});
+
+test('regole: iniziative diplomatiche, una per volta', async () => {
+  const { createArmy } = await import('../public/js/sim/state.js');
+  const { changeRelation } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  createArmy(g, 'volsci', 'c', 20000, 0); // i volsci diventano una minaccia per roma
+  assert.deepEqual(diplomacyInitiatives(g, 'roma'), [{ tipo: 'proponi', nazione: 'roma', genere: 'alleanza', verso: 'latini' }]);
+  const h = makeGame();
+  createArmy(h, 'roma', 'a', 20000, 0);
+  changeRelation(h, 'roma', 'volsci', 60);
+  assert.deepEqual(diplomacyInitiatives(h, 'roma'), [{ tipo: 'proponi', nazione: 'roma', genere: 'foedus', verso: 'volsci' }]);
+});
+
+test('un federato non sceglie guerre', () => {
+  const g = makeGame();
+  g.nazioni.volsci.protettore = 'roma';
+  assert.deepEqual(legalWarTargets(g, 'volsci'), []);
+});
+
+test('un federato diventato più forte del protettore esce dal foedus', async () => {
+  const { createArmy } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  g.nazioni.volsci.protettore = 'roma';
+  assert.deepEqual(diplomacyInitiatives(g, 'volsci'), []);
+  createArmy(g, 'volsci', 'c', 20000, 0);
+  assert.deepEqual(diplomacyInitiatives(g, 'volsci'), [{ tipo: 'esci_foedus', nazione: 'volsci' }]);
 });

@@ -113,15 +113,15 @@ try {
   // il pannello si ridisegna mentre il gioco scorre: le scelte restano
   await page.evaluate(() => {
     const g = window.universalis.ui.session.game;
-    g.province.fidenae.controller = 'roma';
+    g.province.veio.controller = 'roma'; // la capitale di Veio resta sua (Fidenae può cambiare padrone con un ultimatum)
   });
   await page.click('[data-scheda="guerre"]');
-  await page.check('input[name^="chiedi-"][value="fidenae"]');
+  await page.check('input[name^="chiedi-"][value="veio"]');
   // pausa con il bottone: la barra spaziatrice su una casella la toglierebbe
   await page.click('#b-pausa');
   await wait(400);
   await page.click('#b-pausa');
-  check(await page.isChecked('input[name^="chiedi-"][value="fidenae"]'), 'la casella spuntata resta spuntata mentre il tempo scorre');
+  check(await page.isChecked('input[name^="chiedi-"][value="veio"]'), 'la casella spuntata resta spuntata mentre il tempo scorre');
   // esercito selezionato che scompare
   await page.evaluate(() => {
     const u = window.universalis.ui;
@@ -304,6 +304,47 @@ try {
   const xDopo = await page.evaluate(() => window.universalis.markers().find(m => m.id === window.universalis.ui.selezione.eserciti[0]).x);
   check(Math.abs(xDopo - xPrima) > 1, `il soldatino cammina (${xPrima.toFixed(1)} → ${xDopo.toFixed(1)})`);
   await page.screenshot({ path: 'smoke-truppe.png' });
+
+  // --- diplomazia (tappa 4a)
+  await page.goto(url);
+  await page.waitForSelector('#inizio-lista .carta');
+  await page.click('[data-popolo="roma"]');
+  await page.selectOption('#inizio-ia', 'regole');
+  await page.click('#inizio-via');
+  await page.waitForSelector('#barra:not([hidden])');
+  await page.click('[data-scheda="diplomazia"]');
+  check((await page.textContent('#scheda')).includes('Confinanti'), 'diplomazia: confinanti in cima');
+  check(await page.isDisabled('[data-azione="foedus"][data-id="veio"]'), 'foedus spento con il motivo');
+  check((await page.getAttribute('[data-azione="foedus"][data-id="veio"]', 'title')).length > 0, 'il motivo è nel titolo del bottone');
+  await page.evaluate(() => { window.universalis.ui.session.game.nazioni.roma.tesoro = 50; window.universalis.avanza(0); });
+  await page.click('[data-azione="ambasceria"][data-id="veio"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.relazioni.veio) === 25, 'ambasceria: relazione con Veio a 25');
+  await page.click('[data-azione="alleanza"][data-id="lega_latina"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.proposte).some(p => p.tipo === 'alleanza' && p.a === 'lega_latina')), 'alleanza proposta ai Latini');
+  const seconda = await page.evaluate(() => document.querySelector('#ult-lega_latina').options[1].value);
+  await page.selectOption('#ult-lega_latina', seconda);
+  await page.evaluate(async () => {
+    const { changeRelation } = await import('/js/sim/diplomacy.js');
+    changeRelation(window.universalis.ui.session.game, 'roma', 'lega_latina', 3); // il pannello si ridisegna
+    window.universalis.avanza(0);
+  });
+  check(await page.evaluate(() => document.querySelector('#ult-lega_latina').value) === seconda, 'il menu dell\'ultimatum resta sulla provincia scelta');
+  await page.evaluate(async () => {
+    const { propose } = await import('/js/sim/diplomacy.js');
+    const g = window.universalis.ui.session.game;
+    g.proposte = {};
+    propose(g, 'veio', 'tributo', 'roma');
+    window.universalis.avanza(1);
+  });
+  check((await page.textContent('#finestra')).includes('Tributo'), 'proposta di tributo al giocatore: finestra');
+  await page.click('[data-azione="rispondi"][data-accetta="0"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.veio.pretesti.roma > 0), 'tributo rifiutato: Veio ha un pretesto');
+  await page.evaluate(() => { const g = window.universalis.ui.session.game; g.nazioni.roma.protettore = 'lega_latina'; window.universalis.avanza(0); });
+  check(await page.isDisabled('[data-azione="dichiara"][data-id="veio"]'), 'da federato non si dichiara guerra');
+  await page.click('[data-azione="esci"][data-id="lega_latina"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.protettore === null), 'esci dal foedus: di nuovo liberi');
+  await page.click('[data-modo="relazioni"]');
+  await page.screenshot({ path: 'smoke-diplomazia.png' });
 
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
