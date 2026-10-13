@@ -1,6 +1,8 @@
 // IA a regole. Legge lo stato e restituisce comandi; non modifica mai lo stato.
 // Fa il lavoro di fino (eserciti, reclute) per tutti, e le scelte strategiche quando Jev non c'è.
-import { armiesOf, maxManpower, bordersNation } from '../sim/state.js';
+import { armiesOf, maxManpower, bordersNation, power } from '../sim/state.js';
+
+export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
 import { distancesFrom } from '../sim/armies.js';
 import { stabilityCost } from '../sim/economy.js';
@@ -18,11 +20,6 @@ export function isReviewDay(game, id) {
 
 export function enemiesOfNation(game, id) {
   return game.ordine.filter(o => game.nazioni[o].vivo && atWar(game, id, o));
-}
-
-export function power(game, id) {
-  const men = armiesOf(game, id).reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
-  return men + game.nazioni[id].uomini * 0.5;
 }
 
 export function warCandidates(game, id) {

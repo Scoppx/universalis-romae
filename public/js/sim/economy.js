@@ -16,13 +16,18 @@ export function monthlyUpkeep(game, id) {
   return men * game.balance.economia.mantenimento1000;
 }
 
+export function monthlyManpower(game, id) {
+  const n = game.nazioni[id];
+  return Math.round(sumOf(paying(game, id), 'uomini') * game.balance.economia.uominiMese * (1 + (n.tratti.reclute || 0)));
+}
+
 export function monthlyEconomy(game) {
   const b = game.balance.economia;
   for (const id of game.ordine) {
     const n = game.nazioni[id];
     if (!n.vivo) continue;
     n.tesoro += monthlyIncome(game, id) - monthlyUpkeep(game, id);
-    const regen = Math.round(sumOf(paying(game, id), 'uomini') * b.uominiMese * (1 + (n.tratti.reclute || 0)));
+    const regen = monthlyManpower(game, id);
     n.uomini = Math.min(maxManpower(game, id), n.uomini + regen);
     if (n.tesoro < 0) {
       for (const a of armiesOf(game, id)) {

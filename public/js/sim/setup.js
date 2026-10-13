@@ -13,6 +13,7 @@
 //   log: [{ day, tipo, ... }]     // eventi del giorno corrente
 // }
 import { createArmy, provincesOf, sumOf, strettoKey, maxManpower } from './state.js';
+import { initDiplomacy } from './diplomacy.js';
 
 export function createGame({ map, popoli, balance, seed }) {
   const game = {
@@ -47,5 +48,6 @@ export function createGame({ map, popoli, balance, seed }) {
       Math.round(uomini * balance.inizio.fanteriaPerUomo * bonus),
       Math.round(uomini * balance.inizio.cavalleriaPerUomo * bonus));
   }
+  initDiplomacy(game);
   return game;
 }
