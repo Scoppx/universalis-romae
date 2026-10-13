@@ -122,6 +122,7 @@ function avvia(session) {
   ui.selezione = { provincia: null, eserciti: [] };
   ui.notizie = [];
   ui.jevAvvisato = false;
+  ui.clock.accumulo = 0; // una partita nuova parte dall'inizio del giorno
   if (!session.ai) ui.consiglio = [];
   document.querySelector('[data-scheda="consiglio"]').hidden = !session.ai;
   if (!session.ai && ui.scheda === 'consiglio') ui.scheda = 'governo';
