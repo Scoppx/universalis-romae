@@ -139,7 +139,7 @@ export function pendingProposals(game, g) {
       else if (p.termini.ricevente === g) testo = `${da} offre la pace e ti cede: ${nomi}.`;
       else testo = `${da} chiede la pace e vuole: ${nomi}.`;
     } else if (p.tipo === 'alleanza') testo = `${da} propone un'alleanza.`;
-    else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini.`;
+    else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e non potrai più uscirne finché il protettore esiste.`;
     else if (p.tipo === 'tributo') testo = `${da} chiede un tributo: il 20% delle entrate per 10 anni. Se rifiuti avrà un pretesto per attaccarti.`;
     else if (p.tipo === 'ultimatum') testo = `${da} chiede la provincia di ${game.province[p.provincia].nome}. Se rifiuti avrà un pretesto per attaccarti.`;
     else {

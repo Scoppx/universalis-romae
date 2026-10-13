@@ -194,3 +194,12 @@ test('firma dei colori: in modalità relazioni cambia con guerre e tregue', asyn
   g.nazioni.roma.alleati = ['latini'];
   assert.notEqual(fillSignature(g, 'relazioni', 'roma'), prima);
 });
+
+test('la proposta di foedus avverte che non si torna indietro', async () => {
+  const { propose, changeRelation } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  createArmy(g, 'roma', 'a', 20000, 0);
+  changeRelation(g, 'roma', 'volsci', 60);
+  propose(g, 'roma', 'foedus', 'volsci');
+  assert.match(V.pendingProposals(g, 'volsci')[0].testo, /non potrai più uscirne/);
+});
