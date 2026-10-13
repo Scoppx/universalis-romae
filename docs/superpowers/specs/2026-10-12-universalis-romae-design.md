@@ -286,7 +286,8 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 2. UI giocabile.
 2b. Mappa realistica e truppe animate (sezione 10).
 3. Jev e pannello Consiglio.
-4. Diplomazia, governo, cultura.
+4a. Diplomazia (sezione 11).
+4b. Governo, slider, cultura, rivolte, colonie, fortificazioni.
 5. Eventi e popoli dormienti.
 6. Taratura della difficoltà.
 
@@ -326,3 +327,36 @@ Chiesta dall'utente dopo aver provato la tappa 2; inserita prima della diplomazi
   rettangolo; clic destro manda tutti i selezionati; Esc deseleziona.
 - Nuovi comandi della simulazione: `unisci` (eserciti propri, fermi, nella stessa provincia; morale
   medio pesato sugli uomini) e `dividi` (a metà, ogni metà con almeno 100 uomini). L'IA non li usa.
+
+## 11. Tappa 4a: diplomazia (aggiunta del 2026-10-13)
+
+La tappa 4 è divisa in 4a (diplomazia, questa sezione) e 4b (governo, slider, cultura, rivolte, colonie,
+fortificazioni: sezione 3).
+
+- **Relazioni** simmetriche da −200 a +200 per ogni coppia di popoli; base 0, +30 se stessa cultura;
+  −100 quando scoppia una guerra fra due; ogni mese, fuori dalle guerre, tornano di 1 verso la base.
+- **Ambasceria**: costa denaro, +25 alla relazione, una volta l'anno per popolo.
+- **Alleanze** (al massimo 3): si propongono e l'altro accetta o rifiuta. Gli alleati attraversano le terre
+  l'uno dell'altro e combattono insieme. Rompere un'alleanza costa relazione.
+- **Guerre a più popoli**: quando A dichiara guerra a B entrano subito, dalla parte di B, i suoi alleati, i suoi
+  federati, il suo protettore e la coalizione contro A (se A è sopra la soglia d'infamia). Dalla parte di A entrano
+  i suoi federati; i suoi alleati ricevono una **chiamata alle armi**: chi rifiuta rompe l'alleanza e perde relazione.
+  La pace la firma il capofila di ogni lato e chiude la guerra per tutti.
+- **Foedus**: proposto da un popolo almeno 3 volte più forte, confinante, con relazioni ≥ 50. Il federato non
+  dichiara guerre e non stringe alleanze, segue il protettore in guerra e gli manda ogni mese il 20% degli uomini
+  che recluta.
+- **Tributo**: chiesto a un vicino; se accetta paga per 10 anni il 20% delle entrate mensili; se rifiuta, chi lo
+  chiede ottiene un pretesto di guerra per 5 anni.
+- **Ultimatum**: richiesta di una provincia confinante (non l'ultima). Se accettato la provincia passa (con infamia);
+  se rifiutato, pretesto per 5 anni.
+- **Pretesto**: oltre all'infamia sopra soglia, anche un tributo o un ultimatum rifiutati danno un pretesto.
+- **Coalizione**: chi supera la soglia d'infamia ha contro i vicini con relazioni negative, che entrano insieme in
+  difesa se attacca uno di loro.
+- **IA a regole**: accetta o rifiuta per tipo (relazioni e rapporti di forze); iniziative una alla volta nei giorni
+  di revisione: foedus a un vicino debole, alleanza contro una minaccia, ultimatum al posto della guerra contro un
+  vicino molto più debole, ambasceria al vicino più forte.
+- **Jev**: per i popoli che guida decide se accettare alleanze, foedus, tributi, ultimatum e chiamate alle armi
+  (scelta tra "accetta" e "rifiuta" con la situazione nello stato).
+- **Interfaccia**: scheda Diplomazia con tutti i popoli (confinanti prima), barra della relazione, stato e bottoni
+  con il motivo quando un'azione non si può fare; finestra per ogni proposta ricevuta; modalità "relazioni" con
+  alleati, federati e coalizione.
