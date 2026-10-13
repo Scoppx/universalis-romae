@@ -16,9 +16,12 @@ export function resolveBattles(game) {
       if (enemy) { first = x; break; }
     }
     if (!enemy) continue;
+    // tutti gli eserciti dello stesso lato della guerra combattono insieme
+    const war = warBetween(game, first.owner, enemy.owner);
+    const lato = sideOf(war, first.owner), altro = sideOf(war, enemy.owner);
     battleDay(game, provId,
-      armies.filter(x => x.owner === first.owner),
-      armies.filter(x => x.owner === enemy.owner));
+      armies.filter(x => sideOf(war, x.owner) === lato),
+      armies.filter(x => sideOf(war, x.owner) === altro));
   }
 }
 
@@ -29,7 +32,7 @@ function men(side) {
 function modifier(game, prov, side) {
   const owner = side[0].owner, t = game.nazioni[owner].tratti, c = game.balance.combattimento;
   let m = t.battaglia || 0;
-  if (prov.controller === owner) m += c.terreno[prov.terreno];
+  if (side.some(a => a.owner === prov.controller)) m += c.terreno[prov.terreno];
   if (prov.terreno === 'montagna') m += t.montagna || 0;
   return m;
 }
