@@ -3,6 +3,8 @@ import { declareWar, proposePeace, answerProposal } from './war.js';
 import { orderMove, recruit, mergeArmies, splitArmy } from './armies.js';
 import { raiseStability } from './economy.js';
 import { embassy, propose, breakAlliance, leaveFoedus } from './diplomacy.js';
+import { moveSlider } from './government.js';
+import { foundColony, fortify } from './culture.js';
 
 export function applyCommand(game, cmd) {
   switch (cmd.tipo) {
@@ -23,6 +25,12 @@ export function applyCommand(game, cmd) {
       return answerProposal(game, cmd.nazione, cmd.proposta, cmd.accetta);
     case 'proponi':
       return propose(game, cmd.nazione, cmd.genere, cmd.verso, { provincia: cmd.provincia });
+    case 'slider':
+      return moveSlider(game, cmd.nazione, cmd.quale, cmd.verso);
+    case 'colonia':
+      return foundColony(game, cmd.nazione, cmd.provincia);
+    case 'fortifica':
+      return fortify(game, cmd.nazione, cmd.provincia);
     case 'esci_foedus':
       return leaveFoedus(game, cmd.nazione);
     case 'rompi_alleanza':

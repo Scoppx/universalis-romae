@@ -5,6 +5,7 @@ import { loadData } from '../tools/load-data.js';
 import { declareWar, proposePeace, makePeace } from '../public/js/sim/war.js';
 import { createArmy } from '../public/js/sim/state.js';
 import * as V from '../public/js/ui/views.js';
+import { ensureRebels } from '../public/js/sim/culture.js';
 import { provinceFill, cultureColor, RELAZIONE, TERRENO } from '../public/js/ui/colors.js';
 
 test('barra in alto', () => {
@@ -42,9 +43,53 @@ test('provincia: occupazione, eserciti, reclutamento', () => {
 
 test('governo', () => {
   const g = makeGame();
-  assert.deepEqual(V.governmentView(g, 'roma'), {
-    nome: 'roma', governo: 'tribù', stabilita: '0', tratti: 'reclute +30%', costoStabilita: '22.0', puoAlzare: false
-  });
+  const v = V.governmentView(g, 'roma');
+  assert.equal(v.governo, 'neutro');
+  assert.equal(v.effettiGoverno, '');
+  assert.equal(v.tratti, 'reclute +30%');
+  assert.equal(v.costoStabilita, '22.0');
+  assert.deepEqual(v.slider.map(l => [l.quale, l.valore, l.meno, l.piu]),
+    [['societa', '0', null, null], ['guerra', '0', null, null], ['governo', '0', null, null]]);
+  g.nazioni.roma.governo = 'tribù';
+  assert.equal(V.governmentView(g, 'roma').effettiGoverno, 'tasse -20%, reclute +20%');
+  g.nazioni.roma.governo = 'monarchia';
+  assert.equal(V.governmentView(g, 'roma').effettiGoverno, 'la stabilità tende a +1');
+  g.nazioni.roma.slider.guerra = 5;
+  g.nazioni.roma.ultimoSlider = 0;
+  const w = V.governmentView(g, 'roma').slider[1];
+  assert.equal(w.valore, '+5');
+  assert.equal(w.piu, 'già al limite');
+  assert.equal(w.meno, 'prossima riforma tra 10 anni');
+});
+
+test('provincia: malcontento, assimilazione, colonia, azioni', () => {
+  const g = makeGame();
+  g.province.b.cultura = 'volsca';
+  g.province.b.assimilazione = 42.7;
+  const v = V.provinceInfo(g, 'b', 'roma');
+  assert.equal(v.malcontento, 3);
+  assert.equal(v.assimilazione, 42);
+  assert.equal(v.colonia, false);
+  assert.equal(v.azioni.colonia.motivo, 'denaro insufficiente');
+  assert.equal(v.azioni.fortifica.costo, 15);
+  assert.equal(V.provinceInfo(g, 'a', 'roma').assimilazione, null);
+  assert.equal(V.provinceInfo(g, 'c', 'roma').azioni, null);
+});
+
+test('notizie di rivolte e indipendenze', () => {
+  const g = makeGame();
+  ensureRebels(g);
+  assert.equal(V.formatLogEntry({ tipo: 'rivolta', prov: 'b', nazione: 'roma' }, g, 'roma'), 'Rivolta a B contro roma!');
+  assert.equal(V.formatLogEntry({ tipo: 'rivolta', prov: 'c', nazione: 'volsci' }, g, 'roma'), null);
+  assert.equal(V.formatLogEntry({ tipo: 'indipendenza', prov: 'c', da: 'volsci', a: 'latini' }, g, 'roma'), 'C si stacca da volsci e passa a latini.');
+  assert.equal(V.formatLogEntry({ tipo: 'assimilata', prov: 'b', nazione: 'roma' }, g, 'roma'), 'B ha preso la tua cultura.');
+});
+
+test('mappa del malcontento', () => {
+  const g = makeGame();
+  assert.equal(provinceFill(g, g.province.b, 'malcontento', 'roma'), 'hsl(120, 55%, 50%)');
+  g.province.b.cultura = 'volsca';
+  assert.equal(provinceFill(g, g.province.b, 'malcontento', 'roma'), 'hsl(84, 55%, 50%)');
 });
 
 test('diplomazia: tutti i popoli, confinanti prima, stato, relazione, motivi', () => {

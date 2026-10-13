@@ -1,6 +1,6 @@
 // Assedi: ogni giorno un esercito fermo in una provincia nemica ha una probabilità di prenderla.
 import { nextRandom } from './rng.js';
-import { log } from './state.js';
+import { log, RIBELLI } from './state.js';
 import { atWar } from './war.js';
 
 export function siegeChance(game, army, prov) {
@@ -16,7 +16,14 @@ export function advanceSieges(game) {
     if (p.controller === a.owner || !atWar(game, a.owner, p.controller)) continue;
     if (Object.values(game.eserciti).some(e => e.prov === p.id && atWar(game, a.owner, e.owner))) continue;
     if (nextRandom(game) < siegeChance(game, a, p)) {
-      p.controller = a.owner;
+      if (a.owner === RIBELLI) {
+        p.controller = RIBELLI;
+        p.ribelliDal = game.day;
+      } else {
+        // chi toglie una provincia ai ribelli la rende al padrone, a meno di essere in guerra con lui
+        p.controller = p.controller === RIBELLI && !atWar(game, a.owner, p.owner) ? p.owner : a.owner;
+        p.ribelliDal = null;
+      }
       log(game, { tipo: 'assedio', prov: p.id, nazione: a.owner });
     }
   }

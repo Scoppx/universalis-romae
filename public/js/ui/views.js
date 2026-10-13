@@ -1,6 +1,8 @@
 // Modelli dei pannelli: dallo stato di gioco ai dati pronti da mostrare. Niente DOM.
 import { formatDate } from '../sim/calendar.js';
-import { maxManpower, armiesOf, bordersNation } from '../sim/state.js';
+import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf } from '../sim/state.js';
+import { checkSlider } from '../sim/government.js';
+import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
@@ -17,6 +19,18 @@ const TRATTI = {
   assedio: v => `assedio ${v > 0 ? '+' : ''}${pct(v)}%`
 };
 const segno = n => (n > 0 ? `+${n}` : `${n}`);
+const LEVE = [
+  { quale: 'societa', nome: 'Società', sinistra: 'patrizi', destra: 'plebe' },
+  { quale: 'guerra', nome: 'Dottrina', sinistra: 'difesa', destra: 'attacco' },
+  { quale: 'governo', nome: 'Province', sinistra: 'accentramento', destra: 'autonomia' }
+];
+const GOVERNO = {
+  tasse: v => `tasse ${v > 0 ? '+' : ''}${pct(v)}%`,
+  reclute: v => `reclute ${v > 0 ? '+' : ''}${pct(v)}%`,
+  equilibrioStabilita: v => `la stabilità tende a ${segno(v)}`,
+  intervalloSlider: v => `riforme ogni ${v} anni`,
+  foedusRapporto: v => `foedus con forza ${v} volte`
+};
 const byNome = (a, b) => (a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0);
 const nome = (game, id) => game.nazioni[id]?.nome ?? id;
 
@@ -57,15 +71,25 @@ export function provinceInfo(game, id, g) {
       id: a.id, nazione: nome(game, a.owner), mio: a.owner === g,
       uomini: a.fanteria + a.cavalleria, morale: a.morale.toFixed(1)
     })),
-    puoReclutare: Boolean(g) && p.owner === g && p.controller === g
+    puoReclutare: Boolean(g) && p.owner === g && p.controller === g,
+    malcontento: malcontent(game, id),
+    assimilazione: p.cultura !== game.nazioni[p.owner].cultura ? Math.floor(p.assimilazione) : null,
+    colonia: hasColony(p),
+    azioni: g && p.owner === g ? {
+      colonia: { costo: colonyCost(game, id), uomini: game.balance.cultura.coloniaUomini, motivo: checkColony(game, g, id) },
+      fortifica: { costo: fortCost(game, id), motivo: checkFortify(game, g, id) }
+    } : null
   };
 }
 
 export function governmentView(game, g) {
-  const n = game.nazioni[g], costo = stabilityCost(game, g);
+  const n = game.nazioni[g], costo = stabilityCost(game, g), s = sliderOf(game, g);
   return {
-    nome: n.nome, governo: n.governo, stabilita: segno(n.stabilita), tratti: formatTratti(n.tratti),
-    costoStabilita: costo.toFixed(1), puoAlzare: n.stabilita < 3 && n.tesoro >= costo
+    nome: n.nome, governo: n.governo,
+    effettiGoverno: Object.entries(governmentOf(game, g)).map(([k, v]) => (GOVERNO[k] ? GOVERNO[k](v) : `${k} ${v}`)).join(', '),
+    stabilita: segno(n.stabilita), tratti: formatTratti(n.tratti),
+    costoStabilita: costo.toFixed(1), puoAlzare: n.stabilita < 3 && n.tesoro >= costo,
+    slider: LEVE.map(l => ({ ...l, valore: segno(s[l.quale]), meno: checkSlider(game, g, l.quale, -1), piu: checkSlider(game, g, l.quale, 1) }))
   };
 }
 
@@ -154,7 +178,7 @@ export function pendingProposals(game, g) {
   });
 }
 
-// Notizie: guerre, paci ed eliminazioni per tutti; battaglie, assedi e rifiuti solo se riguardano il giocatore.
+// Notizie: guerre, paci, eliminazioni e indipendenze per tutti; battaglie, assedi, rifiuti, rivolte e assimilazioni solo se riguardano il giocatore.
 export function formatLogEntry(e, game, g) {
   const N = id => nome(game, id), P = id => game.province[id]?.nome ?? id;
   switch (e.tipo) {
@@ -176,6 +200,9 @@ export function formatLogEntry(e, game, g) {
       return [e.vincitore, e.sconfitto].includes(g) ? `Battaglia a ${P(e.prov)}: vince ${N(e.vincitore)}.` : null;
     case 'assedio':
       return e.nazione === g || game.province[e.prov]?.owner === g ? `${N(e.nazione)} conquista ${P(e.prov)}.` : null;
+    case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
+    case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
+    case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;
     case 'rifiutata': return e.da === g ? `${N(e.a)} rifiuta la tua proposta di pace.` : null;
     default: return null;
   }
@@ -188,7 +215,7 @@ export function rankingView(game, g) {
 const DOMANDE = {
   guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?',
   alleanza: 'Accettare l\'alleanza?', foedus: 'Accettare il foedus?', tributo: 'Pagare il tributo?',
-  ultimatum: 'Cedere la provincia?', chiamata: 'Rispondere alla chiamata?'
+  ultimatum: 'Cedere la provincia?', chiamata: 'Rispondere alla chiamata?', riforma: 'Quale riforma?'
 };
 
 export function councilView(records, game, filtro) {

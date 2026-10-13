@@ -1,7 +1,8 @@
 // Battaglie giornaliere: ogni giorno un dado 0-9 per parte più i modificatori.
 import { rollD10 } from './rng.js';
-import { armyStrength, clamp, log } from './state.js';
+import { armyStrength, clamp, log, sliderOf, RIBELLI } from './state.js';
 import { atWar, warBetween, sideOf } from './war.js';
+import { friendly } from './diplomacy.js';
 
 export function resolveBattles(game) {
   for (const a of Object.values(game.eserciti)) a.inBattaglia = false;
@@ -16,6 +17,13 @@ export function resolveBattles(game) {
       if (enemy) { first = x; break; }
     }
     if (!enemy) continue;
+    if (first.owner === RIBELLI || enemy.owner === RIBELLI) {
+      // contro i ribelli combatte chi li ha trovati, insieme ai suoi amici
+      const altro = first.owner === RIBELLI ? enemy.owner : first.owner;
+      battleDay(game, provId, armies.filter(x => x.owner === RIBELLI),
+        armies.filter(x => x.owner === altro || (x.owner !== RIBELLI && friendly(game, x.owner, altro))));
+      continue;
+    }
     // tutti gli eserciti dello stesso lato della guerra combattono insieme
     const war = warBetween(game, first.owner, enemy.owner);
     const lato = sideOf(war, first.owner), altro = sideOf(war, enemy.owner);
@@ -29,11 +37,17 @@ function men(side) {
   return side.reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
 }
 
-function modifier(game, prov, side) {
-  const owner = side[0].owner, t = game.nazioni[owner].tratti, c = game.balance.combattimento;
+export function battleModifier(game, prov, side) {
+  const owner = side[0].owner, n = game.nazioni[owner], t = n.tratti, c = game.balance.combattimento;
   let m = t.battaglia || 0;
-  if (side.some(a => a.owner === prov.controller)) m += c.terreno[prov.terreno];
+  const controlla = side.some(a => a.owner === prov.controller);
+  if (controlla) m += c.terreno[prov.terreno];
   if (prov.terreno === 'montagna') m += t.montagna || 0;
+  if (n.stabilita >= c.stabilitaDado) m += 1;
+  else if (n.stabilita <= -c.stabilitaDado) m -= 1;
+  const g = sliderOf(game, owner).guerra, e = game.balance.slider.estremoGuerra;
+  if (g >= e && !controlla) m += 1; // dottrina offensiva: meglio in terra nemica
+  if (g <= -e && controlla) m += 1; // dottrina difensiva: meglio in casa
   return m;
 }
 
@@ -54,8 +68,8 @@ export function battleDay(game, provId, sideA, sideB) {
   for (const a of [...sideA, ...sideB]) a.inBattaglia = true;
   const strength = side => side.reduce((s, a) => s + armyStrength(game, a), 0);
   const sA = strength(sideA), sB = strength(sideB);
-  const rA = rollD10(game) + modifier(game, prov, sideA) + 1;
-  const rB = rollD10(game) + modifier(game, prov, sideB) + 1;
+  const rA = rollD10(game) + battleModifier(game, prov, sideA) + 1;
+  const rB = rollD10(game) + battleModifier(game, prov, sideB) + 1;
   applyLosses(sideB, sA * rA * c.perdite, rA * c.morale * clamp(sA / Math.max(1, sB), 0.5, 2));
   applyLosses(sideA, sB * rB * c.perdite, rB * c.morale * clamp(sB / Math.max(1, sA), 0.5, 2));
   const beaten = side => side.every(a => a.morale <= 0 || a.fanteria + a.cavalleria < c.minimoUomini);

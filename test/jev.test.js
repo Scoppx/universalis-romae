@@ -152,3 +152,21 @@ test('Jev risponde anche alle proposte diplomatiche', async () => {
   assert.ok(records.some(r => r.domande.some(d => d.domanda === 'alleanza' && d.fonte === 'jev' && d.scelta === 'accetta')));
   assert.deepEqual(g.nazioni.latini.alleati, ['roma']);
 });
+
+test('Jev sceglie la riforma: il comando segue la sua risposta, il registro la ricorda', async () => {
+  const g = makeGame();
+  const records = [];
+  const ask = async ({ questions }) => ({
+    answers: Object.fromEntries(Object.entries(questions).map(([k, q]) => [k, k === 'riforma'
+      ? { type: 'choice', choice: 'patrizi', probabilities: { patrizi: 1 }, confidence: 1 }
+      : { type: 'choice', choice: Object.keys(q.criteria)[0], probabilities: { [Object.keys(q.criteria)[0]]: 1 }, confidence: 1 }])),
+    usage: { input_tokens: 1, output_tokens: 1 }
+  });
+  const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
+  const controllers = { roma: ai.controller };
+  await play(g, controllers, ai, 400);
+  const r = records.find(x => x.domande.some(d => d.domanda === 'riforma'));
+  assert.ok(r);
+  assert.deepEqual(r.comandi.filter(c => c.tipo === 'slider'), [{ tipo: 'slider', nazione: 'roma', quale: 'societa', verso: -1 }]);
+  assert.equal(g.nazioni.roma.slider.societa, -1);
+});

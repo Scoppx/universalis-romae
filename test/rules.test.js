@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
-import { armiesOf } from '../public/js/sim/state.js';
+import { armiesOf, createArmy, RIBELLI } from '../public/js/sim/state.js';
+import { ensureRebels } from '../public/js/sim/culture.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import {
+  isSliderDay, sliderDecision, colonyDecision,
   rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
 } from '../public/js/ai/rules.js';
 
@@ -203,4 +205,44 @@ test('un federato diventato più forte del protettore esce dal foedus', async ()
   assert.deepEqual(diplomacyInitiatives(g, 'volsci'), []);
   createArmy(g, 'volsci', 'c', 20000, 0);
   assert.deepEqual(diplomacyInitiatives(g, 'volsci'), [{ tipo: 'esci_foedus', nazione: 'volsci' }]);
+});
+
+test('slider a regole: prima il malcontento, poi la guerra secondo i vicini, poi la società', () => {
+  const g = makeGame();
+  assert.deepEqual(sliderDecision(g, 'roma'), [{ tipo: 'slider', nazione: 'roma', quale: 'guerra', verso: 1 }]);
+  g.province.b.cultura = 'volsca';
+  g.nazioni.roma.stabilita = -1;
+  assert.deepEqual(sliderDecision(g, 'roma'), [{ tipo: 'slider', nazione: 'roma', quale: 'governo', verso: 1 }]);
+  g.nazioni.roma.ultimoSlider = 0;
+  assert.deepEqual(sliderDecision(g, 'roma'), []);
+});
+
+test('slider a regole: un giorno l\'anno per popolo', () => {
+  const g = makeGame();
+  const giorni = [];
+  for (let d = 0; d < 365; d++) { g.day = d; if (isSliderDay(g, 'roma')) giorni.push(d); }
+  assert.equal(giorni.length, 1);
+});
+
+test('colonie a regole: nella provincia straniera più ricca, in pace e con riserve', () => {
+  const g = makeGame();
+  g.province.b.cultura = 'volsca';
+  g.province.a.cultura = 'volsca';
+  g.nazioni.roma.cultura = 'latina';
+  g.nazioni.roma.tesoro = 100;
+  g.nazioni.roma.uomini = 3000;
+  assert.deepEqual(colonyDecision(g, 'roma'), [{ tipo: 'colonia', nazione: 'roma', provincia: 'a' }]);
+  g.nazioni.roma.uomini = 1500;
+  assert.deepEqual(colonyDecision(g, 'roma'), []);
+});
+
+test('in guerra con un obiettivo, l\'esercito più vicino va comunque a reprimere la rivolta', () => {
+  const g = makeGame();
+  declareWar(g, 'roma', 'volsci');
+  ensureRebels(g);
+  createArmy(g, RIBELLI, 'b', 500, 0);
+  createArmy(g, 'roma', 'a', 3000, 0);
+  g.nazioni.roma.obiettivo = 'c';
+  const verso = armyOrders(g, 'roma').filter(c => c.tipo === 'muovi').map(c => c.verso).sort();
+  assert.deepEqual(verso, ['b', 'c']);
 });

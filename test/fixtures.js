@@ -25,8 +25,9 @@ export const fixtureMap = {
   decorazioni: []
 };
 
+// governo senza effetti: i conti dei test delle tappe precedenti restano validi
 const N = (id, cultura, capitale, tratti = {}, extra = {}) =>
-  ({ id, nome: id, colore: '#888888', cultura, governo: 'tribù', capitale, difficolta: 'normale', tratti, carattere: '', ...extra });
+  ({ id, nome: id, colore: '#888888', cultura, governo: 'neutro', capitale, difficolta: 'normale', tratti, carattere: '', ...extra });
 
 export const fixturePopoli = {
   popoli: [

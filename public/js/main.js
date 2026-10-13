@@ -294,6 +294,9 @@ document.addEventListener('click', e => {
       });
       break;
     case 'alza-stabilita': comando({ tipo: 'alza_stabilita' }); break;
+    case 'slider': comando({ tipo: 'slider', quale: el.dataset.quale, verso: Number(el.dataset.verso) }); break;
+    case 'colonia': comando({ tipo: 'colonia', provincia: id }); break;
+    case 'fortifica': comando({ tipo: 'fortifica', provincia: id }); break;
     case 'dichiara': comando({ tipo: 'dichiara_guerra', contro: id }); break;
     case 'ambasceria': comando({ tipo: 'ambasceria', verso: id }); break;
     case 'alleanza':

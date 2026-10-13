@@ -14,7 +14,7 @@ async function stubAsk({ questions }) {
 
 test('il bench a regole riporta tutti i popoli in ordine di punteggio', async () => {
   const { righe } = await runBench({ anni: 5, semi: 1 });
-  assert.equal(righe.length, 38);
+  assert.ok(righe.length >= 38); // in 5 anni può nascere un popolo da un'indipendenza
   const sorted = [...righe].sort((a, b) => b.punteggio - a.punteggio);
   assert.deepEqual(righe.map(r => r.id), sorted.map(r => r.id));
   assert.ok(righe.every(r => r.ia === 'regole'));

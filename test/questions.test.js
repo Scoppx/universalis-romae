@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
-import { buildReview, buildPeaceQuestion, interpretChoice, buildProposalQuestion } from '../public/js/ai/questions.js';
+import { buildReview, buildPeaceQuestion, interpretChoice, buildProposalQuestion, buildSliderQuestion, sampleChoice } from '../public/js/ai/questions.js';
 
 test('in pace: domanda di guerra con i soli bersagli legali e la scelta di restare in pace', () => {
   const g = makeGame();
@@ -68,4 +68,31 @@ test('proposte non di pace: scelta accetta/rifiuta con i fatti nello stato', asy
   assert.equal(q.state.proposta.da, 'roma');
   assert.equal(q.state.proposta.relazione, 30);
   assert.deepEqual(q.meta.alleanza, { tipo: 'proposta', genere: 'alleanza', proposta, mappa: { accetta: true, rifiuta: false }, prudente: 'rifiuta' });
+});
+
+test('domanda sulla riforma: solo le mosse legali, più "nessuna"', () => {
+  const g = makeGame();
+  g.nazioni.roma.slider.guerra = 5;
+  const q = buildSliderQuestion(g, 'roma', 'Ambiziosa.');
+  const opzioni = Object.keys(q.questions.riforma.criteria);
+  assert.deepEqual(opzioni, ['nessuna', 'patrizi', 'plebe', 'difesa', 'accentramento', 'autonomia']);
+  assert.deepEqual(q.meta.riforma.mappa.difesa, { quale: 'guerra', verso: -1 });
+  assert.equal(q.meta.riforma.mappa.nessuna, null);
+  assert.equal(q.state.riforme.guerra, 5);
+  g.nazioni.roma.ultimoSlider = 0;
+  assert.equal(buildSliderQuestion(g, 'roma', ''), null);
+});
+
+test('estrazione a temperatura: deterministica per chiave, segue le probabilità', () => {
+  const meta = { mappa: { a: 1, b: 2, c: 3 } };
+  const ans = { probabilities: { a: 0.75, b: 0.25, c: 0, z: 0.5 } };
+  assert.deepEqual(sampleChoice(ans, meta, 42), sampleChoice(ans, meta, 42));
+  let quanteA = 0;
+  for (let k = 0; k < 1000; k++) {
+    const v = sampleChoice(ans, meta, k);
+    assert.ok(v.scelta === 'a' || v.scelta === 'b'); // c ha probabilità 0, z non è un'opzione
+    if (v.scelta === 'a') quanteA++;
+  }
+  assert.ok(quanteA > 720 && quanteA < 880, String(quanteA)); // 0,75^1,25 / (0,75^1,25 + 0,25^1,25) ≈ 0,80
+  assert.equal(sampleChoice({}, meta, 1), null);
 });
