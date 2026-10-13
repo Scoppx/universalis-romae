@@ -54,7 +54,8 @@
       "collina": 1,
       "montagna": 2,
       "palude": 1
-    }
+    },
+    "stabilitaDado": 2
   },
   "assedio": {
     "base": 0.02,
@@ -101,5 +102,34 @@
     "ultimatumRapporto": 3,
     "uscitaFoedusStabilita": 2,
     "uscitaFoedusRelazione": -100
+  },
+  "governi": {
+    "tribù": {
+      "tasse": -0.2,
+      "reclute": 0.2
+    },
+    "monarchia": {
+      "equilibrioStabilita": 1
+    },
+    "repubblica": {
+      "tasse": 0.1,
+      "intervalloSlider": 15
+    },
+    "lega": {
+      "foedusRapporto": 2
+    },
+    "città-stato": {
+      "tasse": 0.2,
+      "reclute": -0.2
+    }
+  },
+  "slider": {
+    "intervalloAnni": 10,
+    "limite": 5,
+    "tassePatrizi": 0.02,
+    "reclutePlebe": 0.03,
+    "estremoGuerra": 4,
+    "assimilazioneAccentramento": 0.1,
+    "malcontentoAccentramento": 0.2
   }
 }

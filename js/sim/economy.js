@@ -1,5 +1,5 @@
 // Economia mensile e aggiornamenti annuali.
-import { provincesOf, sumOf, armiesOf, maxManpower } from './state.js';
+import { provincesOf, sumOf, armiesOf, maxManpower, governmentOf, taxBonus, recruitBonus } from './state.js';
 import { nextRandom } from './rng.js';
 
 function paying(game, id) {
@@ -8,7 +8,7 @@ function paying(game, id) {
 
 export function monthlyIncome(game, id) {
   const n = game.nazioni[id], b = game.balance.economia;
-  return sumOf(paying(game, id), 'tasse') * b.tasseMese * (1 + n.stabilita * b.stabilitaEntrate);
+  return sumOf(paying(game, id), 'tasse') * b.tasseMese * (1 + n.stabilita * b.stabilitaEntrate) * (1 + taxBonus(game, id));
 }
 
 export function monthlyUpkeep(game, id) {
@@ -17,8 +17,7 @@ export function monthlyUpkeep(game, id) {
 }
 
 export function monthlyManpower(game, id) {
-  const n = game.nazioni[id];
-  return Math.round(sumOf(paying(game, id), 'uomini') * game.balance.economia.uominiMese * (1 + (n.tratti.reclute || 0)));
+  return Math.round(sumOf(paying(game, id), 'uomini') * game.balance.economia.uominiMese * (1 + recruitBonus(game, id)));
 }
 
 export function monthlyEconomy(game) {
@@ -38,15 +37,15 @@ export function monthlyEconomy(game) {
   }
 }
 
-// La stabilità tende a 0: risale più in fretta e scende più piano con il tratto "stabilita".
+// La stabilità tende all'equilibrio del governo (0, +1 per la monarchia): risale più in fretta e scende più piano con il tratto "stabilita".
 export function yearlyUpdate(game) {
   const b = game.balance;
   for (const id of game.ordine) {
     const n = game.nazioni[id];
     if (!n.vivo) continue;
-    const t = n.tratti.stabilita || 0;
-    if (n.stabilita < 0 && nextRandom(game) < b.stabilita.derivaAnno * (1 + t)) n.stabilita += 1;
-    else if (n.stabilita > 0 && nextRandom(game) < b.stabilita.derivaAnno * Math.max(0, 1 - t)) n.stabilita -= 1;
+    const t = n.tratti.stabilita || 0, eq = governmentOf(game, id).equilibrioStabilita ?? 0;
+    if (n.stabilita < eq && nextRandom(game) < b.stabilita.derivaAnno * (1 + t)) n.stabilita += 1;
+    else if (n.stabilita > eq && nextRandom(game) < b.stabilita.derivaAnno * Math.max(0, 1 - t)) n.stabilita -= 1;
     n.infamia = Math.max(0, n.infamia - b.infamia.caloAnno);
   }
 }
