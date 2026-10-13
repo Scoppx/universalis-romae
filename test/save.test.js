@@ -199,3 +199,50 @@ test('il record dei ribelli si ricrea al caricamento', () => {
   assert.equal(r.ok, true, r.motivo);
   assert.deepEqual(r.session.game.nazioni.ribelli.alleati, []);
 });
+
+test('eventi in attesa, eventi fatti e dormienti: andata e ritorno; catalogo non salvato', () => {
+  const s = createSession(data, 'volsci', 3);
+  runDays(s, 400);
+  const g = s.game;
+  g.eventi.v999 = { id: 'v999', evento: 'carestia', nazione: 'roma', altro: null, giorno: g.day };
+  const text = serialize(s);
+  assert.equal(text.includes('"catalogo"'), false);
+  const r = deserialize(text, data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.deepEqual(r.session.game, g);
+});
+
+test('salvataggio vecchio senza eventi né dormienti: valori iniziali dai dati', () => {
+  const s = createSession(data, 'roma', 1);
+  const old = JSON.parse(serialize(s));
+  delete old.game.eventi; delete old.game.eventiFatti; delete old.game.dormienti;
+  const r = deserialize(JSON.stringify(old), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.deepEqual(r.session.game.eventi, {});
+  assert.equal(Object.keys(r.session.game.dormienti).length, 13);
+});
+
+test('evento orfano (tolto dal catalogo) si carica e poi si scarta', () => {
+  const s = createSession(data, 'roma', 1);
+  const x = JSON.parse(serialize(s));
+  x.game.eventi.v998 = { id: 'v998', evento: 'evento_sparito', nazione: 'veio', altro: null, giorno: 0 };
+  const r = deserialize(JSON.stringify(x), data);
+  assert.equal(r.ok, true, r.motivo);
+  runDays(r.session, 1);
+  assert.equal(r.session.game.eventi.v998, undefined);
+});
+
+test('eventi e dormienti non validi: rifiutati', () => {
+  const s = createSession(data, 'roma', 1);
+  const good = JSON.parse(serialize(s));
+  const guasta = f => { const x = structuredClone(good); f(x.game); return JSON.stringify(x); };
+  const bad = [
+    guasta(g => { g.eventi = { v1: { id: 'v1', evento: 'carestia', nazione: 'atlantide', altro: null, giorno: 0 } }; }),
+    guasta(g => { g.eventi = { v1: { id: 'v2', evento: 'carestia', nazione: 'roma', altro: null, giorno: 0 } }; }),
+    guasta(g => { g.eventi = { v1: { id: 'v1', evento: 3, nazione: 'roma', altro: null, giorno: 0 } }; }),
+    guasta(g => { g.eventiFatti = { carestia: ['atlantide'] }; }),
+    guasta(g => { g.dormienti.taranto.capitale = 'atlantide'; }),
+    guasta(g => { g.dormienti.roma = { ...g.dormienti.taranto, id: 'roma' }; }) // già attivo
+  ];
+  for (const text of bad) assert.equal(deserialize(text, data).ok, false, text.slice(0, 80));
+});
