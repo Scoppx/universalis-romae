@@ -3,6 +3,7 @@
 import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, checkColony, colonyCost } from '../sim/culture.js';
+import { eventDef } from '../sim/events.js';
 
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
@@ -19,6 +20,12 @@ function hashId(id) {
 
 export function isReviewDay(game, id) {
   return game.day % 91 === hashId(id) % 91;
+}
+
+// Eventi in attesa: le regole prendono l'opzione indicata dall'evento.
+export function eventAnswers(game, id) {
+  return Object.values(game.eventi).filter(e => e.nazione === id).map(e =>
+    ({ tipo: 'scegli', nazione: id, evento: e.id, opzione: eventDef(game, e.evento)?.regola })).filter(c => c.opzione);
 }
 
 export function isSliderDay(game, id) {
@@ -71,7 +78,7 @@ export function routine(game, id) {
 }
 
 export function rulesController(game, id) {
-  const cmds = [...answerProposals(game, id)];
+  const cmds = [...answerProposals(game, id), ...eventAnswers(game, id)];
   // le regole non usano obiettivi: uno rimasto da Jev (o da un salvataggio) si azzera; in pace lo fa la routine
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
   if (inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });

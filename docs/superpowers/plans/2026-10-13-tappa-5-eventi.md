@@ -794,7 +794,7 @@ process.exit(errori.length ? 1 : 0);
 | id | condizioni | opzioni: effetti | regola |
 |---|---|---|---|
 | ratto_sabine | p 0.02, anni [753, 700], culture [latina], altro {preferiti [sabini]} | ratto: uominiQuota +0.2, relazione −60, pretestoAltro · trattative: relazione +20, tesoroMesi −2 | ratto |
-| superbia_del_re | p 0.05, anni [515, 495], governi [monarchia], unaVolta 'popolo' | cacciare: cambia_governo repubblica, stabilita −1 · tenere: stabilita −2 | cacciare |
+| superbia_del_re | p 0.05, anni [515, 495], governi [monarchia], culture [latina], unaVolta 'popolo' | cacciare: cambia_governo repubblica, stabilita −1 · tenere: stabilita −2 | cacciare |
 | orazi_curiazi | p 0.02, anni [700, 640], culture [latina], altro {preferiti [lega_latina], culture [latina]} | duello: stabilita +1, pretesto · pace: relazione +30 | duello |
 | dodici_tavole | p 0.05, anni [460, 440], governi [repubblica, città-stato] | leggi: slider {societa +1}, stabilita +1 · patrizi: slider {societa −1}, stabilita −1 | leggi |
 | secessione_plebe | p 0.01, anni [500, 280], governi [repubblica], stabilitaMax 0, unaVolta 'popolo' | tribuni: slider {societa +1}, stabilita +1 · resistere: stabilita −2 | tribuni |

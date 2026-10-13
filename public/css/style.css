@@ -62,3 +62,5 @@ button.piccolo { font-size: 12px; padding: 1px 6px; }
 .leva { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
 .leva .nome { width: 70px; }
 .leva b { width: 24px; text-align: center; }
+.opzione { margin: 8px 0; }
+.opzione button { width: 100%; text-align: left; }

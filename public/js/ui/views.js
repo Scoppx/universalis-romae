@@ -3,6 +3,7 @@ import { formatDate } from '../sim/calendar.js';
 import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
+import { eventDef, describeEffects } from '../sim/events.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
@@ -58,6 +59,18 @@ export function peopleCards(popoli) {
       capitale: p.capitale, tratti: formatTratti(p.tratti), carattere: p.carattere
     }))
     .sort((a, b) => DIFFICOLTA.indexOf(a.difficolta) - DIFFICOLTA.indexOf(b.difficolta) || byNome(a, b));
+}
+
+const GOVERNI_ART = { 'tribù': 'una tribù', monarchia: 'una monarchia', repubblica: 'una repubblica', lega: 'una lega', 'città-stato': 'una città-stato' };
+
+export function pendingEvents(game, g) {
+  return Object.values(game.eventi).filter(e => e.nazione === g).map(e => {
+    const def = eventDef(game, e.evento);
+    return def && {
+      id: e.id, titolo: def.titolo, testo: def.testo,
+      opzioni: def.opzioni.map(o => ({ id: o.id, testo: o.testo, effetti: describeEffects(game, e, o) }))
+    };
+  }).filter(Boolean);
 }
 
 export function provinceInfo(game, id, g) {
@@ -178,7 +191,7 @@ export function pendingProposals(game, g) {
   });
 }
 
-// Notizie: guerre, paci, eliminazioni e indipendenze per tutti; battaglie, assedi, rifiuti, rivolte e assimilazioni solo se riguardano il giocatore.
+// Notizie: guerre, paci, eliminazioni, indipendenze, nascite, governi ed eventi storici per tutti; battaglie, assedi, rifiuti, rivolte e assimilazioni solo se riguardano il giocatore.
 export function formatLogEntry(e, game, g) {
   const N = id => nome(game, id), P = id => game.province[id]?.nome ?? id;
   switch (e.tipo) {
@@ -200,6 +213,9 @@ export function formatLogEntry(e, game, g) {
       return [e.vincitore, e.sconfitto].includes(g) ? `Battaglia a ${P(e.prov)}: vince ${N(e.vincitore)}.` : null;
     case 'assedio':
       return e.nazione === g || game.province[e.prov]?.owner === g ? `${N(e.nazione)} conquista ${P(e.prov)}.` : null;
+    case 'nascita': return `Nasce ${N(e.nazione)} a ${P(e.prov)}.`;
+    case 'governo': return `${N(e.nazione)} diventa ${GOVERNI_ART[e.governo] ?? e.governo}.`;
+    case 'evento': return e.storico && e.nazione !== g ? `${N(e.nazione)}: ${eventDef(game, e.evento)?.titolo ?? e.evento}.` : null;
     case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
     case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
     case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;
@@ -215,7 +231,7 @@ export function rankingView(game, g) {
 const DOMANDE = {
   guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?',
   alleanza: 'Accettare l\'alleanza?', foedus: 'Accettare il foedus?', tributo: 'Pagare il tributo?',
-  ultimatum: 'Cedere la provincia?', chiamata: 'Rispondere alla chiamata?', riforma: 'Quale riforma?'
+  ultimatum: 'Cedere la provincia?', chiamata: 'Rispondere alla chiamata?', riforma: 'Quale riforma?', evento: 'Evento'
 };
 
 export function councilView(records, game, filtro) {

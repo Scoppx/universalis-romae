@@ -11,18 +11,23 @@
 //   eserciti: { [id]: { id, owner, prov, fanteria, cavalleria, morale, percorso: [id], giorniAlProssimo, inBattaglia } },
 //   guerre: { [id]: { id, attaccanti: [id], difensori: [id], inizio, battaglie } },
 //   proposte: { [id]: { id, tipo: 'pace', guerra, da, a, termini: { ricevente, province: [id] }, giorno } },
-//   log: [{ day, tipo, ... }]     // eventi del giorno corrente
+//   log: [{ day, tipo, ... }],    // eventi del giorno corrente
+//   catalogo: [evento],           // definizioni degli eventi, ordinate per id (non si salva)
+//   eventi: { [id]: { id, evento, nazione, altro, giorno } },   // eventi in attesa di una scelta
+//   eventiFatti: { [eventoId]: [nazione] },
+//   dormienti: { [id]: { id, nome, colore, cultura, governo, capitale, tratti } }   // popoli che un evento può risvegliare
 // }
 import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus } from './state.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { initCulture } from './culture.js';
 
-export function createGame({ map, popoli, balance, seed }) {
+export function createGame({ map, popoli, balance, catalogo = [], seed }) {
   const game = {
     day: 0, rng: seed >>> 0, nextId: 1, balance,
     province: {}, stretti: [], nazioni: {}, ordine: [],
-    eserciti: {}, guerre: {}, proposte: {}, log: []
+    eserciti: {}, guerre: {}, proposte: {}, log: [],
+    catalogo: [...catalogo].sort((a, b) => (a.id < b.id ? -1 : 1)), eventi: {}, eventiFatti: {}
   };
   for (const p of map.province) {
     game.province[p.id] = {
@@ -39,6 +44,11 @@ export function createGame({ map, popoli, balance, seed }) {
       capitale: n.capitale, tesoro: 0, uomini: 0, stabilita: 0, infamia: 0,
       tratti: { ...n.tratti }, vivo: true, tregue: {}, obiettivo: null
     };
+  }
+  // i dormienti aspettano un evento: si tengono nello stato per poterli risvegliare
+  game.dormienti = {};
+  for (const n of popoli.popoli.filter(x => x.dormiente)) {
+    game.dormienti[n.id] = { id: n.id, nome: n.nome, colore: n.colore, cultura: n.cultura, governo: n.governo, capitale: n.capitale, tratti: { ...n.tratti } };
   }
   for (const id of game.ordine) {
     const n = game.nazioni[id];

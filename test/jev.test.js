@@ -170,3 +170,23 @@ test('Jev sceglie la riforma: il comando segue la sua risposta, il registro la r
   assert.deepEqual(r.comandi.filter(c => c.tipo === 'slider'), [{ tipo: 'slider', nazione: 'roma', quale: 'societa', verso: -1 }]);
   assert.equal(g.nazioni.roma.slider.societa, -1);
 });
+
+test('Jev sceglie negli eventi: comando secondo la risposta, registro con la domanda', async () => {
+  const cat = [{ id: 'e', titolo: 'E', testo: 'T.', condizioni: { probabilita: 1, popoli: ['roma'] },
+    opzioni: [{ id: 'a', testo: 'A', effetti: [] }, { id: 'b', testo: 'B', effetti: [{ stabilita: 1 }] }], regola: 'a' }];
+  const g = makeGame(1, cat);
+  const records = [];
+  const ask = async ({ questions }) => ({
+    answers: Object.fromEntries(Object.entries(questions).map(([k, q]) => [k, k === 'evento'
+      ? { type: 'choice', choice: 'b', probabilities: { b: 1 }, confidence: 1 }
+      : { type: 'choice', choice: Object.keys(q.criteria)[0], probabilities: { [Object.keys(q.criteria)[0]]: 1 }, confidence: 1 }])),
+    usage: { input_tokens: 1, output_tokens: 1 }
+  });
+  const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
+  await play(g, { roma: ai.controller }, ai, 40);
+  const r = records.find(x => x.domande.some(d => d.domanda === 'evento'));
+  assert.ok(r);
+  assert.equal(r.comandi.find(c => c.tipo === 'scegli').opzione, 'b');
+  assert.equal(g.nazioni.roma.stabilita, 1);
+  assert.deepEqual(g.eventi, {});
+});

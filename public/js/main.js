@@ -12,6 +12,7 @@ import { createSession, runDays, pausaNecessaria } from './ui/session.js';
 import { serialize, deserialize, writeStorage, readStorage, AUTOSAVE_KEY } from './ui/save.js';
 import * as V from './ui/views.js';
 import * as H from './ui/panels.js';
+import { validateEvents } from './sim/validate-events.js';
 
 const $ = id => document.getElementById(id);
 
@@ -20,8 +21,18 @@ async function loadData() {
     if (!r.ok) throw new Error(`${f}: ${r.status}`);
     return r.json();
   });
-  const [map, popoli, balance] = await Promise.all(['map.json', 'popoli.json', 'balance.json'].map(get));
-  return { map, popoli, balance };
+  const EVENTI_FILE = ['generici', 'governo', 'storici', 'dormienti']; // come tools/load-data.js
+  const [map, popoli, balance, ...eventi] = await Promise.all(
+    ['map.json', 'popoli.json', 'balance.json', ...EVENTI_FILE.map(f => `eventi/${f}.json`)].map(get));
+  const data = { map, popoli, balance, catalogo: eventi.flatMap(f => f.eventi) };
+  // un catalogo sbagliato ferma il gioco prima che parta
+  const errori = validateEvents(data.catalogo, data);
+  if (errori.length) {
+    document.body.style.whiteSpace = 'pre-wrap';
+    document.body.textContent = `Eventi non validi:\n${errori.join('\n')}`;
+    throw new Error('catalogo degli eventi non valido');
+  }
+  return data;
 }
 
 const data = await loadData();
@@ -154,6 +165,10 @@ function avanza(n) {
 function mostraPausa(motivo) {
   const { game: g, giocatore } = ui.session;
   if (motivo === 'proposta') finestra(H.proposalHtml(V.pendingProposals(g, giocatore)[0]));
+  else if (motivo === 'evento') {
+    const [ev] = V.pendingEvents(g, giocatore);
+    if (ev) finestra(H.eventoHtml(ev));
+  }
   else if (motivo === 'fine') finestra(H.rankingHtml('Fine della partita: 264 a.C.', V.rankingView(g, giocatore)));
   else if (motivo === 'sconfitta') finestra(H.rankingHtml('Il tuo popolo è scomparso', V.rankingView(g, giocatore)));
 }
@@ -336,6 +351,13 @@ document.addEventListener('click', e => {
     case 'rispondi': {
       $('finestra').hidden = true;
       comando({ tipo: 'rispondi', proposta: id, accetta: el.dataset.accetta === '1' });
+      const motivo = pausaNecessaria(ui.session);
+      if (motivo) mostraPausa(motivo);
+      break;
+    }
+    case 'scegli': {
+      $('finestra').hidden = true;
+      comando({ tipo: 'scegli', evento: id, opzione: el.dataset.opzione });
       const motivo = pausaNecessaria(ui.session);
       if (motivo) mostraPausa(motivo);
       break;

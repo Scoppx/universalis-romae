@@ -9,9 +9,9 @@ import { RIBELLI } from '../sim/state.js';
 export const SAVE_VERSION = 1;
 export const AUTOSAVE_KEY = 'universalis-romae:autosave';
 
-// Il bilanciamento non si salva: al caricamento vale quello corrente.
+// Il bilanciamento e il catalogo degli eventi non si salvano: al caricamento valgono quelli correnti.
 export function serialize(session) {
-  const { balance, ...game } = session.game;
+  const { balance, catalogo, ...game } = session.game;
   return JSON.stringify({ versione: SAVE_VERSION, giocatore: session.giocatore, seme: session.seme, ia: session.ia, game });
 }
 
@@ -25,10 +25,19 @@ export function deserialize(text, data, { creaAi } = {}) {
   if (!['regole', 'jev', 'misto'].includes(ia)) return { ok: false, motivo: 'salvataggio non valido: modalità IA sconosciuta' };
   const errore = validateGame(s, data);
   if (errore) return { ok: false, motivo: `salvataggio non valido: ${errore}` };
-  const g = { ...s.game, balance: data.balance };
+  const g = { ...s.game, balance: data.balance, catalogo: [...(data.catalogo ?? [])].sort((a, b) => (a.id < b.id ? -1 : 1)) };
   initDiplomacy(g); // i salvataggi precedenti alla diplomazia ricevono i valori iniziali
   initGovernment(g);
   initCulture(g);
+  g.eventi ??= {};
+  // eventi tolti dal catalogo o di popoli scomparsi: si scartano subito, prima che possano fermare il gioco
+  for (const e of Object.values(g.eventi)) {
+    if (!g.catalogo.some(d => d.id === e.evento) || !g.nazioni[e.nazione]?.vivo) delete g.eventi[e.id];
+  }
+  g.eventiFatti ??= {};
+  // i salvataggi precedenti agli eventi ricevono i dormienti non ancora in partita
+  g.dormienti ??= Object.fromEntries(data.popoli.popoli.filter(p => p.dormiente && !g.nazioni[p.id]).map(p =>
+    [p.id, { id: p.id, nome: p.nome, colore: p.colore, cultura: p.cultura, governo: p.governo, capitale: p.capitale, tratti: { ...p.tratti } }]));
   // il record dei ribelli non viene dal file: si ricrea sempre uguale
   if (g.nazioni[RIBELLI]) { delete g.nazioni[RIBELLI]; ensureRebels(g); }
   // senza creaAi una partita Jev riparte con le regole
@@ -107,6 +116,22 @@ function validateGame(s, data) {
       if (!Array.isArray(p.termini.province) || !p.termini.province.every(provincia)) return `proposta ${k}`;
     }
     if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;
+  }
+  if (g.eventi !== undefined) {
+    if (!isObj(g.eventi)) return 'eventi';
+    for (const [k, e] of Object.entries(g.eventi)) {
+      if (!ID.test(k) || !isObj(e) || e.id !== k || !isStr(e.evento) || !attiva(e.nazione) || !isInt(e.giorno)) return `evento ${k}`;
+      if (e.altro !== null && !attiva(e.altro)) return `evento ${k}`;
+    }
+  }
+  if (g.eventiFatti !== undefined && !(isObj(g.eventiFatti) && Object.values(g.eventiFatti).every(l => Array.isArray(l) && l.every(attiva)))) return 'eventi fatti';
+  if (g.dormienti !== undefined) {
+    if (!isObj(g.dormienti)) return 'dormienti';
+    for (const [k, d] of Object.entries(g.dormienti)) {
+      if (!ID.test(k) || own(g.nazioni, k) || !isObj(d) || d.id !== k) return `dormiente ${k}`;
+      if (![d.nome, d.colore, d.cultura, d.governo].every(isStr) || !provincia(d.capitale)) return `dormiente ${k}`;
+      if (!isObj(d.tratti) || !Object.values(d.tratti).every(isNum)) return `dormiente ${k}`;
+    }
   }
   return null;
 }

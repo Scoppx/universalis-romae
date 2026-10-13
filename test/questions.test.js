@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
-import { buildReview, buildPeaceQuestion, interpretChoice, buildProposalQuestion, buildSliderQuestion, sampleChoice } from '../public/js/ai/questions.js';
+import { buildReview, buildPeaceQuestion, interpretChoice, buildProposalQuestion, buildSliderQuestion, sampleChoice, buildEventQuestion } from '../public/js/ai/questions.js';
+import { monthlyEvents } from '../public/js/sim/events.js';
 
 test('in pace: domanda di guerra con i soli bersagli legali e la scelta di restare in pace', () => {
   const g = makeGame();
@@ -95,4 +96,19 @@ test('estrazione a temperatura: deterministica per chiave, segue le probabilità
   }
   assert.ok(quanteA > 720 && quanteA < 880, String(quanteA)); // 0,75^1,25 / (0,75^1,25 + 0,25^1,25) ≈ 0,80
   assert.equal(sampleChoice({}, meta, 1), null);
+});
+
+test('domanda su un evento: opzioni con il riassunto degli effetti, l\'altro per nome', () => {
+  const g = makeGame(1, [{ id: 'e', titolo: 'Contesa', testo: 'Un confine conteso.', condizioni: { probabilita: 1, popoli: ['roma'], altro: { preferiti: ['volsci'] } },
+    opzioni: [{ id: 'rivendicare', testo: 'Rivendicare', effetti: [{ pretesto: true }] }, { id: 'trattare', testo: 'Trattare', effetti: [{ relazione: 20 }] }], regola: 'trattare' }]);
+  monthlyEvents(g);
+  const pid = Object.keys(g.eventi)[0];
+  const q = buildEventQuestion(g, pid, 'Ambiziosa.');
+  assert.equal(q.state.evento.titolo, 'Contesa');
+  assert.equal(q.state.evento.altro, 'volsci');
+  assert.deepEqual(q.questions.evento.criteria, {
+    rivendicare: 'Rivendicare (pretesto contro volsci)',
+    trattare: 'Trattare (relazioni con volsci +20)'
+  });
+  assert.deepEqual(q.meta.evento, { tipo: 'evento', evento: pid, mappa: { rivendicare: 'rivendicare', trattare: 'trattare' }, prudente: 'trattare' });
 });

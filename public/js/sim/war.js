@@ -57,6 +57,13 @@ export function declareWar(game, attacker, defender) {
   return { ok: true, guerra: id };
 }
 
+// Guerra decisa da un evento o da un risveglio: chi attacca riceve prima un pretesto, quindi non perde stabilità.
+export function startWar(game, a, b) {
+  game.nazioni[a].pretesti ??= {};
+  game.nazioni[a].pretesti[b] = Math.max(game.nazioni[a].pretesti[b] ?? -1, game.day + 1);
+  return declareWar(game, a, b);
+}
+
 // Quota (0-100) del valore delle province di un lato occupata dall'altro lato.
 function occupation(game, war, side) {
   const owners = war[side], enemies = enemiesOf(war, side);

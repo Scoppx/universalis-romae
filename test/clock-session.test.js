@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadData } from '../tools/load-data.js';
+import { applyCommand } from '../public/js/sim/commands.js';
 import { createClock, setSpeed, setPaused, tick } from '../public/js/ui/clock.js';
 import { createSession, runDays, pausaNecessaria } from '../public/js/ui/session.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
@@ -64,4 +65,18 @@ test('sessione con modalità IA: il giocatore escluso, metà a Jev in misto', as
   assert.equal(s.ia, 'misto');
   assert.equal(s.controllers.roma, undefined);
   assert.equal(Object.values(s.controllers).filter(c => c === ai.controller).length, 18); // roma è in posizione pari
+});
+
+test('sessione: si ferma per un evento del giocatore e riparte dopo la scelta', () => {
+  const s = createSession(data, 'roma', 1);
+  s.game.eventi.v1 = { id: 'v1', evento: 'carestia', nazione: 'roma', altro: null, giorno: s.game.day };
+  assert.equal(runDays(s, 10).motivo, 'evento');
+  assert.equal(applyCommand(s.game, { tipo: 'scegli', nazione: 'roma', evento: 'v1', opzione: 'compra_grano' }).ok, true);
+  assert.equal(runDays(s, 1).giorni, 1);
+});
+
+test('sessione: un evento del giocatore senza definizione non ferma il gioco', () => {
+  const s = createSession(data, 'roma', 1);
+  s.game.eventi.v1 = { id: 'v1', evento: 'evento_sparito', nazione: 'roma', altro: null, giorno: s.game.day };
+  assert.equal(runDays(s, 2).giorni, 2);
 });

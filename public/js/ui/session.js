@@ -4,6 +4,7 @@ import { advanceDay, isOver } from '../sim/loop.js';
 import { isNewYear } from '../sim/calendar.js';
 import { buildControllers, syncControllers } from '../ai/modes.js';
 import { formatLogEntry } from './views.js';
+import { eventDef } from '../sim/events.js';
 
 export function createSessionFrom(game, giocatore, seme, ia = 'regole', ai = null) {
   return { game, giocatore, seme, ia, ai, controllers: buildControllers(game, ia, ai, giocatore) };
@@ -19,6 +20,7 @@ export function pausaNecessaria(session) {
   if (isOver(game)) return 'fine';
   if (!game.nazioni[giocatore].vivo) return 'sconfitta';
   if (Object.values(game.proposte).some(p => p.a === giocatore)) return 'proposta';
+  if (Object.values(game.eventi ?? {}).some(e => e.nazione === giocatore && eventDef(game, e.evento))) return 'evento';
   return null;
 }
 

@@ -302,7 +302,7 @@
     },
     {
       "id": "neapolis", "nome": "Neapolis", "colore": "#3a68a8", "cultura": "greca", "governo": "città-stato",
-      "capitale": "cumae", "difficolta": "normale", "dormiente": true,
+      "capitale": "acerrae", "difficolta": "normale", "dormiente": true,
       "tratti": {},
       "carattere": "Città greca nuova, nata da Cuma, ricca di commerci e con un ottimo porto. Preferisce la diplomazia e gli accordi con il potente di turno alla guerra aperta, pur di conservare la sua autonomia."
     }

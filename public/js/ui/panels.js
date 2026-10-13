@@ -140,3 +140,9 @@ export function consiglioHtml(list, nazioni, filtro) {
       `<span class="riempi" style="width:${esc(o.p)}%"></span><span class="pct">${esc(o.p)}%</span></div>`).join('') +
     `<div class="muto">scelta: ${esc(d.scelta ?? '—')} · ${esc(FONTI[d.fonte] ?? d.fonte)}</div></div>`).join('');
 }
+
+export function eventoHtml(v) {
+  return `<h2>${esc(v.titolo)}</h2><p>${esc(v.testo)}</p>` + v.opzioni.map(o =>
+    `<div class="opzione"><button data-azione="scegli" data-id="${esc(v.id)}" data-opzione="${esc(o.id)}">${esc(o.testo)}</button>` +
+    `<div class="muto">${esc(o.effetti)}</div></div>`).join('');
+}
