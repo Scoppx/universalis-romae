@@ -2,7 +2,7 @@
 import { createGame } from '../sim/setup.js';
 import { advanceDay, isOver } from '../sim/loop.js';
 import { isNewYear } from '../sim/calendar.js';
-import { buildControllers } from '../ai/modes.js';
+import { buildControllers, syncControllers } from '../ai/modes.js';
 import { formatLogEntry } from './views.js';
 
 export function createSessionFrom(game, giocatore, seme, ia = 'regole', ai = null) {
@@ -28,6 +28,7 @@ export function runDays(session, days, { onYear } = {}) {
   let motivo = pausaNecessaria(session);
   while (!motivo && giorni < days) {
     const log = advanceDay(session.game, session.controllers);
+    syncControllers(session.controllers, session.game, session.ia, session.ai, session.giocatore);
     giorni++;
     for (const e of log) {
       const t = formatLogEntry(e, session.game, session.giocatore);

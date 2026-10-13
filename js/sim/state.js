@@ -1,5 +1,7 @@
 // Helper di lettura e scrittura dello stato, condivisi da tutti i moduli della simulazione.
 
+export const RIBELLI = 'ribelli'; // popolo speciale: in guerra con tutti, fuori da game.ordine
+
 export function newId(game, prefix) {
   return `${prefix}${game.nextId++}`;
 }
