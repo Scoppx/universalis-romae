@@ -234,12 +234,15 @@ function setHtml(el, html) {
   // con il mouse premuto sul pannello non si ridisegna: il bottone sotto il cursore deve ricevere il clic
   if (ui.premuto || ultimoHtml.get(el) === html) return;
   const spuntate = new Set([...el.querySelectorAll('input[type=checkbox]:checked')].map(i => `${i.name}=${i.value}`));
-  const numeri = Object.fromEntries([...el.querySelectorAll('input[type=number]')].map(i => [i.id, i.value]));
+  const numeri = Object.fromEntries([...el.querySelectorAll('input[type=number], select')].map(i => [i.id, i.value]));
   const focus = el.contains(document.activeElement) ? document.activeElement.id : null;
   el.innerHTML = html;
   ultimoHtml.set(el, html);
   for (const i of el.querySelectorAll('input[type=checkbox]')) if (spuntate.has(`${i.name}=${i.value}`)) i.checked = true;
-  for (const i of el.querySelectorAll('input[type=number]')) if (numeri[i.id] !== undefined) i.value = numeri[i.id];
+  for (const i of el.querySelectorAll('input[type=number], select')) {
+    // un menu torna alla scelta fatta solo se quell'opzione c'è ancora
+    if (numeri[i.id] !== undefined && (i.tagName !== 'SELECT' || [...i.options].some(o => o.value === numeri[i.id]))) i.value = numeri[i.id];
+  }
   if (focus) document.getElementById(focus)?.focus();
 }
 

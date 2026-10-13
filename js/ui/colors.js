@@ -8,12 +8,12 @@ export const RELAZIONE = {
   coalizione: '#8a4b1c', tregua: '#e08e3c', neutrale: '#d9ccaa'
 };
 
-export function relazioneStato(game, g, id) {
+export function relazioneStato(game, g, id, coal = null) {
   if (id === g) return 'tu';
   if (atWar(game, g, id)) return 'guerra';
   if (allied(game, g, id)) return 'alleato';
   if (game.nazioni[id].protettore === g || game.nazioni[g].protettore === id) return 'federato';
-  if (coalition(game, g).includes(id)) return 'coalizione';
+  if ((coal ?? coalition(game, g)).includes(id)) return 'coalizione';
   if (inTruce(game, g, id)) return 'tregua';
   return 'neutrale';
 }
@@ -24,12 +24,12 @@ export function cultureColor(cultura) {
   return `hsl(${h % 360}, 42%, 58%)`;
 }
 
-export function provinceFill(game, prov, modo, giocatore) {
+export function provinceFill(game, prov, modo, giocatore, coal = null) {
   switch (modo) {
     case 'cultura': return cultureColor(prov.cultura);
     case 'terreno': return TERRENO[prov.terreno];
     case 'relazioni':
-      return giocatore ? RELAZIONE[relazioneStato(game, giocatore, prov.owner)] : RELAZIONE.neutrale;
+      return giocatore ? RELAZIONE[relazioneStato(game, giocatore, prov.owner, coal)] : RELAZIONE.neutrale;
     default:
       return game.nazioni[prov.owner].colore;
   }
@@ -40,7 +40,8 @@ export function fillSignature(game, modo, giocatore) {
   let s = '';
   for (const p of Object.values(game.province)) s += `${p.owner},${p.controller};`;
   if (modo === 'relazioni' && giocatore) {
-    for (const id of game.ordine) s += relazioneStato(game, giocatore, id).slice(0, 3);
+    const coal = coalition(game, giocatore); // una volta sola: costa un controllo di confine per popolo
+    for (const id of game.ordine) s += relazioneStato(game, giocatore, id, coal).slice(0, 3);
   }
   return s;
 }

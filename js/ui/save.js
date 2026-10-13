@@ -61,7 +61,7 @@ function validateGame(s, data) {
     if (n.alleati !== undefined && (!Array.isArray(n.alleati) || !n.alleati.every(nazione))) return `popolo ${k}`;
     if (n.protettore !== undefined && n.protettore !== null && !nazione(n.protettore)) return `popolo ${k}`;
     if (n.tributo !== undefined && n.tributo !== null && !(isObj(n.tributo) && nazione(n.tributo.a) && isInt(n.tributo.fine))) return `popolo ${k}`;
-    for (const campo of ['pretesti', 'ambascerie']) {
+    for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati']) {
       if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => nazione(o) && isInt(v)))) return `popolo ${k}`;
     }
   }

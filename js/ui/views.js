@@ -76,8 +76,9 @@ export function diplomacyView(game, g) {
     .filter(id => id !== g && game.nazioni[id].vivo)
     .map(id => {
       const altro = game.nazioni[id];
-      const stato = atWar(game, g, id) ? 'guerra' : inTruce(game, g, id) ? 'tregua' : allied(game, g, id) ? 'alleato'
-        : altro.protettore === g ? 'federato' : me.protettore === id ? 'protettore' : 'pace';
+      // la tregua per ultima: un alleato o un protettore in tregua resta tale (si può rompere o uscirne)
+      const stato = atWar(game, g, id) ? 'guerra' : allied(game, g, id) ? 'alleato'
+        : altro.protettore === g ? 'federato' : me.protettore === id ? 'protettore' : inTruce(game, g, id) ? 'tregua' : 'pace';
       const province = Object.values(game.province)
         .filter(p => !checkProposal(game, g, 'ultimatum', id, { provincia: p.id }))
         .map(p => ({ id: p.id, nome: p.nome }));
@@ -109,6 +110,7 @@ export function warsView(game, g) {
       id: w.id,
       nemico: { id: nemici[0], nome: nome(game, nemici[0]) },
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
+      capofila: w[side][0] === g,
       punteggio: Math.round(scoreFor(game, w, g)),
       daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller))
         .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id) })),

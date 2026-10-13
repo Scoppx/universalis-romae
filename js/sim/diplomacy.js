@@ -1,6 +1,6 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
 import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower } from './state.js';
-import { atWar, sideOf, enemiesOf, inTruce, checkSurvival } from './war.js';
+import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
 const D = game => game.balance.diplomazia;
@@ -20,6 +20,7 @@ export function initDiplomacy(game) {
     n.tributo ??= null;
     n.pretesti ??= {};
     n.ambascerie ??= {};
+    n.ultimatumInviati ??= {};
   }
 }
 
@@ -119,6 +120,7 @@ export function checkProposal(game, from, genere, to, extra = {}) {
       if (B.tributo) return 'paga già un tributo';
       return null;
     case 'ultimatum': {
+      if (!extra.accettazione && game.day - (A.ultimatumInviati?.[to] ?? -Infinity) < 365) return 'ultimatum già inviato quest\'anno';
       const p = game.province[extra.provincia];
       if (!p || p.owner !== to || p.controller !== to) return 'provincia non valida';
       if (!p.vicini.some(v => game.province[v].owner === from)) return 'provincia non confinante';
@@ -135,6 +137,7 @@ export function propose(game, from, genere, to, extra = {}) {
   if (err) return { ok: false, motivo: err };
   const id = newId(game, 'p');
   game.proposte[id] = { id, tipo: genere, da: from, a: to, giorno: game.day, ...(genere === 'ultimatum' ? { provincia: extra.provincia } : {}) };
+  if (genere === 'ultimatum') game.nazioni[from].ultimatumInviati[to] = game.day; // al massimo uno l'anno
   log(game, { tipo: 'proposta', proposta: id, da: from, a: to, genere });
   return { ok: true, proposta: id };
 }
@@ -160,7 +163,7 @@ export function answerDiplomatic(game, p, accetta) {
     return { ok: true, accettata: false };
   }
   if (p.tipo === 'chiamata') return joinCall(game, p);
-  const err = checkProposal(game, p.da, p.tipo, p.a, p);
+  const err = checkProposal(game, p.da, p.tipo, p.a, { ...p, accettazione: true }); // il limite d'invio non vale qui
   if (err) return { ok: false, motivo: err };
   if (p.tipo === 'alleanza') {
     A.alleati.push(p.a);
@@ -177,16 +180,24 @@ export function answerDiplomatic(game, p, accetta) {
     prov.owner = p.da;
     prov.controller = p.da;
     checkSurvival(game);
+    sendStrandedHome(game);
   }
   log(game, { tipo: 'accordo', genere: p.tipo, da: p.da, a: p.a, provincia: p.provincia ?? null });
   return { ok: true, accettata: true };
 }
 
+// Si può entrare in guerra contro tutto il lato nemico solo se nessuno di loro è amico o in tregua.
+function puoEntrare(game, war, id, contro) {
+  return Boolean(id) && game.nazioni[id]?.vivo && !sideOf(war, id) &&
+    contro.every(x => !friendly(game, id, x) && !inTruce(game, id, x));
+}
+
 function joinCall(game, p) {
   const war = game.guerre[p.guerra], d = D(game);
-  if (!war || !game.nazioni[p.a].vivo || sideOf(war, p.a)) return { ok: false, motivo: 'la guerra non c\'è più' };
-  const side = sideOf(war, p.da);
+  const side = war && sideOf(war, p.da);
   if (!side) return { ok: false, motivo: 'la guerra non c\'è più' };
+  if (!allied(game, p.da, p.a) || game.nazioni[p.a].protettore) return { ok: false, motivo: 'non siete più alleati' };
+  if (!puoEntrare(game, war, p.a, enemiesOf(war, side))) return { ok: false, motivo: 'non può combattere contro un amico' };
   war[side].push(p.a);
   for (const e of enemiesOf(war, side)) changeRelation(game, p.a, e, d.guerraRelazione);
   log(game, { tipo: 'chiamata', guerra: war.id, nazione: p.a, alleato: p.da });
@@ -203,13 +214,11 @@ export function coalition(game, x) {
 export function onWarDeclared(game, war) {
   const [att] = war.attaccanti, [dif] = war.difensori;
   const d = D(game);
-  const puo = (id, contro) => id && game.nazioni[id]?.vivo && !sideOf(war, id) &&
-    !friendly(game, id, contro) && !inTruce(game, id, contro);
   const difesa = [...game.nazioni[dif].alleati, ...federatiOf(game, dif), game.nazioni[dif].protettore, ...coalition(game, att)];
-  for (const id of difesa) if (puo(id, att)) war.difensori.push(id);
-  for (const id of federatiOf(game, att)) if (puo(id, dif)) war.attaccanti.push(id);
+  for (const id of difesa) if (puoEntrare(game, war, id, war.attaccanti)) war.difensori.push(id);
+  for (const id of federatiOf(game, att)) if (puoEntrare(game, war, id, war.difensori)) war.attaccanti.push(id);
   for (const id of game.nazioni[att].alleati) {
-    if (!puo(id, dif)) continue;
+    if (!puoEntrare(game, war, id, war.difensori)) continue;
     const pid = newId(game, 'p');
     game.proposte[pid] = { id: pid, tipo: 'chiamata', guerra: war.id, da: att, a: id, giorno: game.day };
   }

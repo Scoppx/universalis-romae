@@ -94,7 +94,9 @@ export function guerreHtml(list) {
   return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
     (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere:</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
     (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere:</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
-    '<div class="comandi">' + (w.propostaInAttesa
+    '<div class="comandi">' + (!w.capofila
+      ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
+      : w.propostaInAttesa
       ? '<span class="muto">Proposta in attesa di risposta.</span>'
       : `<button data-azione="chiedi" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Chiedi le province</button>` +
         `<button data-azione="cedi" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Cedi e fai la pace</button>` +
