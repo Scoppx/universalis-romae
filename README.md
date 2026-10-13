@@ -28,7 +28,15 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Stabilità in battaglia**: con stabilità +2 o più +1 al dado, con −2 o meno −1. Una guerra senza pretesto costa 2 di stabilità: chi attacca così combatte peggio finché la stabilità non risale.
 - **Province**: il malcontento (0–10) sale con la cultura diversa, la stabilità negativa e l'accentramento. Le province straniere si assimilano in circa 15 anni; una **colonia** (denaro e 1000 uomini) raddoppia l'assimilazione e toglie 1 di malcontento. Le **fortificazioni** salgono fino al livello 3. Mappa **Malcontento** per vedere dove c'è rischio.
 - **Rivolte**: oltre 3 di malcontento ogni mese può nascere un esercito ribelle, in guerra con tutti, che assedia la provincia. Se la tiene un anno la provincia diventa indipendente: va al vicino della stessa cultura o nasce un popolo nuovo.
+- **Eventi**: carestie, oracoli, ambascerie, cambi di governo (cacciata del re, tirannide, dittatore) ed eventi storici (ratto delle Sabine, XII tavole, sacco gallico). Quando ne arriva uno il gioco si ferma e una finestra mostra le opzioni con i loro effetti. Gli altri popoli scelgono con le regole o con Jev.
+- **Popoli dormienti**: le colonie greche (Siracusa, Taranto, Neapolis…) sbarcano vicino alla data storica: chi possiede la provincia sceglie se accoglierle (cede la provincia, ne ha un vicino amico e denaro) o respingerle (nascono armate e in guerra). Lucani, Bruzi e Galli arrivano senza chiedere, con un'invasione.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
+
+## Eventi
+
+Il catalogo sta in `public/data/eventi/` (`generici`, `governo`, `storici`, `dormienti`). `npm run validate-events` lo controlla; il gioco non parte se non è valido. Ogni evento ha `id`, `titolo`, `testo`, `condizioni` (`probabilita` mensile, `anni` a.C. `[da, a]`, `unaVolta` `partita`/`popolo`/`false`, `popoli`, `culture`, `governi`, `provincia`, `minProvince`, `maxProvince`, `stabilitaMin`, `stabilitaMax`, `guerra`, `altro` con `preferiti`, `culture`, `soloPreferiti`), `opzioni` (da 1 a 4, ciascuna con `id`, `testo` ed `effetti`), la `regola` scelta dall'IA a regole e, se serve, `storico: true` (compare nelle notizie di tutti).
+
+Effetti: `stabilita`, `tesoroMesi` (mesi di entrate), `uominiQuota` (quota della riserva massima), `infamia`, `relazione`, `pretesto`, `pretestoAltro`, `guerra` (questi quattro sull'"altro"), `cambia_governo`, `slider` (es. `{ "societa": 1 }`), `crea_popolo` (`{ "popolo", "esercito", "guerra", "relazione" }`, solo per i dormienti).
 
 ## Struttura
 
