@@ -2,7 +2,7 @@
 import { declareWar, proposePeace, answerProposal } from './war.js';
 import { orderMove, recruit, mergeArmies, splitArmy } from './armies.js';
 import { raiseStability } from './economy.js';
-import { embassy } from './diplomacy.js';
+import { embassy, propose, breakAlliance } from './diplomacy.js';
 
 export function applyCommand(game, cmd) {
   switch (cmd.tipo) {
@@ -21,6 +21,10 @@ export function applyCommand(game, cmd) {
       return proposePeace(game, cmd.nazione, cmd.guerra, cmd.termini);
     case 'rispondi':
       return answerProposal(game, cmd.nazione, cmd.proposta, cmd.accetta);
+    case 'proponi':
+      return propose(game, cmd.nazione, cmd.genere, cmd.verso, { provincia: cmd.provincia });
+    case 'rompi_alleanza':
+      return breakAlliance(game, cmd.nazione, cmd.con);
     case 'ambasceria':
       return embassy(game, cmd.nazione, cmd.verso);
     case 'unisci':

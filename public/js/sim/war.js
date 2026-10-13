@@ -1,5 +1,6 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
 import { newId, log, bordersNation, provincesOf, sumOf } from './state.js';
+import { friendly, answerDiplomatic } from './diplomacy.js';
 
 export function sideOf(war, id) {
   if (war.attaccanti.includes(id)) return 'attaccanti';
@@ -31,12 +32,21 @@ export function inTruce(game, a, b) {
   return (game.nazioni[a].tregue[b] ?? -1) > game.day;
 }
 
-export function declareWar(game, attacker, defender) {
+export function checkWar(game, attacker, defender) {
   const A = game.nazioni[attacker], D = game.nazioni[defender];
-  if (!A?.vivo || !D?.vivo || attacker === defender) return { ok: false, motivo: 'nazione non valida' };
-  if (atWar(game, attacker, defender)) return { ok: false, motivo: 'già in guerra' };
-  if (inTruce(game, attacker, defender)) return { ok: false, motivo: 'tregua in corso' };
-  if (!bordersNation(game, attacker, defender)) return { ok: false, motivo: 'nessun confine' };
+  if (!A?.vivo || !D?.vivo || attacker === defender) return 'nazione non valida';
+  if (A.protettore) return 'un federato non dichiara guerre';
+  if (friendly(game, attacker, defender)) return 'siete alleati';
+  if (atWar(game, attacker, defender)) return 'già in guerra';
+  if (inTruce(game, attacker, defender)) return 'tregua in corso';
+  if (!bordersNation(game, attacker, defender)) return 'nessun confine';
+  return null;
+}
+
+export function declareWar(game, attacker, defender) {
+  const err = checkWar(game, attacker, defender);
+  if (err) return { ok: false, motivo: err };
+  const A = game.nazioni[attacker];
   if (!hasPretext(game, attacker, defender)) A.stabilita = Math.max(-3, A.stabilita - game.balance.guerra.senzaPretesto);
   const id = newId(game, 'g');
   game.guerre[id] = { id, attaccanti: [attacker], difensori: [defender], inizio: game.day, battaglie: 0 };
@@ -179,6 +189,7 @@ export function answerProposal(game, nationId, propId, accetta) {
   const p = game.proposte[propId];
   if (!p || p.a !== nationId) return { ok: false, motivo: 'proposta inesistente' };
   delete game.proposte[propId];
+  if (p.tipo !== 'pace') return answerDiplomatic(game, p, accetta);
   if (!accetta) {
     log(game, { tipo: 'rifiutata', proposta: propId, da: p.da, a: p.a });
     return { ok: true, accettata: false };

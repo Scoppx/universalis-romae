@@ -4,7 +4,8 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy } from '../public/js/sim/diplomacy.js';
+import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
   const g = makeGame();
@@ -46,4 +47,65 @@ test('pretesto da un rifiuto: vale fino alla scadenza', () => {
   assert.equal(hasPretext(g, 'roma', 'volsci'), true);
   g.day += 11;
   assert.equal(hasPretext(g, 'roma', 'volsci'), false);
+});
+
+const proponi = (g, da, genere, verso, extra = {}) => applyCommand(g, { tipo: 'proponi', nazione: da, genere, verso, ...extra });
+const rispondi = (g, chi, proposta, accetta) => applyCommand(g, { tipo: 'rispondi', nazione: chi, proposta, accetta });
+
+test('alleanza: proposta, accettazione, rottura', () => {
+  const g = makeGame();
+  const { proposta } = proponi(g, 'roma', 'alleanza', 'latini');
+  assert.equal(proponi(g, 'roma', 'alleanza', 'latini').motivo, 'proposta già in attesa');
+  assert.deepEqual(rispondi(g, 'latini', proposta, true), { ok: true, accettata: true });
+  assert.equal(allied(g, 'roma', 'latini'), true);
+  assert.equal(checkProposal(g, 'roma', 'alleanza', 'latini'), 'siete già alleati');
+  assert.equal(applyCommand(g, { tipo: 'dichiara_guerra', nazione: 'roma', contro: 'latini' }).motivo, 'siete alleati');
+  const prima = relation(g, 'roma', 'latini');
+  assert.equal(applyCommand(g, { tipo: 'rompi_alleanza', nazione: 'roma', con: 'latini' }).ok, true);
+  assert.equal(allied(g, 'latini', 'roma'), false);
+  assert.equal(relation(g, 'roma', 'latini'), prima - 25);
+});
+
+test('foedus: solo a un vicino molto più debole e amico; il federato non dichiara guerre', () => {
+  const g = makeGame();
+  assert.equal(checkProposal(g, 'roma', 'foedus', 'volsci'), 'non abbastanza più forte');
+  createArmy(g, 'roma', 'a', 20000, 0);
+  assert.equal(checkProposal(g, 'roma', 'foedus', 'volsci'), 'relazioni troppo basse');
+  changeRelation(g, 'roma', 'volsci', 60);
+  const { proposta } = proponi(g, 'roma', 'foedus', 'volsci');
+  rispondi(g, 'volsci', proposta, true);
+  assert.equal(g.nazioni.volsci.protettore, 'roma');
+  assert.equal(applyCommand(g, { tipo: 'dichiara_guerra', nazione: 'volsci', contro: 'siculi' }).motivo, 'un federato non dichiara guerre');
+  assert.equal(checkProposal(g, 'volsci', 'alleanza', 'siculi'), 'un federato non stringe alleanze');
+  g.nazioni.volsci.uomini = 1000;
+  while (g.day !== 10) advanceDay(g); // 1 maggio: reclute del mese (75), il 20% (15) va a Roma
+  assert.equal(g.nazioni.volsci.uomini, 1000 + 75 - 15);
+});
+
+test('tributo: rifiutato dà un pretesto, accettato si paga ogni mese', () => {
+  const g = makeGame();
+  const p1 = proponi(g, 'roma', 'tributo', 'volsci').proposta;
+  rispondi(g, 'volsci', p1, false);
+  assert.equal(g.nazioni.roma.pretesti.volsci, g.day + 5 * 365);
+  const p2 = proponi(g, 'roma', 'tributo', 'latini').proposta;
+  rispondi(g, 'latini', p2, true);
+  assert.deepEqual(g.nazioni.latini.tributo, { a: 'roma', fine: g.day + 10 * 365 });
+  const tr = g.nazioni.roma.tesoro, tl = g.nazioni.latini.tesoro;
+  monthlyDiplomacy(g); // il 20% delle entrate latine (5 × 0,1 = 0,5) passa a Roma
+  assert.ok(Math.abs(g.nazioni.roma.tesoro - tr - 0.1) < 1e-9);
+  assert.ok(Math.abs(tl - g.nazioni.latini.tesoro - 0.1) < 1e-9);
+});
+
+test('ultimatum: provincia ceduta con infamia; non vale più se la provincia cambia padrone', () => {
+  const g = makeGame();
+  assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'a' }), 'provincia non valida');
+  const p = proponi(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }).proposta;
+  rispondi(g, 'latini', p, true);
+  assert.equal(g.province.e.owner, 'roma');
+  assert.ok(g.nazioni.roma.infamia >= 2);
+  assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'd' }), 'è la sua ultima provincia');
+  const q = proponi(g, 'roma', 'ultimatum', 'volsci', { provincia: 'c' }).proposta;
+  g.province.c.owner = 'latini';
+  assert.equal(rispondi(g, 'volsci', q, true).ok, false);
+  assert.equal(g.province.c.owner, 'latini');
 });
