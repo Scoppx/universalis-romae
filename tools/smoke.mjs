@@ -321,6 +321,14 @@ try {
   check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.relazioni.veio) === 25, 'ambasceria: relazione con Veio a 25');
   await page.click('[data-azione="alleanza"][data-id="lega_latina"]');
   check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.proposte).some(p => p.tipo === 'alleanza' && p.a === 'lega_latina')), 'alleanza proposta ai Latini');
+  const seconda = await page.evaluate(() => document.querySelector('#ult-lega_latina').options[1].value);
+  await page.selectOption('#ult-lega_latina', seconda);
+  await page.evaluate(async () => {
+    const { changeRelation } = await import('/js/sim/diplomacy.js');
+    changeRelation(window.universalis.ui.session.game, 'roma', 'lega_latina', 3); // il pannello si ridisegna
+    window.universalis.avanza(0);
+  });
+  check(await page.evaluate(() => document.querySelector('#ult-lega_latina').value) === seconda, 'il menu dell\'ultimatum resta sulla provincia scelta');
   await page.evaluate(async () => {
     const { propose } = await import('/js/sim/diplomacy.js');
     const g = window.universalis.ui.session.game;

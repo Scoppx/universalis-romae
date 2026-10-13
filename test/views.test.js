@@ -205,3 +205,25 @@ test('la proposta di foedus avverte che non si torna indietro', async () => {
   propose(g, 'roma', 'foedus', 'volsci');
   assert.match(V.pendingProposals(g, 'volsci')[0].testo, /uscirne costerà/);
 });
+
+test('revisione: alleato in tregua resta "alleato" (si può rompere), e la mappa delle relazioni calcola la coalizione una volta', async () => {
+  const { relazioneStato } = await import('../public/js/ui/colors.js');
+  const { coalition } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  g.nazioni.roma.alleati = ['latini']; g.nazioni.latini.alleati = ['roma'];
+  g.nazioni.roma.tregue.latini = 9999; g.nazioni.latini.tregue.roma = 9999;
+  const d = V.diplomacyView(g, 'roma');
+  assert.equal(d[0].stato, 'alleato');
+  assert.equal(d[0].azioni.rompi, null);
+  g.nazioni.roma.infamia = 30;
+  const coal = coalition(g, 'roma');
+  for (const id of g.ordine) assert.equal(relazioneStato(g, 'roma', id, coal), relazioneStato(g, 'roma', id));
+});
+
+test('revisione: il modulo di pace è solo per il capofila', () => {
+  const g = makeGame();
+  g.nazioni.volsci.alleati = ['siculi']; g.nazioni.siculi.alleati = ['volsci'];
+  declareWar(g, 'roma', 'volsci');
+  assert.equal(V.warsView(g, 'volsci')[0].capofila, true);
+  assert.equal(V.warsView(g, 'siculi')[0].capofila, false);
+});

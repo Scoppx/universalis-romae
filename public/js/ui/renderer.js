@@ -1,6 +1,7 @@
 // Disegno della mappa a due strati. La base (mare, rilievo, popoli, confini, acque, nomi) sta in una tela nascosta
 // e si ridisegna solo quando cambiano vista o confini; selezione, percorsi e soldatini a ogni fotogramma.
 import { provinceFill, fillSignature } from './colors.js';
+import { coalition } from '../sim/diplomacy.js';
 import { atWar } from '../sim/war.js';
 import { toScreen } from './camera.js';
 import { drawSoldier, drawLabel, drawArrow } from './soldier.js';
@@ -78,7 +79,8 @@ export function createRenderer(canvas, map, { onReady } = {}) {
     for (const d of decor) if (d.tipo === 'incognita') { g.fillStyle = 'rgba(120, 110, 95, 0.45)'; g.fill(d.path); }
     const provs = Object.values(game.province);
     g.globalAlpha = 0.42;
-    for (const p of provs) { g.fillStyle = provinceFill(game, p, modo, giocatore); g.fill(paths[p.id]); }
+    const coal = modo === 'relazioni' && giocatore ? coalition(game, giocatore) : [];
+    for (const p of provs) { g.fillStyle = provinceFill(game, p, modo, giocatore, coal); g.fill(paths[p.id]); }
     g.globalAlpha = 0.8;
     for (const p of provs) if (p.controller !== p.owner) { g.fillStyle = stripe(game.nazioni[p.controller].colore); g.fill(paths[p.id]); }
     g.globalAlpha = 1;

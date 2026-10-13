@@ -103,6 +103,7 @@ test('ultimatum: provincia ceduta con infamia; non vale più se la provincia cam
   rispondi(g, 'latini', p, true);
   assert.equal(g.province.e.owner, 'roma');
   assert.ok(g.nazioni.roma.infamia >= 2);
+  g.day += 366; // un ultimatum l'anno per vicino
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'd' }), 'è la sua ultima provincia');
   const q = proponi(g, 'roma', 'ultimatum', 'volsci', { provincia: 'c' }).proposta;
   g.province.c.owner = 'latini';
@@ -198,4 +199,71 @@ test('uscita dal foedus: costa stabilità e relazione, il protettore ha un prete
   g.nazioni.volsci.protettore = 'roma';
   declareWar(g, 'siculi', 'volsci');
   assert.equal(checkLeaveFoedus(g, 'volsci'), 'non durante una guerra');
+});
+
+test('revisione: nessuna chiamata né ingresso contro un amico dell\'intero lato nemico', () => {
+  const g = makeGame();
+  allea(g, 'volsci', 'latini');
+  allea(g, 'roma', 'siculi');
+  allea(g, 'siculi', 'latini');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.deepEqual(g.guerre[guerra].difensori, ['volsci', 'latini']);
+  assert.equal(Object.values(g.proposte).filter(p => p.tipo === 'chiamata').length, 0);
+  // una chiamata vecchia, arrivata quando i siculi non erano ancora amici dei latini: non vale
+  const pid = 'p99';
+  g.proposte[pid] = { id: pid, tipo: 'chiamata', guerra, da: 'roma', a: 'siculi', giorno: g.day };
+  assert.equal(rispondi(g, 'siculi', pid, true).ok, false);
+  assert.deepEqual(g.guerre[guerra].attaccanti, ['roma']);
+});
+
+test('revisione: una chiamata da chi non è più alleato non vale', () => {
+  const g = makeGame();
+  allea(g, 'roma', 'siculi');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const ch = Object.values(g.proposte).find(p => p.tipo === 'chiamata');
+  g.nazioni.roma.alleati = []; g.nazioni.siculi.alleati = [];
+  assert.equal(rispondi(g, 'siculi', ch.id, true).ok, false);
+});
+
+test('revisione: un\'eliminazione non cancella le proposte che non la riguardano', async () => {
+  const { makePeace } = await import('../public/js/sim/war.js');
+  const g = makeGame();
+  const { proposta } = proponi(g, 'roma', 'alleanza', 'latini');
+  const { guerra } = declareWar(g, 'volsci', 'siculi');
+  g.province.g.controller = 'volsci';
+  makePeace(g, guerra, 'volsci', { province: ['g'] });
+  assert.equal(g.nazioni.siculi.vivo, false);
+  assert.ok(g.proposte[proposta]);
+});
+
+test('revisione: solo il capofila firma la pace', async () => {
+  const { proposePeace } = await import('../public/js/sim/war.js');
+  const g = makeGame();
+  allea(g, 'volsci', 'siculi');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.equal(proposePeace(g, 'siculi', guerra, { ricevente: 'siculi', province: [] }).motivo, 'solo il capofila firma la pace');
+  assert.equal(proposePeace(g, 'volsci', guerra, { ricevente: 'volsci', province: [] }).ok, true);
+});
+
+test('revisione: una pace non rimanda a casa gli eserciti alleati in terra amica', async () => {
+  const { makePeace } = await import('../public/js/sim/war.js');
+  const g = makeGame();
+  allea(g, 'roma', 'latini');
+  const l = createArmy(g, 'latini', 'b', 1000, 0);
+  const { guerra } = declareWar(g, 'volsci', 'siculi');
+  makePeace(g, guerra, 'volsci', { province: [] });
+  assert.equal(l.prov, 'b');
+});
+
+test('revisione: ultimatum al massimo uno l\'anno per vicino; chi cede ritira l\'esercito', () => {
+  const g = makeGame();
+  const [lat] = Object.values(g.eserciti).filter(a => a.owner === 'latini');
+  lat.prov = 'e';
+  const p = proponi(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }).proposta;
+  rispondi(g, 'latini', p, true);
+  assert.equal(lat.prov, 'd'); // torna nella capitale
+  g.province.e.owner = 'latini'; g.province.e.controller = 'latini';
+  assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), 'ultimatum già inviato quest\'anno');
+  g.day += 366;
+  assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), null);
 });
