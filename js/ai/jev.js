@@ -1,7 +1,8 @@
 // IA con Jev: le decisioni strategiche si chiedono a Jev in modo asincrono e diventano comandi quando
 // la risposta arriva. Il lavoro di fino resta alle regole. Se Jev non risponde, decidono le regole.
 import { isReviewDay, peaceProposals, warDecision, answerProposals, routine, legalWarTargets, diplomacyInitiatives, isSliderDay, sliderDecision, colonyDecision } from './rules.js';
-import { buildReview, buildProposalQuestion, interpretChoice, buildSliderQuestion, sampleChoice } from './questions.js';
+import { buildReview, buildProposalQuestion, interpretChoice, buildSliderQuestion, sampleChoice, buildEventQuestion } from './questions.js';
+import { eventDef } from '../sim/events.js';
 import { sideOf } from '../sim/war.js';
 
 const inGuerra = (game, id) => Object.values(game.guerre).some(w => sideOf(w, id));
@@ -51,6 +52,15 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
         record.domande.push({ domanda, scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
         continue;
       }
+      if (meta.tipo === 'evento') {
+        const e = game.eventi[meta.evento];
+        if (!e) { record.domande.push({ domanda: 'evento', scelta: null, fonte: 'superata', probabilita: null }); continue; }
+        const v = usabile ? sampleChoice(ans, meta, job.seq * 100003 + job.giorno) : null;
+        const opzione = v ? v.valore : eventDef(game, e.evento).regola;
+        record.comandi.push({ tipo: 'scegli', nazione: id, evento: meta.evento, opzione });
+        record.domande.push({ domanda: 'evento', scelta: opzione, fonte: v ? 'jev' : 'regola', probabilita: v ? v.probabilita : null });
+        continue;
+      }
       if (meta.tipo === 'slider') {
         // riforma: scelta di gusto, estratta dalle probabilità con una chiave fissa (il rigioco legge i comandi dal registro)
         const v = usabile ? sampleChoice(ans, meta, job.seq * 100003 + job.giorno) : null;
@@ -94,6 +104,12 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
       if (p.a !== id || chieste.has(p.id)) continue;
       chieste.add(p.id);
       const q = buildProposalQuestion(game, p.id, caratteri[id] ?? '');
+      enqueue({ nazione: id, giorno: game.day, req: { state: q.state, questions: q.questions }, meta: q.meta });
+    }
+    for (const e of Object.values(game.eventi)) {
+      if (e.nazione !== id || chieste.has(e.id) || !eventDef(game, e.evento)) continue; // un evento tolto dal catalogo si scarta a fine giornata
+      chieste.add(e.id);
+      const q = buildEventQuestion(game, e.id, caratteri[id] ?? '');
       enqueue({ nazione: id, giorno: game.day, req: { state: q.state, questions: q.questions }, meta: q.meta });
     }
     if (isReviewDay(game, id)) {
