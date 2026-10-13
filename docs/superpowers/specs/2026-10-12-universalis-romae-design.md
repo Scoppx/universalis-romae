@@ -288,7 +288,7 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 3. Jev e pannello Consiglio.
 4a. Diplomazia (sezione 11).
 4b. Governo, slider, cultura, rivolte, colonie, fortificazioni (sezione 12).
-5. Eventi e popoli dormienti.
+5. Eventi e popoli dormienti (sezione 13).
 6. Taratura della difficoltà.
 
 I valori numerici iniziali (perdite, soglie, costi) stanno in `public/data/balance.json`
@@ -392,3 +392,28 @@ fortificazioni: sezione 3).
   quello della partita, così il rigioco resta identico).
 - **Interfaccia**: scheda Governo con slider e bottoni (motivo se spenti); scheda provincia con malcontento,
   assimilazione, colonia e fortificazione; modalità mappa "malcontento"; notizie di rivolte e indipendenze.
+
+## 13. Tappa 5: eventi e popoli dormienti (aggiunta del 2026-10-13)
+
+- **Catalogo** in `public/data/eventi/{generici,governo,storici,dormienti}.json`, circa 35 eventi, controllato da
+  un validatore (`tools/validate-events.js` e un test) prima di ogni partita. Le definizioni non si salvano: come il
+  bilanciamento, al caricamento vale il catalogo corrente.
+- **Condizioni**: anni a.C. (da, a), probabilità mensile, una volta per partita o per popolo, popoli, culture,
+  governi, provincia posseduta e controllata, numero di province, stabilità minima e massima, in guerra sì/no, e
+  un "altro" popolo confinante (con un elenco di preferiti) a cui gli effetti possono riferirsi.
+- **Effetti**: `stabilita`, `tesoroMesi` (mesi di entrate), `uominiQuota` (quota della riserva massima), `infamia`,
+  `relazione` (con l'altro), `pretesto` (noi contro l'altro), `pretestoAltro` (l'altro contro di noi), `guerra`
+  (l'altro ci attacca), `cambia_governo`, `slider` (sposta una leva senza contare l'intervallo), `crea_popolo`.
+- **Svolgimento**: il primo del mese, per ogni popolo vivo al più un evento nuovo (in ordine di id); l'evento resta
+  in attesa finché il popolo sceglie. Il giocatore lo vede in una finestra che mette in pausa; le regole scelgono
+  l'opzione indicata nell'evento; Jev sceglie estraendo dalle probabilità con temperatura 0,8, vedendo per ogni
+  opzione il testo e un riassunto degli effetti scritto dal codice. Un evento non scelto entro 60 giorni prende
+  l'opzione delle regole.
+- **Popoli dormienti**: i 13 popoli dormienti sono salvati nello stato della partita e si risvegliano con
+  `crea_popolo`, che prende la loro provincia capitale dal padrone, crea il popolo con il suo esercito (multiplo di
+  quello iniziale) e può dichiarare guerra al vecchio padrone. Le colonie greche arrivano con un evento per chi
+  possiede la provincia: accoglierle (cede la provincia, relazioni buone, denaro dal commercio) o respingerle (la
+  colonia nasce più armata e in guerra). Galli, Lucani e Bruzi arrivano senza scelta, con un'invasione armata.
+  Neapolis nasce ad Acerrae (Cuma ha una sola provincia, che non può perdere per un evento). Un evento che
+  porterebbe via l'ultima provincia di un popolo non scatta.
+- **Notizie**: nascite di popoli e eventi storici per tutti; i propri eventi li si vede nella finestra.
