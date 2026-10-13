@@ -1,6 +1,7 @@
 // Colori delle province per modalità della mappa.
 import { atWar, inTruce } from '../sim/war.js';
 import { allied, coalition } from '../sim/diplomacy.js';
+import { malcontent } from '../sim/culture.js';
 
 export const TERRENO = { pianura: '#c8cf8f', collina: '#b9a56d', montagna: '#8d7d6a', palude: '#7d9a86' };
 export const RELAZIONE = {
@@ -28,6 +29,7 @@ export function provinceFill(game, prov, modo, giocatore, coal = null) {
   switch (modo) {
     case 'cultura': return cultureColor(prov.cultura);
     case 'terreno': return TERRENO[prov.terreno];
+    case 'malcontento': return `hsl(${Math.round(120 - 12 * malcontent(game, prov.id))}, 55%, 50%)`;
     case 'relazioni':
       return giocatore ? RELAZIONE[relazioneStato(game, giocatore, prov.owner, coal)] : RELAZIONE.neutrale;
     default:
@@ -38,7 +40,10 @@ export function provinceFill(game, prov, modo, giocatore, coal = null) {
 // Tutto ciò da cui dipendono i colori della mappa: se non cambia, la base disegnata resta valida.
 export function fillSignature(game, modo, giocatore) {
   let s = '';
-  for (const p of Object.values(game.province)) s += `${p.owner},${p.controller};`;
+  for (const p of Object.values(game.province)) {
+    s += `${p.owner},${p.controller},${p.cultura};`;
+    if (modo === 'malcontento') s += `${malcontent(game, p.id)};`;
+  }
   if (modo === 'relazioni' && giocatore) {
     const coal = coalition(game, giocatore); // una volta sola: costa un controllo di confine per popolo
     for (const id of game.ordine) s += relazioneStato(game, giocatore, id, coal).slice(0, 3);

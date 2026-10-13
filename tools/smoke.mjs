@@ -346,6 +346,38 @@ try {
   await page.click('[data-modo="relazioni"]');
   await page.screenshot({ path: 'smoke-diplomazia.png' });
 
+  // --- governo e cultura (tappa 4b)
+  await page.click('[data-scheda="governo"]');
+  await page.click('[data-azione="slider"][data-quale="guerra"][data-verso="1"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.slider.guerra) === 1, 'riforma: dottrina +1');
+  check(await page.isDisabled('[data-azione="slider"][data-quale="societa"][data-verso="1"]'), 'riforma successiva spenta');
+  check((await page.getAttribute('[data-azione="slider"][data-quale="societa"][data-verso="1"]', 'title')).includes('anni'), 'motivo: anni alla prossima riforma');
+  await page.evaluate(() => {
+    const g = window.universalis.ui.session.game;
+    g.province.roma.cultura = 'etrusca';
+    g.nazioni.roma.tesoro = 200; g.nazioni.roma.uomini = 5000;
+    window.universalis.ui.selezione.provincia = 'roma';
+    window.universalis.avanza(0);
+  });
+  check((await page.textContent('#provincia')).includes('Malcontento'), 'provincia: malcontento mostrato');
+  await page.click('[data-azione="colonia"][data-id="roma"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.province.roma.colonia) === 'roma', 'colonia fondata');
+  const fortPrima = await page.evaluate(() => window.universalis.ui.session.game.province.roma.fort);
+  await page.click('[data-azione="fortifica"][data-id="roma"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.province.roma.fort) === fortPrima + 1, 'fortificazione salita');
+  await page.evaluate(async () => {
+    const { ensureRebels } = await import('/js/sim/culture.js');
+    const { createArmy } = await import('/js/sim/state.js');
+    const g = window.universalis.ui.session.game;
+    ensureRebels(g);
+    createArmy(g, 'ribelli', 'veio', 800, 0);
+    window.universalis.avanza(0);
+  });
+  await page.click('[data-modo="malcontento"]');
+  await wait(300);
+  check(await page.evaluate(() => window.universalis.markers().some(m => m.owner === 'ribelli')), 'esercito ribelle disegnato');
+  await page.screenshot({ path: 'smoke-malcontento.png' });
+
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
 } catch (e) {
