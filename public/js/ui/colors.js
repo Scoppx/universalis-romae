@@ -24,3 +24,13 @@ export function provinceFill(game, prov, modo, giocatore) {
       return game.nazioni[prov.owner].colore;
   }
 }
+
+// Tutto ciò da cui dipendono i colori della mappa: se non cambia, la base disegnata resta valida.
+export function fillSignature(game, modo, giocatore) {
+  let s = '';
+  for (const p of Object.values(game.province)) s += `${p.owner},${p.controller};`;
+  if (modo === 'relazioni' && giocatore) {
+    for (const id of game.ordine) s += atWar(game, giocatore, id) ? 'g' : inTruce(game, giocatore, id) ? 't' : '-';
+  }
+  return s;
+}

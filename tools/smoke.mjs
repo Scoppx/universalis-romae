@@ -79,8 +79,12 @@ try {
   check(giorno >= 10, `il tempo scorre (giorno ${giorno})`);
   await wait(300);
   check(await page.evaluate(() => window.universalis.ui.session.game.day) === giorno, 'la pausa ferma il tempo');
-  await page.click('[data-modo="terreno"]');
-  check(await page.evaluate(() => window.universalis.ui.modo) === 'terreno', 'modalità terreno');
+  await page.click('[data-modo="cultura"]');
+  check(await page.evaluate(() => window.universalis.ui.modo) === 'cultura', 'modalità cultura');
+  check((await page.locator('[data-modo="terreno"]').count()) === 0, 'la modalità terreno non c\'è più');
+  await page.waitForFunction(() => window.universalis.rilievoPronto(), null, { timeout: 10000 }).catch(() => {});
+  check(await page.evaluate(() => window.universalis.rilievoPronto()), 'rilievo caricato e disegnato');
+  check(await page.evaluate(() => window.universalis.markers().length > 30), 'un soldatino per ogni esercito');
   await page.click('[data-modo="politica"]');
 
   // --- pannelli, eserciti e comandi (task 7)
@@ -98,11 +102,11 @@ try {
   check((await page.textContent('#scheda')).includes('Contro Veio'), 'guerra a Veio nella scheda Guerre');
   await page.click('[data-scheda="eserciti"]');
   await page.click('#scheda [data-azione="seleziona-esercito"]');
-  check(await page.evaluate(() => Boolean(window.universalis.ui.selezione.esercito)), 'esercito selezionato');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length > 0), 'esercito selezionato');
   await clickProvince('veio', 'right');
   check(await page.evaluate(() => {
     const u = window.universalis.ui;
-    return u.session.game.eserciti[u.selezione.esercito].percorso.at(-1) === 'veio';
+    return u.session.game.eserciti[u.selezione.eserciti[0]].percorso.at(-1) === 'veio';
   }), 'clic destro su Veio: esercito in marcia');
   await clickProvince('tarquinia', 'right'); // visibile e non in guerra con Roma
   check((await page.textContent('#avviso')) === 'nessun percorso', 'destinazione irraggiungibile: avviso');
@@ -121,10 +125,10 @@ try {
   // esercito selezionato che scompare
   await page.evaluate(() => {
     const u = window.universalis.ui;
-    delete u.session.game.eserciti[u.selezione.esercito];
+    delete u.session.game.eserciti[u.selezione.eserciti[0]];
     window.universalis.avanza(1);
   });
-  check(await page.evaluate(() => window.universalis.ui.selezione.esercito === null), 'esercito scomparso: selezione azzerata');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length === 0), 'esercito scomparso: selezione azzerata');
 
   // --- revisione finale: clic durante i ridisegni, errore di disegno che non ferma il ciclo
   await page.click('[data-scheda="eserciti"]');
@@ -138,7 +142,7 @@ try {
   await page.click('#b-pausa');
   let presi = 0;
   for (let i = 0; i < 8; i++) {
-    await page.evaluate(() => { window.universalis.ui.selezione.esercito = null; });
+    await page.evaluate(() => { window.universalis.ui.selezione.eserciti = []; });
     const b = await page.evaluate(() => {
       const r = document.querySelector('#scheda [data-azione="seleziona-esercito"]').getBoundingClientRect();
       return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
@@ -147,7 +151,7 @@ try {
     await page.mouse.down();
     await wait(120);
     await page.mouse.up();
-    if (await page.evaluate(() => window.universalis.ui.selezione.esercito !== null)) presi++;
+    if (await page.evaluate(() => window.universalis.ui.selezione.eserciti.length > 0)) presi++;
   }
   await page.click('#b-pausa');
   check(presi === 8, `clic sui bottoni col gioco in corsa: ${presi}/8`);
@@ -246,6 +250,60 @@ try {
   check(await opzione(p2, 'jev'), 'senza chiave: modalità Jev disattivata');
   await p2.close();
   senza.close();
+
+  // --- soldatini: selezione, rettangolo, unisci, dividi, marcia (tappa 2b)
+  await page.goto(url);
+  await page.waitForSelector('#inizio-lista .carta');
+  await page.click('[data-popolo="roma"]');
+  await page.selectOption('#inizio-ia', 'regole');
+  await page.click('#inizio-via');
+  await page.waitForSelector('#barra:not([hidden])');
+  await page.evaluate(async () => {
+    const { createArmy } = await import('/js/sim/state.js');
+    const g = window.universalis.ui.session.game;
+    createArmy(g, 'roma', 'roma', 800, 0);
+    window.universalis.avanza(0);
+  });
+  await page.waitForFunction(n => window.universalis.markers().filter(m => m.owner === 'roma').length >= n, 2);
+  const box = await page.locator('#mappa').boundingBox();
+  const mie = await page.evaluate(() => window.universalis.markers().filter(m => m.owner === 'roma'));
+  await page.mouse.click(box.x + mie[0].x, box.y + mie[0].y);
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length === 1), 'clic sul soldatino: selezionato');
+  await page.keyboard.down('Shift');
+  await page.mouse.click(box.x + mie[1].x, box.y + mie[1].y);
+  await page.keyboard.up('Shift');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length === 2), 'Maiuscolo+clic: due selezionati');
+  await page.keyboard.press('Escape');
+  const xs = mie.map(m => m.x), ys = mie.map(m => m.y);
+  await page.keyboard.down('Shift');
+  await page.mouse.move(box.x + Math.min(...xs) - 25, box.y + Math.min(...ys) - 25);
+  await page.mouse.down();
+  await page.mouse.move(box.x + Math.max(...xs) + 25, box.y + Math.max(...ys) + 25, { steps: 6 });
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length >= 2), 'Maiuscolo+trascina: rettangolo seleziona');
+  await page.click('[data-scheda="eserciti"]');
+  await page.click('[data-azione="unisci"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(e => e.owner === 'roma').length === 1), 'unisci: un solo esercito');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length === 1), 'dopo l\'unione resta selezionato');
+  await page.click('[data-azione="dividi"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(e => e.owner === 'roma').length === 2), 'dividi: due eserciti');
+  await page.evaluate(async () => {
+    const { declareWar } = await import('/js/sim/war.js');
+    const g = window.universalis.ui.session.game;
+    g.proposte = {}; // una proposta al giocatore fermerebbe il tempo
+    declareWar(g, 'roma', 'veio');
+  });
+  await clickProvince('veio', 'right');
+  check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.every(id => window.universalis.ui.session.game.eserciti[id].percorso.at(-1) === 'veio')), 'clic destro: tutti i selezionati in marcia');
+  const xPrima = await page.evaluate(() => window.universalis.markers().find(m => m.id === window.universalis.ui.selezione.eserciti[0]).x);
+  await page.keyboard.press('1');
+  await page.click('#b-pausa');
+  await wait(1500);
+  await page.click('#b-pausa');
+  const xDopo = await page.evaluate(() => window.universalis.markers().find(m => m.id === window.universalis.ui.selezione.eserciti[0]).x);
+  check(Math.abs(xDopo - xPrima) > 1, `il soldatino cammina (${xPrima.toFixed(1)} → ${xDopo.toFixed(1)})`);
+  await page.screenshot({ path: 'smoke-truppe.png' });
 
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });

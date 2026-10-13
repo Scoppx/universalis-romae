@@ -56,3 +56,25 @@ test('la partita reale si crea', () => {
   assert.equal(g.ordine.length, 38);
   assert.equal(Object.keys(g.eserciti).length, 38);
 });
+
+const distPunto = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+
+test('fiumi e laghi: il Tevere passa da Roma, laghi a nord', () => {
+  assert.ok(map.fiumi.length >= 20);
+  assert.ok(map.fiumi.some(f => f.punti.some(p => distPunto(p, byId.roma.centro) < 20)), 'nessun fiume vicino a Roma');
+  assert.ok(map.laghi.length >= 3);
+  assert.ok(map.laghi.some(l => l[0].every(([, y]) => y < 350)), 'nessun lago al nord');
+});
+
+test('confini condivisi: uno o più tratti per ogni coppia di vicini sulla stessa terra', () => {
+  const coppie = new Set(map.confini.map(c => [c.a, c.b].sort().join('|')));
+  for (const p of map.province) for (const v of p.vicini) {
+    if (map.stretti.some(([x, y]) => [x, y].sort().join('|') === [p.id, v].sort().join('|'))) continue;
+    assert.ok(coppie.has([p.id, v].sort().join('|')), `${p.id}-${v} senza confine`);
+  }
+  assert.ok(map.confini.every(c => c.punti.length >= 2));
+});
+
+test('confini irregolari: le linee fra province non sono più segmenti dritti', () => {
+  assert.ok(map.confini.some(c => c.punti.length > 4));
+});

@@ -6,14 +6,17 @@ export function createClock() {
   return { velocita: 3, pausa: true, accumulo: 0, ultimo: null };
 }
 
+// La parte di giorno già trascorsa resta la stessa a ogni velocità: niente balzi dei soldatini.
 export function setSpeed(clock, v) {
-  clock.velocita = Math.max(1, Math.min(5, v));
+  const nuova = Math.max(1, Math.min(5, v));
+  clock.accumulo *= SPEEDS[nuova - 1] / SPEEDS[clock.velocita - 1];
+  clock.velocita = nuova;
 }
 
+// In pausa la parte di giorno trascorsa si conserva, così i soldatini restano dove sono.
 export function setPaused(clock, pausa) {
   clock.pausa = pausa;
   clock.ultimo = null;
-  clock.accumulo = 0;
 }
 
 export function tick(clock, now) {
@@ -27,4 +30,9 @@ export function tick(clock, now) {
   // scheda rimasta inattiva: non si recupera tutto il tempo perso
   if (n > MAX_PER_FRAME) { clock.accumulo = 0; return MAX_PER_FRAME; }
   return n;
+}
+
+// Quanto del giorno in corso è già passato: serve a muovere i soldatini senza scatti.
+export function frazione(clock) {
+  return Math.min(1, clock.accumulo / SPEEDS[clock.velocita - 1]);
 }

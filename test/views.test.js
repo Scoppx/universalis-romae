@@ -130,3 +130,32 @@ test('consiglio: decisioni recenti con probabilità ordinate, filtro per popolo'
   assert.equal(v[0].domanda, 'Accettare la pace?');
   assert.deepEqual(V.councilView(records, g, 'roma').map(x => x.nazione), ['roma']);
 });
+
+test('azioni sulla selezione: unire e dividere', () => {
+  const g = makeGame();
+  const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
+  const b = createArmy(g, 'roma', 'a', 500, 0);
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true });
+  b.prov = 'b';
+  assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).puoUnire, false);
+  assert.equal(V.selectionActions(g, 'roma', []).puoDividere, false);
+  assert.deepEqual(V.armiesView(g, 'roma', [b.id]).map(a => a.scelto), [false, true]);
+});
+
+test('firma dei colori: in modalità relazioni cambia con guerre e tregue', async () => {
+  const { fillSignature } = await import('../public/js/ui/colors.js');
+  const g = makeGame();
+  const pol = fillSignature(g, 'politica', 'roma'), rel = fillSignature(g, 'relazioni', 'roma');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.equal(fillSignature(g, 'politica', 'roma'), pol); // la politica non dipende dalle guerre
+  const inGuerra = fillSignature(g, 'relazioni', 'roma');
+  assert.notEqual(inGuerra, rel);
+  makePeace(g, guerra, 'roma', { province: [] });
+  const inTregua = fillSignature(g, 'relazioni', 'roma');
+  assert.notEqual(inTregua, inGuerra);
+  g.day += 1826; // la tregua scade
+  assert.notEqual(fillSignature(g, 'relazioni', 'roma'), inTregua);
+  g.province.c.controller = 'roma';
+  assert.notEqual(fillSignature(g, 'politica', 'roma'), pol); // le occupazioni contano sempre
+});

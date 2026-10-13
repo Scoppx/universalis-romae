@@ -5,8 +5,9 @@ import { createJevAi } from './ai/jev.js';
 import { createRenderer } from './ui/renderer.js';
 import { createCamera, toWorld, toScreen, zoomAt, pan, centerOn } from './ui/camera.js';
 import { buildIndex, provinceAt, armyAt } from './ui/hit.js';
+import { armiesInRect } from './ui/armies-view.js';
 import { attachInput } from './ui/input.js';
-import { createClock, tick, setSpeed, setPaused } from './ui/clock.js';
+import { createClock, tick, setSpeed, setPaused, frazione } from './ui/clock.js';
 import { createSession, runDays, pausaNecessaria } from './ui/session.js';
 import { serialize, deserialize, writeStorage, readStorage, AUTOSAVE_KEY } from './ui/save.js';
 import * as V from './ui/views.js';
@@ -25,7 +26,7 @@ async function loadData() {
 
 const data = await loadData();
 const canvas = $('mappa');
-const renderer = createRenderer(canvas, data.map);
+const renderer = createRenderer(canvas, data.map, { onReady: () => { ui.sporco = true; } });
 const index = buildIndex(data.map);
 const cards = V.peopleCards(data.popoli);
 const caratteri = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p.carattere]));
@@ -55,13 +56,16 @@ const ui = {
   session: null,
   anteprima: createGame({ ...data, seed: 1 }),
   scelto: null,
-  selezione: { provincia: null, esercito: null },
+  selezione: { provincia: null, eserciti: [] }, rettangolo: null,
   modo: 'politica', scheda: 'governo',
   clock: createClock(), camera: null, size: { w: 0, h: 0 },
   notizie: [], sporco: true, disegni: 0, premuto: false,
   consiglio: [], filtroConsiglio: null, jevAvvisato: false
 };
-window.universalis = { ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n) };
+window.universalis = {
+  ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n),
+  markers: () => renderer.markers(), rilievoPronto: () => renderer.rilievoPronto()
+};
 
 const game = () => (ui.session ? ui.session.game : ui.anteprima);
 
@@ -115,9 +119,10 @@ fetch('api/jev').then(r => r.json()).then(({ disponibile }) => {
 function avvia(session) {
   ui.session = session;
   ui.scelto = null;
-  ui.selezione = { provincia: null, esercito: null };
+  ui.selezione = { provincia: null, eserciti: [] };
   ui.notizie = [];
   ui.jevAvvisato = false;
+  ui.clock.accumulo = 0; // una partita nuova parte dall'inizio del giorno
   if (!session.ai) ui.consiglio = [];
   document.querySelector('[data-scheda="consiglio"]').hidden = !session.ai;
   if (!session.ai && ui.scheda === 'consiglio') ui.scheda = 'governo';
@@ -181,14 +186,14 @@ function frame(now) {
       const n = tick(ui.clock, now);
       if (n) avanza(n);
     }
-    if (ui.sporco) {
-      ui.sporco = false;
-      renderer.draw({
-        game: game(), giocatore: ui.session?.giocatore ?? null, modo: ui.modo,
-        selezione: ui.selezione, camera: ui.camera, evidenzia: ui.session ? null : ui.scelto
-      });
-      ui.disegni++;
-    }
+    // si disegna a ogni fotogramma: i soldatini si muovono; la base della mappa resta in cache
+    renderer.draw({
+      game: game(), giocatore: ui.session?.giocatore ?? null, modo: ui.modo,
+      selezione: ui.selezione, camera: ui.camera, evidenzia: ui.session ? null : ui.scelto,
+      fraz: frazione(ui.clock), now, inPausa: ui.clock.pausa || !ui.session, rettangolo: ui.rettangolo
+    });
+    ui.sporco = false;
+    ui.disegni++;
   } catch (e) {
     console.warn('fotogramma non riuscito', e);
   }
@@ -200,7 +205,7 @@ function aggiorna() {
   ui.sporco = true;
   if (!ui.session) return;
   const { game: g, giocatore } = ui.session;
-  if (ui.selezione.esercito && !g.eserciti[ui.selezione.esercito]) ui.selezione.esercito = null;
+  ui.selezione.eserciti = ui.selezione.eserciti.filter(id => g.eserciti[id]);
   const b = V.topBar(g, giocatore);
   for (const k of ['data', 'tesoro', 'entrate', 'uomini', 'stabilita', 'infamia']) $(`b-${k}`).textContent = b[k];
   $('b-pausa').textContent = ui.clock.pausa ? '▶' : '❚❚';
@@ -215,7 +220,7 @@ function aggiorna() {
   const schede = {
     governo: () => H.governoHtml(V.governmentView(g, giocatore)),
     diplomazia: () => H.diplomaziaHtml(V.diplomacyView(g, giocatore)),
-    eserciti: () => H.esercitiHtml(V.armiesView(g, giocatore), ui.selezione.esercito),
+    eserciti: () => H.esercitiHtml(V.armiesView(g, giocatore, ui.selezione.eserciti), V.selectionActions(g, giocatore, ui.selezione.eserciti)),
     guerre: () => H.guerreHtml(V.warsView(g, giocatore)),
     consiglio: () => H.consiglioHtml(V.councilView(ui.consiglio, g, ui.filtroConsiglio),
       g.ordine.filter(id => id !== giocatore).map(id => ({ id, nome: g.nazioni[id].nome })), ui.filtroConsiglio)
@@ -256,11 +261,14 @@ function comando(cmd) {
   return r;
 }
 
-function selezionaEsercito(id, centra) {
+function selezionaEsercito(id, { centra = false, aggiungi = false } = {}) {
   const a = ui.session.game.eserciti[id];
   if (!a) return;
-  ui.selezione.esercito = a.owner === ui.session.giocatore ? id : null;
   ui.selezione.provincia = a.prov;
+  const sel = ui.selezione.eserciti;
+  if (a.owner !== ui.session.giocatore) { if (!aggiungi) ui.selezione.eserciti = []; }
+  else if (aggiungi) ui.selezione.eserciti = sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id];
+  else ui.selezione.eserciti = [id];
   if (centra) centerOn(ui.camera, ui.size.w, ui.size.h, ...centroDi(a.prov));
   aggiorna();
 }
@@ -284,7 +292,18 @@ document.addEventListener('click', e => {
       break;
     case 'alza-stabilita': comando({ tipo: 'alza_stabilita' }); break;
     case 'dichiara': comando({ tipo: 'dichiara_guerra', contro: id }); break;
-    case 'seleziona-esercito': selezionaEsercito(id, true); break;
+    case 'seleziona-esercito': selezionaEsercito(id, { centra: true, aggiungi: e.shiftKey }); break;
+    case 'unisci': {
+      const r = comando({ tipo: 'unisci', eserciti: ui.selezione.eserciti });
+      if (r.ok) { ui.selezione.eserciti = [r.esercito]; aggiorna(); }
+      break;
+    }
+    case 'dividi': {
+      const [primo] = ui.selezione.eserciti;
+      const r = comando({ tipo: 'dividi', esercito: primo });
+      if (r.ok) { ui.selezione.eserciti = [primo, r.esercito]; aggiorna(); }
+      break;
+    }
     case 'chiedi':
     case 'cedi': {
       const province = [...document.querySelectorAll(`input[name="${el.dataset.azione}-${id}"]:checked`)].map(i => i.value);
@@ -343,18 +362,33 @@ $('b-piu').addEventListener('click', () => velocita(ui.clock.velocita + 1));
 attachInput(canvas, {
   onPan: (dx, dy) => { pan(ui.camera, dx, dy); ui.sporco = true; },
   onZoom: (x, y, f) => { zoomAt(ui.camera, x, y, f); ui.sporco = true; },
-  onClick: (x, y) => {
-    const army = ui.session && armyAt(renderer.markers(), x, y);
-    if (army) { selezionaEsercito(army, false); return; }
+  onClick: (x, y, { shift } = {}) => {
+    const army = ui.session && armyAt(renderer.markers(), x, y, 16);
+    if (army) { selezionaEsercito(army, { aggiungi: shift }); return; }
     const prov = provinceAt(index, ...toWorld(ui.camera, x, y));
     if (!ui.session) { if (prov) scegli(game().province[prov].owner); return; }
     ui.selezione.provincia = prov;
+    if (!shift) ui.selezione.eserciti = [];
     aggiorna();
   },
   onRightClick: (x, y) => {
-    if (!ui.session || !ui.selezione.esercito) return;
+    if (!ui.session || !ui.selezione.eserciti.length) return;
     const prov = provinceAt(index, ...toWorld(ui.camera, x, y));
-    if (prov) comando({ tipo: 'muovi', esercito: ui.selezione.esercito, verso: prov });
+    if (!prov) return;
+    const falliti = [];
+    for (const id of ui.selezione.eserciti) {
+      const r = applyCommand(ui.session.game, { tipo: 'muovi', nazione: ui.session.giocatore, esercito: id, verso: prov });
+      if (!r.ok) falliti.push(r.motivo);
+    }
+    if (falliti.length) avviso(falliti.length === ui.selezione.eserciti.length ? falliti[0] : `${falliti.length} eserciti non possono arrivarci`);
+    aggiorna();
+  },
+  onBoxMove: r => { ui.rettangolo = r; },
+  onBox: r => {
+    ui.rettangolo = null;
+    if (!ui.session) return;
+    ui.selezione.eserciti = armiesInRect(renderer.markers(), r, ui.session.giocatore);
+    aggiorna();
   },
   onKey: k => {
     if (!ui.session) return false;
@@ -362,7 +396,7 @@ attachInput(canvas, {
     if (k === '+' || k === '=') { velocita(ui.clock.velocita + 1); return true; }
     if (k === '-') { velocita(ui.clock.velocita - 1); return true; }
     if (/^[1-5]$/.test(k)) { velocita(Number(k)); return true; }
-    if (k === 'Escape') { ui.selezione = { provincia: null, esercito: null }; aggiorna(); return true; }
+    if (k === 'Escape') { ui.selezione = { provincia: null, eserciti: [] }; aggiorna(); return true; }
     return false;
   }
 });

@@ -13,6 +13,7 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - `npm test` — tutti i test
 - `npm run fetch-ne` — scarica Natural Earth in `data/ne/` (una volta)
 - `npm run build-map` — rigenera `public/data/map.json` da `data/centri.json`
+- `npm run build-relief` — rigenera `public/img/rilievo.jpg` dai dati di elevazione (scarica i tasselli in `data/dem/`)
 - `node bench.js [anni] [semi]` — partite headless con l'IA a regole, tabella in `bench-regole.txt`
 
 ## Come si gioca
@@ -20,7 +21,7 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - Scegli un popolo (lista o clic sulla mappa), poi **Inizia**.
 - **Barra spaziatrice**: pausa. **1–5** o **+/−**: velocità.
 - **Clic** su una provincia: scheda a destra. **Rotella**: zoom. **Trascina**: sposta la mappa.
-- **Eserciti**: seleziona (clic sull'etichetta o dalla scheda Eserciti), poi **clic destro** sulla destinazione.
+- **Eserciti**: clic sul soldatino per selezionarlo; **Maiuscolo+clic** o **Maiuscolo+trascina** per sceglierne più d'uno; **clic destro** sulla destinazione. Nella scheda Eserciti: **Unisci** e **Dividi**.
 - **Diplomazia**: dichiara guerra ai vicini. **Guerre**: chiedi le province occupate, cedi le tue o proponi la pace bianca.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
 
