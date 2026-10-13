@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
-import { armiesOf } from '../public/js/sim/state.js';
+import { armiesOf, createArmy, RIBELLI } from '../public/js/sim/state.js';
+import { ensureRebels } from '../public/js/sim/culture.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import {
@@ -233,4 +234,15 @@ test('colonie a regole: nella provincia straniera più ricca, in pace e con rise
   assert.deepEqual(colonyDecision(g, 'roma'), [{ tipo: 'colonia', nazione: 'roma', provincia: 'a' }]);
   g.nazioni.roma.uomini = 1500;
   assert.deepEqual(colonyDecision(g, 'roma'), []);
+});
+
+test('in guerra con un obiettivo, l\'esercito più vicino va comunque a reprimere la rivolta', () => {
+  const g = makeGame();
+  declareWar(g, 'roma', 'volsci');
+  ensureRebels(g);
+  createArmy(g, RIBELLI, 'b', 500, 0);
+  createArmy(g, 'roma', 'a', 3000, 0);
+  g.nazioni.roma.obiettivo = 'c';
+  const verso = armyOrders(g, 'roma').filter(c => c.tipo === 'muovi').map(c => c.verso).sort();
+  assert.deepEqual(verso, ['b', 'c']);
 });
