@@ -52,3 +52,9 @@ export function bordersNation(game, a, b) {
 export function log(game, entry) {
   game.log.push({ day: game.day, ...entry });
 }
+
+// Forza in uomini: quelli negli eserciti più metà della riserva.
+export function power(game, id) {
+  const men = armiesOf(game, id).reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
+  return men + game.nazioni[id].uomini * 0.5;
+}

@@ -23,7 +23,8 @@ export function atWar(game, a, b) {
 }
 
 export function hasPretext(game, attacker, defender) {
-  return game.nazioni[defender].infamia > game.balance.infamia.soglia;
+  return game.nazioni[defender].infamia > game.balance.infamia.soglia ||
+    (game.nazioni[attacker].pretesti?.[defender] ?? -1) > game.day;
 }
 
 export function inTruce(game, a, b) {
