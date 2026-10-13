@@ -1,5 +1,5 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
-import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower } from './state.js';
+import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf } from './state.js';
 import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
@@ -112,7 +112,7 @@ export function checkProposal(game, from, genere, to, extra = {}) {
     case 'foedus':
       if (A.protettore || B.protettore) return 'già in un foedus';
       if (!bordersNation(game, from, to)) return 'nessun confine';
-      if (power(game, from) < d.foedusRapporto * power(game, to)) return 'non abbastanza più forte';
+      if (power(game, from) < (governmentOf(game, from).foedusRapporto ?? d.foedusRapporto) * power(game, to)) return 'non abbastanza più forte';
       if (relation(game, from, to) < d.foedusMinRelazione) return 'relazioni troppo basse';
       return null;
     case 'tributo':

@@ -43,7 +43,7 @@ test('provincia: occupazione, eserciti, reclutamento', () => {
 test('governo', () => {
   const g = makeGame();
   assert.deepEqual(V.governmentView(g, 'roma'), {
-    nome: 'roma', governo: 'tribù', stabilita: '0', tratti: 'reclute +30%', costoStabilita: '22.0', puoAlzare: false
+    nome: 'roma', governo: 'neutro', stabilita: '0', tratti: 'reclute +30%', costoStabilita: '22.0', puoAlzare: false
   });
 });
 

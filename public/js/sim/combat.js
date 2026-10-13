@@ -1,6 +1,6 @@
 // Battaglie giornaliere: ogni giorno un dado 0-9 per parte più i modificatori.
 import { rollD10 } from './rng.js';
-import { armyStrength, clamp, log } from './state.js';
+import { armyStrength, clamp, log, sliderOf } from './state.js';
 import { atWar, warBetween, sideOf } from './war.js';
 
 export function resolveBattles(game) {
@@ -29,11 +29,17 @@ function men(side) {
   return side.reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
 }
 
-function modifier(game, prov, side) {
-  const owner = side[0].owner, t = game.nazioni[owner].tratti, c = game.balance.combattimento;
+export function battleModifier(game, prov, side) {
+  const owner = side[0].owner, n = game.nazioni[owner], t = n.tratti, c = game.balance.combattimento;
   let m = t.battaglia || 0;
-  if (side.some(a => a.owner === prov.controller)) m += c.terreno[prov.terreno];
+  const controlla = side.some(a => a.owner === prov.controller);
+  if (controlla) m += c.terreno[prov.terreno];
   if (prov.terreno === 'montagna') m += t.montagna || 0;
+  if (n.stabilita >= c.stabilitaDado) m += 1;
+  else if (n.stabilita <= -c.stabilitaDado) m -= 1;
+  const g = sliderOf(game, owner).guerra, e = game.balance.slider.estremoGuerra;
+  if (g >= e && !controlla) m += 1; // dottrina offensiva: meglio in terra nemica
+  if (g <= -e && controlla) m += 1; // dottrina difensiva: meglio in casa
   return m;
 }
 
@@ -54,8 +60,8 @@ export function battleDay(game, provId, sideA, sideB) {
   for (const a of [...sideA, ...sideB]) a.inBattaglia = true;
   const strength = side => side.reduce((s, a) => s + armyStrength(game, a), 0);
   const sA = strength(sideA), sB = strength(sideB);
-  const rA = rollD10(game) + modifier(game, prov, sideA) + 1;
-  const rB = rollD10(game) + modifier(game, prov, sideB) + 1;
+  const rA = rollD10(game) + battleModifier(game, prov, sideA) + 1;
+  const rB = rollD10(game) + battleModifier(game, prov, sideB) + 1;
   applyLosses(sideB, sA * rA * c.perdite, rA * c.morale * clamp(sA / Math.max(1, sB), 0.5, 2));
   applyLosses(sideA, sB * rB * c.perdite, rB * c.morale * clamp(sB / Math.max(1, sA), 0.5, 2));
   const beaten = side => side.every(a => a.morale <= 0 || a.fanteria + a.cavalleria < c.minimoUomini);

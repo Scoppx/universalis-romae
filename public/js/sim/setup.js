@@ -5,15 +5,16 @@
 //   province: { [id]: { id, nome, owner, controller, cultura, terreno, tasse, uomini, fort, vicini: [id] } },
 //   stretti: ['a|b'],
 //   nazioni: { [id]: { id, nome, colore, cultura, governo, capitale, tesoro, uomini, stabilita, infamia,
-//                      tratti, vivo, tregue: { [id]: giornoFine } } },
+//                      tratti, vivo, tregue: { [id]: giornoFine }, slider: { societa, guerra, governo }, ultimoSlider } },
 //   ordine: [id],                 // ordine stabile delle nazioni attive (quello di popoli.json)
 //   eserciti: { [id]: { id, owner, prov, fanteria, cavalleria, morale, percorso: [id], giorniAlProssimo, inBattaglia } },
 //   guerre: { [id]: { id, attaccanti: [id], difensori: [id], inizio, battaglie } },
 //   proposte: { [id]: { id, tipo: 'pace', guerra, da, a, termini: { ricevente, province: [id] }, giorno } },
 //   log: [{ day, tipo, ... }]     // eventi del giorno corrente
 // }
-import { createArmy, provincesOf, sumOf, strettoKey, maxManpower } from './state.js';
+import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus } from './state.js';
 import { initDiplomacy } from './diplomacy.js';
+import { initGovernment } from './government.js';
 
 export function createGame({ map, popoli, balance, seed }) {
   const game = {
@@ -40,7 +41,7 @@ export function createGame({ map, popoli, balance, seed }) {
   for (const id of game.ordine) {
     const n = game.nazioni[id];
     const owned = provincesOf(game, id);
-    const bonus = 1 + (n.tratti.reclute || 0);
+    const bonus = 1 + recruitBonus(game, id);
     const uomini = sumOf(owned, 'uomini');
     n.tesoro = sumOf(owned, 'tasse') * balance.economia.tasseMese * balance.inizio.tesoroMesi;
     n.uomini = Math.round(maxManpower(game, id) * balance.inizio.riservaQuota);
@@ -49,5 +50,6 @@ export function createGame({ map, popoli, balance, seed }) {
       Math.round(uomini * balance.inizio.cavalleriaPerUomo * bonus));
   }
   initDiplomacy(game);
+  initGovernment(game);
   return game;
 }

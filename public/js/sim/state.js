@@ -20,9 +20,28 @@ export function clamp(x, lo, hi) {
   return Math.max(lo, Math.min(hi, x));
 }
 
+// Effetti del governo (balance.governi): un governo senza voce non ha effetti.
+export function governmentOf(game, id) {
+  return game.balance.governi?.[game.nazioni[id].governo] ?? {};
+}
+
+export function sliderOf(game, id) {
+  return game.nazioni[id].slider ?? { societa: 0, guerra: 0, governo: 0 };
+}
+
+// Bonus sulle tasse: governo e patrizi (slider della società negativo).
+export function taxBonus(game, id) {
+  return (governmentOf(game, id).tasse || 0) + Math.max(0, -sliderOf(game, id).societa) * game.balance.slider.tassePatrizi;
+}
+
+// Bonus sulle reclute: tratto, governo e plebe (slider della società positivo).
+export function recruitBonus(game, id) {
+  return (game.nazioni[id].tratti.reclute || 0) + (governmentOf(game, id).reclute || 0) +
+    Math.max(0, sliderOf(game, id).societa) * game.balance.slider.reclutePlebe;
+}
+
 export function maxManpower(game, nationId) {
-  const n = game.nazioni[nationId];
-  return Math.round(sumOf(provincesOf(game, nationId), 'uomini') * game.balance.economia.uominiMax * (1 + (n.tratti.reclute || 0)));
+  return Math.round(sumOf(provincesOf(game, nationId), 'uomini') * game.balance.economia.uominiMax * (1 + recruitBonus(game, nationId)));
 }
 
 export function armiesOf(game, nationId) {
