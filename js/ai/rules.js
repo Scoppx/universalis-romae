@@ -1,6 +1,8 @@
 // IA a regole. Legge lo stato e restituisce comandi; non modifica mai lo stato.
 // Fa il lavoro di fino (eserciti, reclute) per tutti, e le scelte strategiche quando Jev non c'è.
-import { armiesOf, maxManpower, bordersNation, power, RIBELLI } from '../sim/state.js';
+import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf } from '../sim/state.js';
+import { checkSlider } from '../sim/government.js';
+import { malcontent, checkColony, colonyCost } from '../sim/culture.js';
 
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
@@ -17,6 +19,32 @@ function hashId(id) {
 
 export function isReviewDay(game, id) {
   return game.day % 91 === hashId(id) % 91;
+}
+
+export function isSliderDay(game, id) {
+  return game.day % 365 === hashId(id) % 365;
+}
+
+// Riforme a regole: prima calmare le province scontente, poi la dottrina secondo i vicini, poi la società secondo i bisogni.
+export function sliderDecision(game, id) {
+  const n = game.nazioni[id], soglia = game.balance.cultura.sogliaRivolta;
+  const mosse = [];
+  if (provincesOf(game, id).some(p => malcontent(game, p.id) > soglia)) mosse.push(['governo', 1]);
+  const minaccia = game.ordine.some(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && power(game, o) > power(game, id));
+  mosse.push(['guerra', minaccia ? -1 : 1]);
+  mosse.push(['societa', n.uomini < maxManpower(game, id) / 2 ? 1 : -1]);
+  const m = mosse.find(([q, v]) => !checkSlider(game, id, q, v));
+  return m ? [{ tipo: 'slider', nazione: id, quale: m[0], verso: m[1] }] : [];
+}
+
+// Una colonia nella provincia straniera più ricca, in pace e con denaro e uomini che avanzano.
+export function colonyDecision(game, id) {
+  const n = game.nazioni[id], ia = game.balance.ia, c = game.balance.cultura;
+  if (enemiesOfNation(game, id).length || n.uomini < c.coloniaUomini + ia.reclutaSoglia) return [];
+  const p = provincesOf(game, id)
+    .filter(p => !checkColony(game, id, p.id) && n.tesoro >= colonyCost(game, p.id) + ia.riservaColonia)
+    .sort((a, b) => b.tasse - a.tasse || (a.id < b.id ? -1 : 1))[0];
+  return p ? [{ tipo: 'colonia', nazione: id, provincia: p.id }] : [];
 }
 
 export function enemiesOfNation(game, id) {
@@ -47,7 +75,8 @@ export function rulesController(game, id) {
   // le regole non usano obiettivi: uno rimasto da Jev (o da un salvataggio) si azzera; in pace lo fa la routine
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
   if (inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });
-  if (isReviewDay(game, id)) cmds.push(...strategy(game, id));
+  if (isSliderDay(game, id)) cmds.push(...sliderDecision(game, id));
+  if (isReviewDay(game, id)) cmds.push(...strategy(game, id), ...colonyDecision(game, id));
   cmds.push(...routine(game, id));
   return cmds;
 }

@@ -78,7 +78,8 @@
     "paceBiancaAnni": 3,
     "reclutaSoglia": 1000,
     "riservaTesoro": 2,
-    "esercitoObiettivo": 0.8
+    "esercitoObiettivo": 0.8,
+    "riservaColonia": 10
   },
   "diplomazia": {
     "relazioneStessaCultura": 30,
