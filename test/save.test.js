@@ -86,6 +86,13 @@ test('salvataggi manipolati: rifiutati prima di toccare la partita', () => {
       g.game.proposte = { k1: { id: 'p9', tipo: 'pace', guerra: 'g1', da: 'veio', a: 'roma', termini: { ricevente: 'veio', province: [] }, giorno: 0 } };
     },
     'obiettivo sconosciuto': g => { g.game.nazioni.veio.obiettivo = 'atlantide'; },
+    'alleato sconosciuto': g => { g.game.nazioni.veio.alleati = ['atlantide']; },
+    'relazione non numerica': g => { g.game.nazioni.veio.relazioni.roma = 'cattiva'; },
+    'protettore sconosciuto': g => { g.game.nazioni.veio.protettore = 'atlantide'; },
+    'tributo malformato': g => { g.game.nazioni.veio.tributo = { a: 'roma' }; },
+    'proposta di tipo sconosciuto': g => {
+      g.game.proposte = { p9: { id: 'p9', tipo: 'matrimonio', da: 'veio', a: 'roma', giorno: 0 } };
+    },
     'id con caratteri strani': g => { g.game.guerre = { 'g"1': { id: 'g"1', attaccanti: ['veio'], difensori: ['roma'], inizio: 0, battaglie: 0 } }; }
   };
   for (const [nome, rompi] of Object.entries(casi)) {
@@ -115,4 +122,21 @@ test('la modalità IA si salva e si ricarica', () => {
   assert.equal(deserialize(JSON.stringify(vecchio), data).session.ia, 'regole');
   vecchio.ia = 'oracolo';
   assert.equal(deserialize(JSON.stringify(vecchio), data).ok, false);
+});
+
+test('salvataggi senza diplomazia (tappa 3): ricevono i valori iniziali', () => {
+  const s = createSession(data, 'roma', 1);
+  const g = JSON.parse(serialize(s));
+  for (const n of Object.values(g.game.nazioni)) { delete n.relazioni; delete n.alleati; delete n.protettore; delete n.tributo; delete n.pretesti; delete n.ambascerie; }
+  const r = deserialize(JSON.stringify(g), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.equal(r.session.game.nazioni.roma.relazioni.lega_latina, 30);
+  assert.deepEqual(r.session.game.nazioni.roma.alleati, []);
+  runDays(r.session, 60);
+});
+
+test('proposte diplomatiche valide: accettate', () => {
+  const s = createSession(data, 'roma', 1);
+  s.game.proposte = { p9: { id: 'p9', tipo: 'alleanza', da: 'veio', a: 'roma', giorno: 0 } };
+  assert.equal(deserialize(serialize(s), data).ok, true);
 });
