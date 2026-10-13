@@ -16,7 +16,9 @@ export function cardDetailHtml(c) {
 
 export function provinceHtml(v) {
   const righe = [['Proprietario', v.proprietario.nome], ...(v.occupante ? [['Occupata da', v.occupante.nome]] : []),
-    ['Cultura', v.cultura], ['Terreno', v.terreno], ['Tasse', v.tasse], ['Uomini', v.uomini], ['Fortificazione', v.fort]];
+    ['Cultura', v.cultura], ['Terreno', v.terreno], ['Tasse', v.tasse], ['Uomini', v.uomini], ['Fortificazione', v.fort],
+    ['Malcontento', `${v.malcontento}/10`], ...(v.assimilazione !== null && v.assimilazione !== undefined ? [['Assimilazione', `${v.assimilazione}%`]] : []),
+    ...(v.colonia ? [['Colonia', 'sì']] : [])];
   const eserciti = v.eserciti.length
     ? v.eserciti.map(e => `<div class="riga"><span>${esc(e.nazione)}: ${esc(e.uomini)} uomini, morale ${esc(e.morale)}</span>` +
       (e.mio ? `<button data-azione="seleziona-esercito" data-id="${esc(e.id)}">Seleziona</button>` : '') + '</div>').join('')
@@ -27,16 +29,25 @@ export function provinceHtml(v) {
       '<label>Cavalieri <input id="r-cavalieri" type="number" min="0" step="100" value="0"></label>' +
       `<button data-azione="recluta" data-id="${esc(v.id)}">Recluta</button></div>`
     : '';
+  const azioni = v.azioni ? '<h3>Provincia</h3><div class="comandi">' +
+    bottone('colonia', v.id, `Fonda colonia (${v.azioni.colonia.costo} denari, ${v.azioni.colonia.uomini} uomini)`, v.azioni.colonia.motivo) +
+    bottone('fortifica', v.id, v.azioni.fortifica.costo === null ? 'Fortificazione al massimo' : `Fortifica (${v.azioni.fortifica.costo} denari)`, v.azioni.fortifica.motivo) +
+    '</div>' : '';
   return `<h2>${esc(v.nome)}</h2><table>${righe.map(([k, x]) => `<tr><td>${k}</td><td>${esc(x)}</td></tr>`).join('')}</table>` +
-    `<h3>Eserciti</h3>${eserciti}${recluta}`;
+    `<h3>Eserciti</h3>${eserciti}${recluta}${azioni}`;
 }
 
 export function governoHtml(v) {
+  const leva = l => `<div class="leva"><span class="nome">${esc(l.nome)}</span>` +
+    `<button class="piccolo" data-azione="slider" data-quale="${esc(l.quale)}" data-verso="-1"${l.meno ? ` disabled title="${esc(l.meno)}"` : ''}>◀ ${esc(l.sinistra)}</button>` +
+    `<b>${esc(l.valore)}</b>` +
+    `<button class="piccolo" data-azione="slider" data-quale="${esc(l.quale)}" data-verso="1"${l.piu ? ` disabled title="${esc(l.piu)}"` : ''}>${esc(l.destra)} ▶</button></div>`;
   return `<h3>${esc(v.nome)}</h3><table>` +
-    `<tr><td>Governo</td><td>${esc(v.governo)}</td></tr>` +
+    `<tr><td>Governo</td><td>${esc(v.governo)}${v.effettiGoverno ? ` <span class="muto">(${esc(v.effettiGoverno)})</span>` : ''}</td></tr>` +
     `<tr><td>Stabilità</td><td>${esc(v.stabilita)}</td></tr>` +
     `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr></table>` +
-    `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? '' : ' disabled'}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>`;
+    `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? '' : ' disabled'}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
+    `<h3>Riforme</h3>${v.slider.map(leva).join('')}`;
 }
 
 const STATI = { guerra: 'in guerra', tregua: 'tregua', alleato: 'alleato', federato: 'tuo federato', protettore: 'tuo protettore', pace: 'in pace' };
