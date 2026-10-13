@@ -165,7 +165,10 @@ function avanza(n) {
 function mostraPausa(motivo) {
   const { game: g, giocatore } = ui.session;
   if (motivo === 'proposta') finestra(H.proposalHtml(V.pendingProposals(g, giocatore)[0]));
-  else if (motivo === 'evento') finestra(H.eventoHtml(V.pendingEvents(g, giocatore)[0]));
+  else if (motivo === 'evento') {
+    const [ev] = V.pendingEvents(g, giocatore);
+    if (ev) finestra(H.eventoHtml(ev));
+  }
   else if (motivo === 'fine') finestra(H.rankingHtml('Fine della partita: 264 a.C.', V.rankingView(g, giocatore)));
   else if (motivo === 'sconfitta') finestra(H.rankingHtml('Il tuo popolo è scomparso', V.rankingView(g, giocatore)));
 }

@@ -30,6 +30,10 @@ export function deserialize(text, data, { creaAi } = {}) {
   initGovernment(g);
   initCulture(g);
   g.eventi ??= {};
+  // eventi tolti dal catalogo o di popoli scomparsi: si scartano subito, prima che possano fermare il gioco
+  for (const e of Object.values(g.eventi)) {
+    if (!g.catalogo.some(d => d.id === e.evento) || !g.nazioni[e.nazione]?.vivo) delete g.eventi[e.id];
+  }
   g.eventiFatti ??= {};
   // i salvataggi precedenti agli eventi ricevono i dormienti non ancora in partita
   g.dormienti ??= Object.fromEntries(data.popoli.popoli.filter(p => p.dormiente && !g.nazioni[p.id]).map(p =>

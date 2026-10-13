@@ -74,3 +74,9 @@ test('sessione: si ferma per un evento del giocatore e riparte dopo la scelta', 
   assert.equal(applyCommand(s.game, { tipo: 'scegli', nazione: 'roma', evento: 'v1', opzione: 'compra_grano' }).ok, true);
   assert.equal(runDays(s, 1).giorni, 1);
 });
+
+test('sessione: un evento del giocatore senza definizione non ferma il gioco', () => {
+  const s = createSession(data, 'roma', 1);
+  s.game.eventi.v1 = { id: 'v1', evento: 'evento_sparito', nazione: 'roma', altro: null, giorno: s.game.day };
+  assert.equal(runDays(s, 2).giorni, 2);
+});

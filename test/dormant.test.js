@@ -87,3 +87,14 @@ test('se la capitale ha cambiato padrone dopo lo scatto, il risveglio si salta s
   assert.equal(g.province.g.owner, 'siculi');
   assert.ok(g.dormienti.taranto);
 });
+
+test('un risveglio saltato non consuma l\'evento: potrà arrivare di nuovo', () => {
+  const g = makeGame(1, [coloni]);
+  g.province.f.owner = 'siculi'; g.province.f.controller = 'siculi';
+  monthlyEvents(g);
+  const e = Object.values(g.eventi).find(x => x.nazione === 'siculi');
+  g.province.f.owner = 'volsci'; g.province.f.controller = 'volsci';
+  chooseOption(g, 'siculi', e.id, 'accogliere');
+  g.province.f.owner = 'siculi'; g.province.f.controller = 'siculi';
+  assert.equal(conditionsHold(g, eventDef(g, 'coloni_taranto'), 'siculi'), true);
+});

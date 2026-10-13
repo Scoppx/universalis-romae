@@ -161,3 +161,12 @@ test('il giorno fa scattare gli eventi il primo del mese e li fa scadere', () =>
   assert.equal(Object.values(g.eventi).length, 0);
   assert.equal(g.nazioni.roma.stabilita, 1);
 });
+
+test('un altro vivo ma non più confinante: gli effetti su di lui si saltano', () => {
+  const g = makeGame(1, [ev('e', { probabilita: 1, popoli: ['roma'], altro: {} }, [opt('x', [{ relazione: -40 }, { guerra: true }, { stabilita: 1 }])])]);
+  g.eventi.v1 = { id: 'v1', evento: 'e', nazione: 'roma', altro: 'siculi', giorno: 0 }; // i siculi non confinano con roma
+  chooseOption(g, 'roma', 'v1', 'x');
+  assert.equal(relation(g, 'roma', 'siculi'), 0);
+  assert.equal(atWar(g, 'siculi', 'roma'), false);
+  assert.equal(g.nazioni.roma.stabilita, 1);
+});

@@ -246,3 +246,13 @@ test('eventi e dormienti non validi: rifiutati', () => {
   ];
   for (const text of bad) assert.equal(deserialize(text, data).ok, false, text.slice(0, 80));
 });
+
+test('evento orfano del giocatore: scartato al caricamento, la partita riparte', () => {
+  const s = createSession(data, 'roma', 1);
+  const x = JSON.parse(serialize(s));
+  x.game.eventi.v997 = { id: 'v997', evento: 'evento_sparito', nazione: 'roma', altro: null, giorno: 0 };
+  const r = deserialize(JSON.stringify(x), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.equal(r.session.game.eventi.v997, undefined);
+  assert.equal(runDays(r.session, 3).giorni, 3);
+});
