@@ -17,7 +17,7 @@
 //   eventiFatti: { [eventoId]: [nazione] },
 //   dormienti: { [id]: { id, nome, colore, cultura, governo, capitale, tratti } }   // popoli che un evento può risvegliare
 // }
-import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus } from './state.js';
+import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus, difficultyOf } from './state.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { initCulture } from './culture.js';
@@ -42,24 +42,24 @@ export function createGame({ map, popoli, balance, catalogo = [], seed }) {
     game.nazioni[n.id] = {
       id: n.id, nome: n.nome, colore: n.colore, cultura: n.cultura, governo: n.governo,
       capitale: n.capitale, tesoro: 0, uomini: 0, stabilita: 0, infamia: 0,
-      tratti: { ...n.tratti }, vivo: true, tregue: {}, obiettivo: null
+      tratti: { ...n.tratti }, vivo: true, tregue: {}, obiettivo: null, difficolta: n.difficolta ?? 'normale'
     };
   }
   // i dormienti aspettano un evento: si tengono nello stato per poterli risvegliare
   game.dormienti = {};
   for (const n of popoli.popoli.filter(x => x.dormiente)) {
-    game.dormienti[n.id] = { id: n.id, nome: n.nome, colore: n.colore, cultura: n.cultura, governo: n.governo, capitale: n.capitale, tratti: { ...n.tratti } };
+    game.dormienti[n.id] = { id: n.id, nome: n.nome, colore: n.colore, cultura: n.cultura, governo: n.governo, capitale: n.capitale, tratti: { ...n.tratti }, difficolta: n.difficolta ?? 'normale' };
   }
   for (const id of game.ordine) {
     const n = game.nazioni[id];
     const owned = provincesOf(game, id);
-    const bonus = 1 + recruitBonus(game, id);
+    const bonus = 1 + recruitBonus(game, id), d = difficultyOf(game, id);
     const uomini = sumOf(owned, 'uomini');
-    n.tesoro = sumOf(owned, 'tasse') * balance.economia.tasseMese * balance.inizio.tesoroMesi;
-    n.uomini = Math.round(maxManpower(game, id) * balance.inizio.riservaQuota);
+    n.tesoro = sumOf(owned, 'tasse') * balance.economia.tasseMese * balance.inizio.tesoroMesi * d.tesoro;
+    n.uomini = Math.round(maxManpower(game, id) * balance.inizio.riservaQuota * d.uomini);
     createArmy(game, id, n.capitale,
-      Math.round(uomini * balance.inizio.fanteriaPerUomo * bonus),
-      Math.round(uomini * balance.inizio.cavalleriaPerUomo * bonus));
+      Math.round(uomini * balance.inizio.fanteriaPerUomo * bonus * d.esercito),
+      Math.round(uomini * balance.inizio.cavalleriaPerUomo * bonus * d.esercito));
   }
   initDiplomacy(game);
   initGovernment(game);

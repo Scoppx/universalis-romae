@@ -42,6 +42,12 @@ export function recruitBonus(game, id) {
     Math.max(0, sliderOf(game, id).societa) * game.balance.slider.reclutePlebe;
 }
 
+// Bonus della difficoltà del popolo (balance.difficolta): normale e valori mancanti sono neutri.
+export function difficultyOf(game, id) {
+  const d = game.balance.difficolta?.[game.nazioni[id]?.difficolta] ?? {};
+  return { esercito: d.esercito ?? 1, tesoro: d.tesoro ?? 1, uomini: d.uomini ?? 1, dado: d.dado ?? 0 };
+}
+
 export function maxManpower(game, nationId) {
   return Math.round(sumOf(provincesOf(game, nationId), 'uomini') * game.balance.economia.uominiMax * (1 + recruitBonus(game, nationId)));
 }

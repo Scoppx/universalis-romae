@@ -29,6 +29,8 @@ export function deserialize(text, data, { creaAi } = {}) {
   initDiplomacy(g); // i salvataggi precedenti alla diplomazia ricevono i valori iniziali
   initGovernment(g);
   initCulture(g);
+  const info = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p]));
+  for (const id of g.ordine) g.nazioni[id].difficolta ??= info[id]?.difficolta ?? 'normale';
   g.eventi ??= {};
   // eventi tolti dal catalogo o di popoli scomparsi: si scartano subito, prima che possano fermare il gioco
   for (const e of Object.values(g.eventi)) {
@@ -37,7 +39,8 @@ export function deserialize(text, data, { creaAi } = {}) {
   g.eventiFatti ??= {};
   // i salvataggi precedenti agli eventi ricevono i dormienti non ancora in partita
   g.dormienti ??= Object.fromEntries(data.popoli.popoli.filter(p => p.dormiente && !g.nazioni[p.id]).map(p =>
-    [p.id, { id: p.id, nome: p.nome, colore: p.colore, cultura: p.cultura, governo: p.governo, capitale: p.capitale, tratti: { ...p.tratti } }]));
+    [p.id, { id: p.id, nome: p.nome, colore: p.colore, cultura: p.cultura, governo: p.governo, capitale: p.capitale, tratti: { ...p.tratti }, difficolta: p.difficolta ?? 'normale' }]));
+  for (const d of Object.values(g.dormienti)) d.difficolta ??= info[d.id]?.difficolta ?? 'normale';
   // il record dei ribelli non viene dal file: si ricrea sempre uguale
   if (g.nazioni[RIBELLI]) { delete g.nazioni[RIBELLI]; ensureRebels(g); }
   // senza creaAi una partita Jev riparte con le regole
@@ -81,6 +84,7 @@ function validateGame(s, data) {
     if (n.protettore !== undefined && n.protettore !== null && !attiva(n.protettore)) return `popolo ${k}`;
     if (n.tributo !== undefined && n.tributo !== null && !(isObj(n.tributo) && attiva(n.tributo.a) && isInt(n.tributo.fine))) return `popolo ${k}`;
     if (n.slider !== undefined && !(isObj(n.slider) && SLIDER.every(q => isInt(n.slider[q]) && Math.abs(n.slider[q]) <= 5))) return `popolo ${k}`;
+    if (n.difficolta !== undefined && !isStr(n.difficolta)) return `popolo ${k}`;
     if (n.ultimoSlider !== undefined && n.ultimoSlider !== null && !isInt(n.ultimoSlider)) return `popolo ${k}`;
     for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati']) {
       if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => attiva(o) && isInt(v)))) return `popolo ${k}`;
@@ -131,6 +135,7 @@ function validateGame(s, data) {
       if (!ID.test(k) || own(g.nazioni, k) || !isObj(d) || d.id !== k) return `dormiente ${k}`;
       if (![d.nome, d.colore, d.cultura, d.governo].every(isStr) || !provincia(d.capitale)) return `dormiente ${k}`;
       if (!isObj(d.tratti) || !Object.values(d.tratti).every(isNum)) return `dormiente ${k}`;
+      if (d.difficolta !== undefined && !isStr(d.difficolta)) return `dormiente ${k}`;
     }
   }
   return null;
