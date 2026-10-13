@@ -4,6 +4,7 @@ import { distancesFrom } from '../sim/armies.js';
 import { armiesOf } from '../sim/state.js';
 import { sideOf, enemiesOf, scoreFor, hasPretext, peaceCost } from '../sim/war.js';
 import { formatDate } from '../sim/calendar.js';
+import { relation } from '../sim/diplomacy.js';
 
 const round2 = x => Math.round(x * 100) / 100;
 const nome = (game, id) => game.nazioni[id]?.nome ?? id;
@@ -144,4 +145,38 @@ export function interpretChoice(answer, meta) {
   const incerto = p1 < 0.5 && p1 - p2 < 0.15;
   const scelta = incerto ? meta.prudente : top;
   return { scelta, valore: meta.mappa[scelta], incerto, probabilita: probs };
+}
+
+const PROPOSTE = {
+  alleanza: ['un\'alleanza', 'Allearsi: ci difenderemo a vicenda e potremo chiamarci in guerra.', 'Restare liberi da impegni.'],
+  foedus: ['un foedus', 'Entrare nel foedus: protezione di un popolo più forte, ma niente guerre nostre e uomini ceduti ogni mese.', 'Restare indipendenti.'],
+  tributo: ['un tributo', 'Pagare il tributo (il 20% delle entrate per 10 anni) per non dargli un pretesto di guerra.', 'Rifiutare il tributo: avrà un pretesto per attaccarci.'],
+  ultimatum: ['una provincia', 'Cedere la provincia per evitare la guerra.', 'Rifiutare e prepararsi alla guerra: avrà un pretesto per attaccarci.'],
+  chiamata: ['di entrare in guerra al suo fianco', 'Rispondere alla chiamata ed entrare in guerra con l\'alleato.', 'Restare fuori dalla guerra: l\'alleanza si rompe.']
+};
+
+export function buildProposalQuestion(game, propId, carattere) {
+  const p = game.proposte[propId];
+  if (p.tipo === 'pace') return buildPeaceQuestion(game, propId, carattere);
+  const id = p.a, [cosa, si, no] = PROPOSTE[p.tipo];
+  const state = statoPopolo(game, id, carattere);
+  const w = p.tipo === 'chiamata' ? game.guerre[p.guerra] : null;
+  state.proposta = {
+    da: nome(game, p.da), chiede: cosa,
+    relazione: relation(game, id, p.da),
+    rapporto_forze: round2(power(game, p.da) / Math.max(1, power(game, id))),
+    ...(p.tipo === 'ultimatum' ? { provincia: game.province[p.provincia].nome } : {}),
+    ...(w ? { contro: enemiesOf(w, sideOf(w, p.da)).map(n => nome(game, n)).join(', ') } : {})
+  };
+  return {
+    state,
+    questions: {
+      [p.tipo]: {
+        type: 'choice',
+        instructions: 'Sei il consiglio di `popolo.nome` e decidi secondo `popolo.carattere`. Guardando `proposta`, la relazione e il rapporto di forze, cosa rispondi?',
+        criteria: { accetta: si, rifiuta: no }
+      }
+    },
+    meta: { [p.tipo]: { tipo: 'proposta', genere: p.tipo, proposta: propId, mappa: { accetta: true, rifiuta: false }, prudente: 'rifiuta' } }
+  };
 }

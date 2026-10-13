@@ -139,3 +139,16 @@ test('obiettivo senza risposta di Jev: azzerato, decidono le regole', async () =
   for (let i = 0; i < 200; i++) { advanceDay(g, { roma: ai.controller }); await ai.flush(); }
   assert.equal(g.nazioni.roma.obiettivo, null);
 });
+
+test('Jev risponde anche alle proposte diplomatiche', async () => {
+  const { propose } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame(1);
+  const records = [];
+  const ai = createJevAi({ ask: stubAsk, caratteri, onRecord: r => records.push(r) });
+  propose(g, 'roma', 'alleanza', 'latini');
+  advanceDay(g, { latini: ai.controller });
+  await ai.flush();
+  advanceDay(g, { latini: ai.controller });
+  assert.ok(records.some(r => r.domande.some(d => d.domanda === 'alleanza' && d.fonte === 'jev' && d.scelta === 'accetta')));
+  assert.deepEqual(g.nazioni.latini.alleati, ['roma']);
+});
