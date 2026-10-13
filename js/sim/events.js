@@ -5,6 +5,7 @@ import { dateFromDay } from './calendar.js';
 import { monthlyIncome } from './economy.js';
 import { changeRelation } from './diplomacy.js';
 import { atWar, startWar } from './war.js';
+import { dormantReady, activateDormant } from './dormant.js';
 
 const ALTRO = ['relazione', 'pretesto', 'pretestoAltro', 'guerra'];
 const LEVE = { societa: 'società', guerra: 'dottrina', governo: 'province' };
@@ -50,6 +51,10 @@ export function conditionsHold(game, def, id) {
   if (volta === 'partita' && fatti.length) return false;
   if (volta === 'popolo' && fatti.includes(id)) return false;
   if (c.altro && !resolveOther(game, def, id)) return false;
+  // un risveglio scatta solo per il padrone della capitale del dormiente
+  for (const o of def.opzioni) for (const eff of o.effetti) {
+    if (eff.crea_popolo && !dormantReady(game, eff.crea_popolo.popolo, id)) return false;
+  }
   return true;
 }
 
@@ -107,6 +112,7 @@ function applyEffect(game, e, eff) {
       for (const [q, d] of Object.entries(v)) n.slider[q] = clamp(n.slider[q] + d, -lim, lim);
       break;
     }
+    case 'crea_popolo': activateDormant(game, v.popolo, v); break;
     default: break; // il validatore impedisce effetti sconosciuti
   }
 }
@@ -146,13 +152,14 @@ export function describeEffects(game, e, opzione) {
       case 'guerra': return `${altro} ci dichiara guerra`;
       case 'cambia_governo': return `governo: ${v}`;
       case 'slider': return Object.entries(v).map(([q, d]) => `${LEVE[q]} ${segno(d)}`).join(', ');
-      default: return describeExtra(game, k, v);
+      default: return describeExtra(game, k, v); // crea_popolo
     }
   });
   return parti.length ? parti.join(', ') : 'nessun effetto';
 }
 
-// Effetti descritti da altri moduli (crea_popolo, Task 2).
 function describeExtra(game, k, v) {
-  return k;
+  if (k !== 'crea_popolo') return k;
+  const nome = game.dormienti[v.popolo]?.nome ?? game.nazioni[v.popolo]?.nome ?? v.popolo;
+  return `nasce ${nome}${(v.esercito ?? 1) !== 1 ? ` (esercito ×${v.esercito})` : ''}${v.guerra ? ', in guerra con noi' : ''}${v.relazione ? `, relazioni ${segno(v.relazione)}` : ''}`;
 }
