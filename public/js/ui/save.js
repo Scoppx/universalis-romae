@@ -2,6 +2,9 @@
 import { END_DAY } from '../sim/calendar.js';
 import { createSessionFrom } from './session.js';
 import { initDiplomacy } from '../sim/diplomacy.js';
+import { initGovernment, SLIDER } from '../sim/government.js';
+import { initCulture, ensureRebels } from '../sim/culture.js';
+import { RIBELLI } from '../sim/state.js';
 
 export const SAVE_VERSION = 1;
 export const AUTOSAVE_KEY = 'universalis-romae:autosave';
@@ -24,6 +27,10 @@ export function deserialize(text, data, { creaAi } = {}) {
   if (errore) return { ok: false, motivo: `salvataggio non valido: ${errore}` };
   const g = { ...s.game, balance: data.balance };
   initDiplomacy(g); // i salvataggi precedenti alla diplomazia ricevono i valori iniziali
+  initGovernment(g);
+  initCulture(g);
+  // il record dei ribelli non viene dal file: si ricrea sempre uguale
+  if (g.nazioni[RIBELLI]) { delete g.nazioni[RIBELLI]; ensureRebels(g); }
   // senza creaAi una partita Jev riparte con le regole
   const ai = ia !== 'regole' && creaAi ? creaAi() : null;
   return { ok: true, session: createSessionFrom(g, s.giocatore, s.seme, ai ? ia : 'regole', ai) };
@@ -45,30 +52,39 @@ function validateGame(s, data) {
   if (!isInt(g.day) || g.day < 0 || g.day > END_DAY) return 'data impossibile';
   if (!isInt(g.rng) || !isInt(g.nextId) || !Array.isArray(g.log) || !Array.isArray(g.stretti) || !g.stretti.every(isStr)) return 'dati di base mancanti';
   if (!isObj(g.nazioni) || !Array.isArray(g.ordine)) return 'popoli mancanti';
-  const nazioni = Object.keys(g.nazioni);
+  if (own(g.nazioni, RIBELLI) && !isObj(g.nazioni[RIBELLI])) return 'popolo ribelli';
+  const nazioni = Object.keys(g.nazioni).filter(k => k !== RIBELLI);
   if (g.ordine.length !== nazioni.length || new Set(g.ordine).size !== nazioni.length || !g.ordine.every(id => own(g.nazioni, id))) return 'elenco dei popoli incoerente';
   if (!isStr(s.giocatore) || !own(g.nazioni, s.giocatore)) return 'popolo del giocatore sconosciuto';
-  const nazione = id => isStr(id) && own(g.nazioni, id);
+  const nazione = id => isStr(id) && own(g.nazioni, id); // ribelli compresi: eserciti e controllori
+  const attiva = id => isStr(id) && g.ordine.includes(id); // solo i popoli veri
   const provincia = id => isStr(id) && own(g.province, id);
   for (const [k, n] of Object.entries(g.nazioni)) {
+    if (k === RIBELLI) continue; // si ricrea al caricamento
     if (!ID.test(k) || !isObj(n) || n.id !== k) return `popolo ${k}`;
     if (![n.nome, n.colore, n.cultura, n.governo].every(isStr) || !provincia(n.capitale)) return `popolo ${k}`;
     if (![n.tesoro, n.uomini, n.stabilita, n.infamia].every(isNum) || typeof n.vivo !== 'boolean') return `popolo ${k}`;
     if (!isObj(n.tratti) || !Object.values(n.tratti).every(isNum)) return `popolo ${k}`;
-    if (!isObj(n.tregue) || !Object.entries(n.tregue).every(([t, d]) => nazione(t) && isInt(d))) return `popolo ${k}`;
+    if (!isObj(n.tregue) || !Object.entries(n.tregue).every(([t, d]) => attiva(t) && isInt(d))) return `popolo ${k}`;
     if (n.obiettivo !== undefined && n.obiettivo !== null && !provincia(n.obiettivo)) return `popolo ${k}`;
-    if (n.relazioni !== undefined && (!isObj(n.relazioni) || !Object.entries(n.relazioni).every(([o, v]) => nazione(o) && isNum(v)))) return `popolo ${k}`;
-    if (n.alleati !== undefined && (!Array.isArray(n.alleati) || !n.alleati.every(nazione))) return `popolo ${k}`;
-    if (n.protettore !== undefined && n.protettore !== null && !nazione(n.protettore)) return `popolo ${k}`;
-    if (n.tributo !== undefined && n.tributo !== null && !(isObj(n.tributo) && nazione(n.tributo.a) && isInt(n.tributo.fine))) return `popolo ${k}`;
+    if (n.relazioni !== undefined && (!isObj(n.relazioni) || !Object.entries(n.relazioni).every(([o, v]) => attiva(o) && isNum(v)))) return `popolo ${k}`;
+    if (n.alleati !== undefined && (!Array.isArray(n.alleati) || !n.alleati.every(attiva))) return `popolo ${k}`;
+    if (n.protettore !== undefined && n.protettore !== null && !attiva(n.protettore)) return `popolo ${k}`;
+    if (n.tributo !== undefined && n.tributo !== null && !(isObj(n.tributo) && attiva(n.tributo.a) && isInt(n.tributo.fine))) return `popolo ${k}`;
+    if (n.slider !== undefined && !(isObj(n.slider) && SLIDER.every(q => isInt(n.slider[q]) && Math.abs(n.slider[q]) <= 5))) return `popolo ${k}`;
+    if (n.ultimoSlider !== undefined && n.ultimoSlider !== null && !isInt(n.ultimoSlider)) return `popolo ${k}`;
     for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati']) {
-      if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => nazione(o) && isInt(v)))) return `popolo ${k}`;
+      if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => attiva(o) && isInt(v)))) return `popolo ${k}`;
     }
   }
   for (const [k, p] of Object.entries(g.province)) {
-    if (!isObj(p) || p.id !== k || !nazione(p.owner) || !nazione(p.controller)) return `provincia ${k}`;
+    if (!isObj(p) || p.id !== k || !attiva(p.owner) || !nazione(p.controller)) return `provincia ${k}`;
     if (![p.nome, p.cultura, p.terreno].every(isStr) || ![p.tasse, p.uomini, p.fort].every(isInt)) return `provincia ${k}`;
     if (!Array.isArray(p.vicini) || !p.vicini.every(provincia)) return `provincia ${k}`;
+    if (p.assimilazione !== undefined && !(isNum(p.assimilazione) && p.assimilazione >= 0 && p.assimilazione <= 100)) return `provincia ${k}`;
+    if (p.assimilazioneDi !== undefined && !attiva(p.assimilazioneDi)) return `provincia ${k}`;
+    if (p.colonia !== undefined && p.colonia !== null && !attiva(p.colonia)) return `provincia ${k}`;
+    if (p.ribelliDal !== undefined && p.ribelliDal !== null && !(isInt(p.ribelliDal) && p.ribelliDal >= 0)) return `provincia ${k}`;
   }
   if (!isObj(g.eserciti) || !isObj(g.guerre) || !isObj(g.proposte)) return 'dati mancanti';
   for (const [k, a] of Object.entries(g.eserciti)) {
@@ -79,15 +95,15 @@ function validateGame(s, data) {
   }
   for (const [k, w] of Object.entries(g.guerre)) {
     if (!ID.test(k) || !isObj(w) || w.id !== k || !isInt(w.inizio) || !isNum(w.battaglie)) return `guerra ${k}`;
-    if (![w.attaccanti, w.difensori].every(l => Array.isArray(l) && l.length > 0 && l.every(nazione))) return `guerra ${k}`;
+    if (![w.attaccanti, w.difensori].every(l => Array.isArray(l) && l.length > 0 && l.every(attiva))) return `guerra ${k}`;
   }
   const TIPI = ['pace', 'alleanza', 'foedus', 'tributo', 'ultimatum', 'chiamata'];
   for (const [k, p] of Object.entries(g.proposte)) {
     if (!ID.test(k) || !isObj(p) || p.id !== k || !TIPI.includes(p.tipo) || !isInt(p.giorno)) return `proposta ${k}`;
-    if (!nazione(p.da) || !nazione(p.a)) return `proposta ${k}`;
+    if (!attiva(p.da) || !attiva(p.a)) return `proposta ${k}`;
     if ((p.tipo === 'pace' || p.tipo === 'chiamata') && !own(g.guerre, p.guerra)) return `proposta ${k}`;
     if (p.tipo === 'pace') {
-      if (!isObj(p.termini) || !nazione(p.termini.ricevente)) return `proposta ${k}`;
+      if (!isObj(p.termini) || !attiva(p.termini.ricevente)) return `proposta ${k}`;
       if (!Array.isArray(p.termini.province) || !p.termini.province.every(provincia)) return `proposta ${k}`;
     }
     if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;

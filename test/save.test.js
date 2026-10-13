@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { loadData } from '../tools/load-data.js';
 import { createSession, runDays } from '../public/js/ui/session.js';
 import { serialize, deserialize, writeStorage, readStorage, AUTOSAVE_KEY } from '../public/js/ui/save.js';
+import { RIBELLI, createArmy, provincesOf } from '../public/js/sim/state.js';
+import { ensureRebels, independence } from '../public/js/sim/culture.js';
 
 const data = loadData();
 
@@ -139,4 +141,61 @@ test('proposte diplomatiche valide: accettate', () => {
   const s = createSession(data, 'roma', 1);
   s.game.proposte = { p9: { id: 'p9', tipo: 'alleanza', da: 'veio', a: 'roma', giorno: 0 } };
   assert.equal(deserialize(serialize(s), data).ok, true);
+});
+
+test('ribelli e popoli nuovi: andata e ritorno identici', () => {
+  const s = createSession(data, 'roma', 2);
+  runDays(s, 40);
+  const g = s.game;
+  ensureRebels(g);
+  const p = Object.values(g.province).find(x => x.owner !== 'roma' && provincesOf(g, x.owner).length > 1);
+  p.cultura = 'nessuna_cultura';
+  p.controller = RIBELLI;
+  independence(g, p.id);
+  const q = Object.values(g.province).find(x => x.owner === 'veio');
+  createArmy(g, RIBELLI, q.id, 800, 0);
+  g.nazioni.roma.slider.guerra = 2;
+  const r = deserialize(serialize(s), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.deepEqual(r.session.game, g);
+  runDays(s, 60);
+  runDays(r.session, 60);
+  assert.deepEqual(r.session.game, s.game);
+});
+
+test('salvataggio vecchio senza slider, cultura e ribelli: valori iniziali', () => {
+  const s = createSession(data, 'roma', 1);
+  const old = JSON.parse(serialize(s));
+  for (const n of Object.values(old.game.nazioni)) { delete n.slider; delete n.ultimoSlider; }
+  for (const p of Object.values(old.game.province)) { delete p.assimilazione; delete p.assimilazioneDi; delete p.colonia; delete p.ribelliDal; }
+  const r = deserialize(JSON.stringify(old), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.deepEqual(r.session.game.nazioni.roma.slider, { societa: 0, guerra: 0, governo: 0 });
+  assert.equal(r.session.game.province.roma.colonia, null);
+});
+
+test('campi nuovi non validi: rifiutati', () => {
+  const s = createSession(data, 'roma', 1);
+  const good = JSON.parse(serialize(s));
+  const guasta = f => { const x = structuredClone(good); f(x.game); return JSON.stringify(x); };
+  const bad = [
+    guasta(g => { g.nazioni.roma.slider = { societa: 9, guerra: 0, governo: 0 }; }),
+    guasta(g => { g.nazioni.roma.ultimoSlider = 'ieri'; }),
+    guasta(g => { g.province.roma.assimilazione = 400; }),
+    guasta(g => { g.province.roma.colonia = 'atlantide'; }),
+    guasta(g => { g.province.roma.ribelliDal = -1.5; }),
+    guasta(g => { g.nazioni.ribelli = { id: 'ribelli' }; g.province.roma.owner = 'ribelli'; }),
+    guasta(g => { g.province.roma.controller = 'ribelli'; }), // ribelli senza record
+    guasta(g => { g.nazioni.ribelli = 'boh'; })
+  ];
+  for (const text of bad) assert.equal(deserialize(text, data).ok, false, text.slice(0, 80));
+});
+
+test('il record dei ribelli si ricrea al caricamento', () => {
+  const s = createSession(data, 'roma', 1);
+  const x = JSON.parse(serialize(s));
+  x.game.nazioni.ribelli = { id: 'ribelli', nome: 'Ribelli', colore: '#000000' };
+  const r = deserialize(JSON.stringify(x), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.deepEqual(r.session.game.nazioni.ribelli.alleati, []);
 });
