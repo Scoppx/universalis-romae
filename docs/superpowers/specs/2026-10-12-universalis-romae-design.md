@@ -289,7 +289,7 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 4a. Diplomazia (sezione 11).
 4b. Governo, slider, cultura, rivolte, colonie, fortificazioni (sezione 12).
 5. Eventi e popoli dormienti (sezione 13).
-6. Taratura della difficoltà.
+6. Taratura della difficoltà (sezione 14).
 
 I valori numerici iniziali (perdite, soglie, costi) stanno in `public/data/balance.json`
 e si correggono con il bench, non nel codice.
@@ -417,3 +417,25 @@ fortificazioni: sezione 3).
   Neapolis nasce ad Acerrae (Cuma ha una sola provincia, che non può perdere per un evento). Un evento che
   porterebbe via l'ultima provincia di un popolo non scatta.
 - **Notizie**: nascite di popoli e eventi storici per tutti; i propri eventi li si vede nella finestra.
+
+## 14. Tappa 6: taratura (aggiunta del 2026-10-14)
+
+- **Obiettivi**, misurati dal bench a regole a 100 anni su 20 semi: popoli vivi per difficoltà — facile (Roma)
+  almeno 80% e più province di quante ne aveva all'inizio; normale 50–65%; difficile 30–45%; molto difficile
+  15–30%; in totale almeno il 55% dei popoli iniziali. In modalità Jev, guerre dichiarate per popolo e per anno
+  vicine a quelle delle regole (entro un fattore 1,5).
+- **Riepilogo del bench**: sopravvivenza per difficoltà e totale, Roma (viva, province, punteggio), guerre
+  (numero, durata media, guerre per popolo-anno di regole e di Jev), popoli nuovi (nati, vivi), e un ✓/✗ per
+  ogni obiettivo.
+- **Bonus per difficoltà** (`balance.difficolta`): moltiplicatori dell'esercito, del tesoro e della riserva
+  iniziali e un modificatore al dado, per ogni etichetta; normale senza effetti. La difficoltà è un campo del
+  popolo nello stato della partita (i popoli nati durante la partita sono "normale").
+- **Leve contro la letalità**, tutte in `balance.json`: anni di respiro a inizio partita senza guerre dell'IA;
+  quota massima di province di un popolo cedibili in una pace; stanchezza di guerra (dopo tanti anni l'IA
+  propone e accetta la pace bianca); rapporto di forze per attaccare.
+- **Popoli nuovi** (indipendenze, risvegli): tregua con i confinanti per alcuni anni e, per le indipendenze, un
+  esercito più grande.
+- **Jev**: la domanda di guerra dice cosa si guadagna (province e tasse del bersaglio) e cosa si rischia; la scelta
+  di restare in pace non è più descritta come la più saggia.
+- **Metodo**: si cambia un valore alla volta, si misura su 20 semi, si tiene o si torna indietro; ogni modifica
+  tenuta finisce nel registro con i numeri prima e dopo. Le soglie che non si riescono a raggiungere si dichiarano.
