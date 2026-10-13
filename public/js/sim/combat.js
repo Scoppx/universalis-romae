@@ -1,7 +1,8 @@
 // Battaglie giornaliere: ogni giorno un dado 0-9 per parte più i modificatori.
 import { rollD10 } from './rng.js';
-import { armyStrength, clamp, log, sliderOf } from './state.js';
+import { armyStrength, clamp, log, sliderOf, RIBELLI } from './state.js';
 import { atWar, warBetween, sideOf } from './war.js';
+import { friendly } from './diplomacy.js';
 
 export function resolveBattles(game) {
   for (const a of Object.values(game.eserciti)) a.inBattaglia = false;
@@ -16,6 +17,13 @@ export function resolveBattles(game) {
       if (enemy) { first = x; break; }
     }
     if (!enemy) continue;
+    if (first.owner === RIBELLI || enemy.owner === RIBELLI) {
+      // contro i ribelli combatte chi li ha trovati, insieme ai suoi amici
+      const altro = first.owner === RIBELLI ? enemy.owner : first.owner;
+      battleDay(game, provId, armies.filter(x => x.owner === RIBELLI),
+        armies.filter(x => x.owner === altro || (x.owner !== RIBELLI && friendly(game, x.owner, altro))));
+      continue;
+    }
     // tutti gli eserciti dello stesso lato della guerra combattono insieme
     const war = warBetween(game, first.owner, enemy.owner);
     const lato = sideOf(war, first.owner), altro = sideOf(war, enemy.owner);

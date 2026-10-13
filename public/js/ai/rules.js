@@ -1,6 +1,6 @@
 // IA a regole. Legge lo stato e restituisce comandi; non modifica mai lo stato.
 // Fa il lavoro di fino (eserciti, reclute) per tutti, e le scelte strategiche quando Jev non c'è.
-import { armiesOf, maxManpower, bordersNation, power } from '../sim/state.js';
+import { armiesOf, maxManpower, bordersNation, power, RIBELLI } from '../sim/state.js';
 
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
@@ -168,18 +168,22 @@ export function armyOrders(game, id) {
   const cmds = [];
   const enemies = enemiesOfNation(game, id);
   const capital = game.nazioni[id].capitale;
+  // province proprie tenute o invase dai ribelli: si reprimono anche in pace
+  const rivolte = Object.values(game.province).filter(p => p.owner === id &&
+    (p.controller === RIBELLI || Object.values(game.eserciti).some(e => e.prov === p.id && e.owner === RIBELLI)));
   for (const a of armiesOf(game, id)) {
     if (a.inBattaglia || a.percorso.length) continue;
-    if (!enemies.length) {
+    if (!enemies.length && !rivolte.length) {
       if (a.prov !== capital) cmds.push({ tipo: 'muovi', nazione: id, esercito: a.id, verso: capital });
       continue;
     }
     const here = game.province[a.prov];
-    if (here.controller !== id && enemies.includes(here.controller)) continue; // sta assediando
+    if (here.controller !== id && (enemies.includes(here.controller) || (here.controller === RIBELLI && here.owner === id))) continue; // sta assediando
     if (a.morale < game.balance.combattimento.moraleMax / 2) continue; // si riprende
     // solo province tenute da un nemico: quelle occupate da un terzo non si possono assediare
-    const targets = Object.values(game.province).filter(p =>
+    const nemiche = Object.values(game.province).filter(p =>
       enemies.includes(p.controller) && (p.owner === id || enemies.includes(p.owner)));
+    const targets = [...nemiche, ...rivolte.filter(p => !nemiche.includes(p))];
     const { dist } = distancesFrom(game, id, a.prov);
     // obiettivo deciso dal consiglio: un bersaglio nemico, oppure la capitale da presidiare
     const ob = game.nazioni[id].obiettivo;

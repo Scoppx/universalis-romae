@@ -1,5 +1,5 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
-import { newId, log, bordersNation, provincesOf, sumOf } from './state.js';
+import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI } from './state.js';
 import { friendly, answerDiplomatic, onWarDeclared, cleanupDead } from './diplomacy.js';
 
 export function sideOf(war, id) {
@@ -20,7 +20,9 @@ export function warBetween(game, a, b) {
 }
 
 export function atWar(game, a, b) {
-  return a !== b && warBetween(game, a, b) !== null;
+  if (a === b) return false;
+  if (a === RIBELLI || b === RIBELLI) return true; // i ribelli sono in guerra con tutti
+  return warBetween(game, a, b) !== null;
 }
 
 export function hasPretext(game, attacker, defender) {
@@ -135,6 +137,7 @@ export function makePeace(game, warId, receiver, termini) {
 // Eserciti rimasti in terra straniera (né in guerra con il padrone né amici suoi) tornano nella capitale.
 export function sendStrandedHome(game) {
   for (const a of Object.values(game.eserciti)) {
+    if (a.owner === RIBELLI) continue;
     const p = game.province[a.prov];
     if (p.owner !== a.owner && p.controller !== a.owner && !atWar(game, a.owner, p.owner) && !friendly(game, a.owner, p.owner)) {
       a.prov = game.nazioni[a.owner].capitale;
