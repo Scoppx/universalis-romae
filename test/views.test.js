@@ -6,6 +6,7 @@ import { declareWar, proposePeace, makePeace } from '../public/js/sim/war.js';
 import { createArmy } from '../public/js/sim/state.js';
 import * as V from '../public/js/ui/views.js';
 import { ensureRebels } from '../public/js/sim/culture.js';
+import { monthlyEvents } from '../public/js/sim/events.js';
 import { provinceFill, cultureColor, RELAZIONE, TERRENO } from '../public/js/ui/colors.js';
 
 test('barra in alto', () => {
@@ -271,4 +272,19 @@ test('revisione: il modulo di pace è solo per il capofila', () => {
   declareWar(g, 'roma', 'volsci');
   assert.equal(V.warsView(g, 'volsci')[0].capofila, true);
   assert.equal(V.warsView(g, 'siculi')[0].capofila, false);
+});
+
+test('eventi del giocatore e notizie di nascite, governi, eventi storici', () => {
+  const g = makeGame(1, [{ id: 'e', titolo: 'Carestia', testo: 'Il raccolto è perduto.', condizioni: { probabilita: 1, popoli: ['roma'] },
+    opzioni: [{ id: 'a', testo: 'Comprare grano', effetti: [{ tesoroMesi: -3 }] }], regola: 'a', storico: true }]);
+  monthlyEvents(g);
+  const [v] = V.pendingEvents(g, 'roma');
+  assert.equal(v.titolo, 'Carestia');
+  assert.deepEqual(v.opzioni, [{ id: 'a', testo: 'Comprare grano', effetti: 'tesoro −3 mesi di entrate' }]);
+  assert.deepEqual(V.pendingEvents(g, 'latini'), []);
+  assert.equal(V.formatLogEntry({ tipo: 'nascita', nazione: 'latini', prov: 'd', da: 'roma' }, g, 'roma'), 'Nasce latini a D.');
+  assert.equal(V.formatLogEntry({ tipo: 'governo', nazione: 'latini', governo: 'repubblica' }, g, 'roma'), 'latini diventa una repubblica.');
+  assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'latini', opzione: 'a', storico: true }, g, 'roma'), 'latini: Carestia.');
+  assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'roma', opzione: 'a', storico: true }, g, 'roma'), null);
+  assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'latini', opzione: 'a', storico: false }, g, 'roma'), null);
 });

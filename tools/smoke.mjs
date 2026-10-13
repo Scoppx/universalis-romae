@@ -378,6 +378,21 @@ try {
   check(await page.evaluate(() => window.universalis.markers().some(m => m.owner === 'ribelli')), 'esercito ribelle disegnato');
   await page.screenshot({ path: 'smoke-malcontento.png' });
 
+  // --- eventi e popoli dormienti (tappa 5)
+  await page.evaluate(() => {
+    const g = window.universalis.ui.session.game;
+    g.eventi.v900 = { id: 'v900', evento: 'carestia', nazione: 'roma', altro: null, giorno: g.day };
+    g.eventi.v901 = { id: 'v901', evento: 'oracolo', nazione: 'roma', altro: null, giorno: g.day };
+    window.universalis.avanza(1);
+  });
+  check((await page.textContent('#finestra')).includes('mesi di entrate'), 'evento: finestra con gli effetti');
+  await page.click('[data-azione="scegli"][data-id="v900"]');
+  check(await page.evaluate(() => !window.universalis.ui.session.game.eventi.v900), 'evento scelto');
+  check(await page.isVisible('[data-azione="scegli"][data-id="v901"]'), 'secondo evento subito dopo');
+  await page.click('[data-azione="scegli"][data-id="v901"]');
+  check(await page.isHidden('#finestra'), 'finestra chiusa dopo l\'ultimo evento');
+  await page.screenshot({ path: 'smoke-eventi.png' });
+
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
 } catch (e) {

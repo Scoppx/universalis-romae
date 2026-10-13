@@ -19,6 +19,7 @@ export function pausaNecessaria(session) {
   if (isOver(game)) return 'fine';
   if (!game.nazioni[giocatore].vivo) return 'sconfitta';
   if (Object.values(game.proposte).some(p => p.a === giocatore)) return 'proposta';
+  if (Object.values(game.eventi ?? {}).some(e => e.nazione === giocatore)) return 'evento';
   return null;
 }
 

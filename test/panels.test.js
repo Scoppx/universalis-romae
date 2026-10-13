@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esercitiHtml, provinceHtml, rankingHtml, governoHtml } from '../public/js/ui/panels.js';
+import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml } from '../public/js/ui/panels.js';
 
 const evil = '<img src=x onerror=alert(1)>';
 
@@ -20,5 +20,6 @@ test('ogni valore inserito nell\'HTML è protetto, anche i "numeri"', () => {
     slider: [{ quale: evil, nome: evil, sinistra: evil, destra: evil, valore: evil, meno: evil, piu: null }]
   });
   assert.equal(gov.includes('<img'), false);
+  assert.equal(eventoHtml({ id: evil, titolo: evil, testo: evil, opzioni: [{ id: evil, testo: evil, effetti: evil }] }).includes('<img'), false);
   assert.equal(rankingHtml('Fine', [{ pos: 1, nome: 'Roma', punteggio: evil, vivo: true, tu: true }]).includes('<img'), false);
 });
