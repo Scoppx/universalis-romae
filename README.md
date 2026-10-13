@@ -23,6 +23,7 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Clic** su una provincia: scheda a destra. **Rotella**: zoom. **Trascina**: sposta la mappa.
 - **Eserciti**: clic sul soldatino per selezionarlo; **Maiuscolo+clic** o **Maiuscolo+trascina** per sceglierne più d'uno; **clic destro** sulla destinazione. Nella scheda Eserciti: **Unisci** e **Dividi**.
 - **Diplomazia**: dichiara guerra ai vicini. **Guerre**: chiedi le province occupate, cedi le tue o proponi la pace bianca.
+- **Diplomazia**: per ogni popolo vedi la relazione e cosa puoi fare (il motivo, se un bottone è spento): ambasceria, alleanza, foedus, tributo, ultimatum, guerra. Quando dichiari guerra i tuoi alleati vengono chiamati alle armi; quelli del nemico entrano da soli. Da un foedus si può uscire, ma costa stabilità e dà al protettore un pretesto di guerra.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
 
 ## Struttura
