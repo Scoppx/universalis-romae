@@ -1,7 +1,7 @@
 // IA con Jev: le decisioni strategiche si chiedono a Jev in modo asincrono e diventano comandi quando
 // la risposta arriva. Il lavoro di fino resta alle regole. Se Jev non risponde, decidono le regole.
-import { isReviewDay, peaceProposals, warDecision, answerProposals, routine, legalWarTargets } from './rules.js';
-import { buildReview, buildPeaceQuestion, interpretChoice } from './questions.js';
+import { isReviewDay, peaceProposals, warDecision, answerProposals, routine, legalWarTargets, diplomacyInitiatives } from './rules.js';
+import { buildReview, buildProposalQuestion, interpretChoice } from './questions.js';
 import { sideOf } from '../sim/war.js';
 
 const inGuerra = (game, id) => Object.values(game.guerre).some(w => sideOf(w, id));
@@ -42,12 +42,13 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
     };
     for (const [q, meta] of Object.entries(job.meta)) {
       const ans = res?.answers?.[q];
-      if (meta.tipo === 'pace') {
-        if (!game.proposte[meta.proposta]) { record.domande.push({ domanda: 'pace', scelta: null, fonte: 'superata', probabilita: null }); continue; }
+      if (meta.tipo === 'pace' || meta.tipo === 'proposta') {
+        const domanda = meta.genere ?? 'pace';
+        if (!game.proposte[meta.proposta]) { record.domande.push({ domanda, scelta: null, fonte: 'superata', probabilita: null }); continue; }
         const v = usabile ? interpretChoice(ans, meta) : null;
         const accetta = v ? v.valore : answerProposals(game, id).find(c => c.proposta === meta.proposta).accetta;
         record.comandi.push({ tipo: 'rispondi', nazione: id, proposta: meta.proposta, accetta });
-        record.domande.push({ domanda: 'pace', scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
+        record.domande.push({ domanda, scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
         continue;
       }
       if (meta.tipo === 'guerra' && stato.guerra) {
@@ -85,11 +86,12 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
     for (const p of Object.values(game.proposte)) {
       if (p.a !== id || chieste.has(p.id)) continue;
       chieste.add(p.id);
-      const q = buildPeaceQuestion(game, p.id, caratteri[id] ?? '');
+      const q = buildProposalQuestion(game, p.id, caratteri[id] ?? '');
       enqueue({ nazione: id, giorno: game.day, req: { state: q.state, questions: q.questions }, meta: q.meta });
     }
     if (isReviewDay(game, id)) {
       if (inGuerra(game, id)) cmds.push(...peaceProposals(game, id));
+      else cmds.push(...diplomacyInitiatives(game, id));
       const q = buildReview(game, id, caratteri[id] ?? '');
       if (q) enqueue({ nazione: id, giorno: game.day, req: { state: q.state, questions: q.questions }, meta: q.meta });
     }
@@ -114,7 +116,7 @@ export function createReplayAi(records) {
   }
   function controller(game, id) {
     const cmds = [...(perGiorno.get(`${game.day}|${id}`) ?? [])];
-    if (isReviewDay(game, id) && inGuerra(game, id)) cmds.push(...peaceProposals(game, id));
+    if (isReviewDay(game, id)) cmds.push(...(inGuerra(game, id) ? peaceProposals(game, id) : diplomacyInitiatives(game, id)));
     cmds.push(...routine(game, id));
     return cmds;
   }

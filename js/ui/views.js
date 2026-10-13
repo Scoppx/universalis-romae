@@ -148,7 +148,11 @@ export function rankingView(game, g) {
   return ranking(game).map((r, i) => ({ pos: i + 1, nome: nome(game, r.id), punteggio: r.punteggio, vivo: r.vivo, tu: r.id === g }));
 }
 
-const DOMANDE = { guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?' };
+const DOMANDE = {
+  guerra: 'Guerra?', obiettivo: 'Obiettivo degli eserciti', pace: 'Accettare la pace?',
+  alleanza: 'Accettare l\'alleanza?', foedus: 'Accettare il foedus?', tributo: 'Pagare il tributo?',
+  ultimatum: 'Cedere la provincia?', chiamata: 'Rispondere alla chiamata?'
+};
 
 export function councilView(records, game, filtro) {
   return records.filter(r => !filtro || r.nazione === filtro).slice(-50).reverse().flatMap(r => r.domande.map(d => ({
