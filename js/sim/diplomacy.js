@@ -227,3 +227,23 @@ export function cleanupDead(game, id) {
   game.nazioni[id].protettore = null;
   game.nazioni[id].tributo = null;
 }
+
+export function checkLeaveFoedus(game, id) {
+  const n = game.nazioni[id];
+  if (!n?.vivo || !n.protettore) return 'non sei in un foedus';
+  if (Object.values(game.guerre).some(w => sideOf(w, id))) return 'non durante una guerra';
+  return null;
+}
+
+// Uscire dal foedus: si torna liberi, ma si perde stabilità e il protettore ottiene un pretesto di guerra.
+export function leaveFoedus(game, id) {
+  const err = checkLeaveFoedus(game, id);
+  if (err) return { ok: false, motivo: err };
+  const n = game.nazioni[id], d = D(game), P = n.protettore;
+  n.protettore = null;
+  n.stabilita = Math.max(-3, n.stabilita - d.uscitaFoedusStabilita);
+  changeRelation(game, id, P, d.uscitaFoedusRelazione);
+  game.nazioni[P].pretesti[id] = game.day + d.pretestoAnni * 365;
+  log(game, { tipo: 'uscita', nazione: id, protettore: P });
+  return { ok: true };
+}

@@ -5,7 +5,7 @@ import { armiesOf, maxManpower, bordersNation, power } from '../sim/state.js';
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
 import { distancesFrom } from '../sim/armies.js';
-import { relation, friendly, checkProposal, checkEmbassy } from '../sim/diplomacy.js';
+import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { stabilityCost } from '../sim/economy.js';
 import { isFirstOfMonth } from '../sim/calendar.js';
 
@@ -74,7 +74,8 @@ export function ultimatumDecision(game, id) {
 
 export function diplomacyInitiatives(game, id) {
   const n = game.nazioni[id], d = game.balance.diplomazia, mine = power(game, id);
-  if (n.protettore) return [];
+  // un federato che è diventato più forte del suo protettore se ne va
+  if (n.protettore) return mine > power(game, n.protettore) && !checkLeaveFoedus(game, id) ? [{ tipo: 'esci_foedus', nazione: id }] : [];
   const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
   const vicini = game.ordine.filter(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && !atWar(game, id, o));
   const foedus = vicini.filter(o => !checkProposal(game, id, 'foedus', o)).sort(byId)[0];
