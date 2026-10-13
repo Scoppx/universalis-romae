@@ -142,3 +142,20 @@ test('azioni sulla selezione: unire e dividere', () => {
   assert.equal(V.selectionActions(g, 'roma', []).puoDividere, false);
   assert.deepEqual(V.armiesView(g, 'roma', [b.id]).map(a => a.scelto), [false, true]);
 });
+
+test('firma dei colori: in modalità relazioni cambia con guerre e tregue', async () => {
+  const { fillSignature } = await import('../public/js/ui/colors.js');
+  const g = makeGame();
+  const pol = fillSignature(g, 'politica', 'roma'), rel = fillSignature(g, 'relazioni', 'roma');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.equal(fillSignature(g, 'politica', 'roma'), pol); // la politica non dipende dalle guerre
+  const inGuerra = fillSignature(g, 'relazioni', 'roma');
+  assert.notEqual(inGuerra, rel);
+  makePeace(g, guerra, 'roma', { province: [] });
+  const inTregua = fillSignature(g, 'relazioni', 'roma');
+  assert.notEqual(inTregua, inGuerra);
+  g.day += 1826; // la tregua scade
+  assert.notEqual(fillSignature(g, 'relazioni', 'roma'), inTregua);
+  g.province.c.controller = 'roma';
+  assert.notEqual(fillSignature(g, 'politica', 'roma'), pol); // le occupazioni contano sempre
+});

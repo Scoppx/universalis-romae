@@ -56,3 +56,21 @@ test('ventaglio, rettangolo, scala', () => {
   assert.equal(soldierScale({ scale: 0.5, min: 0.4 }), 0.8);
   assert.equal(soldierScale({ scale: 4, min: 0.4 }), 1.4);
 });
+
+test('frazione continua: la pausa la congela, il cambio di velocità la conserva', async () => {
+  const { setSpeed } = await import('../public/js/ui/clock.js');
+  const c = createClock();
+  setPaused(c, false);
+  tick(c, 0);
+  tick(c, 100); // velocità 3: metà giornata
+  setPaused(c, true);
+  assert.equal(frazione(c), 0.5); // in pausa il soldatino resta dov'era
+  setSpeed(c, 5);
+  assert.equal(frazione(c), 0.5); // cambiare velocità non lo sposta
+  setPaused(c, false);
+  assert.equal(tick(c, 1000), 0); // alla ripresa nessun balzo
+  assert.equal(frazione(c), 0.5);
+  setSpeed(c, 1);
+  assert.equal(frazione(c), 0.5);
+  assert.equal(tick(c, 1600), 1); // a velocità 1 (1000 ms) servono altri 500 ms per finire il giorno
+});

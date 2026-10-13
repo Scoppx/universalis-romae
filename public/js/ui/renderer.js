@@ -1,6 +1,6 @@
 // Disegno della mappa a due strati. La base (mare, rilievo, popoli, confini, acque, nomi) sta in una tela nascosta
 // e si ridisegna solo quando cambiano vista o confini; selezione, percorsi e soldatini a ogni fotogramma.
-import { provinceFill } from './colors.js';
+import { provinceFill, fillSignature } from './colors.js';
 import { atWar } from '../sim/war.js';
 import { toScreen } from './camera.js';
 import { drawSoldier, drawLabel, drawArrow } from './soldier.js';
@@ -104,9 +104,7 @@ export function createRenderer(canvas, map, { onReady } = {}) {
   }
 
   function draw({ game, giocatore, modo, selezione, camera, evidenzia, fraz = 0, now = 0, inPausa = true, rettangolo = null }) {
-    let firma = '';
-    for (const p of Object.values(game.province)) firma += `${p.owner},${p.controller};`;
-    const chiave = [camera.x, camera.y, camera.scale, modo, giocatore, evidenzia, size.w, size.h, pronto, firma].join('|');
+    const chiave = [camera.x, camera.y, camera.scale, modo, giocatore, evidenzia, size.w, size.h, pronto, fillSignature(game, modo, giocatore)].join('|');
     if (chiave !== chiaveBase) { drawBase(game, giocatore, modo, camera, evidenzia); chiaveBase = chiave; }
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
