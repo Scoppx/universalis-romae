@@ -1,7 +1,9 @@
 // Domande per Jev: il codice calcola i fatti e le opzioni legali, Jev sceglie, il codice interpreta.
 import { legalWarTargets, enemiesOfNation, power } from './rules.js';
 import { distancesFrom } from '../sim/armies.js';
-import { armiesOf } from '../sim/state.js';
+import { armiesOf, sliderOf, provincesOf } from '../sim/state.js';
+import { checkSlider, sliderInterval } from '../sim/government.js';
+import { malcontent } from '../sim/culture.js';
 import { sideOf, enemiesOf, scoreFor, hasPretext, peaceCost } from '../sim/war.js';
 import { formatDate } from '../sim/calendar.js';
 import { relation } from '../sim/diplomacy.js';
@@ -179,4 +181,71 @@ export function buildProposalQuestion(game, propId, carattere) {
     },
     meta: { [p.tipo]: { tipo: 'proposta', genere: p.tipo, proposta: propId, mappa: { accetta: true, rifiuta: false }, prudente: 'rifiuta' } }
   };
+}
+
+const LEVE = [
+  ['societa', -1, 'patrizi', 'Dare più potere ai patrizi: +2% di tasse per ogni passo.'],
+  ['societa', 1, 'plebe', 'Dare più spazio alla plebe: +3% di reclute per ogni passo.'],
+  ['guerra', -1, 'difesa', 'Educare il popolo alla difesa: oltre −4, +1 al dado quando si combatte in casa.'],
+  ['guerra', 1, 'attacco', 'Educare il popolo all\'attacco: oltre +4, +1 al dado quando si combatte in terra nemica.'],
+  ['governo', -1, 'accentramento', 'Accentrare il potere: le province straniere si assimilano prima, ma il malcontento cresce.'],
+  ['governo', 1, 'autonomia', 'Lasciare autonomia alle province: meno malcontento, ma assimilazione più lenta.']
+];
+
+export function buildSliderQuestion(game, id, carattere) {
+  const criteria = { nessuna: 'Non fare riforme per ora: la situazione va bene così.' };
+  const mappa = { nessuna: null };
+  for (const [quale, verso, k, testo] of LEVE) {
+    if (checkSlider(game, id, quale, verso)) continue;
+    criteria[k] = testo;
+    mappa[k] = { quale, verso };
+  }
+  if (Object.keys(mappa).length === 1) return null;
+  const n = game.nazioni[id], s = sliderOf(game, id), prov = provincesOf(game, id);
+  const state = statoPopolo(game, id, carattere);
+  state.riforme = {
+    societa: s.societa, guerra: s.guerra, governo: s.governo,
+    nota: `Ogni leva va da −5 (patrizi, difesa, accentramento) a +5 (plebe, attacco, autonomia); la prossima riforma tra ${sliderInterval(game, id) / 365} anni.`
+  };
+  state.province = {
+    totali: prov.length,
+    di_altra_cultura: prov.filter(p => p.cultura !== n.cultura).length,
+    scontente: prov.filter(p => malcontent(game, p.id) > game.balance.cultura.sogliaRivolta).length
+  };
+  state.in_guerra = enemiesOfNation(game, id).length > 0;
+  return {
+    state,
+    questions: {
+      riforma: {
+        type: 'choice',
+        instructions: 'Sei il consiglio di `popolo.nome` e decidi secondo `popolo.carattere`. Guardando `riforme`, `province` e la situazione, quale riforma fai adesso?',
+        criteria
+      }
+    },
+    meta: { riforma: { tipo: 'slider', mappa, prudente: 'nessuna' } }
+  };
+}
+
+// Numero in [0, 1) da una chiave intera (un passo di mulberry32): non tocca il generatore della partita.
+function hashUnit(n) {
+  let t = (n + 0x6D2B79F5) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+// Scelte di gusto: si estrae dalle probabilità (temperatura 0,8) invece di prendere sempre la più probabile.
+export function sampleChoice(answer, meta, chiave, temperatura = 0.8) {
+  const probs = answer?.probabilities;
+  if (!probs || typeof probs !== 'object') return null;
+  const voci = Object.entries(probs)
+    .filter(([k, v]) => typeof v === 'number' && v > 0 && Object.hasOwn(meta.mappa, k))
+    .sort(([a], [b]) => (a < b ? -1 : 1));
+  if (!voci.length) return null;
+  const pesi = voci.map(([, v]) => v ** (1 / temperatura));
+  let u = hashUnit(chiave) * pesi.reduce((s, x) => s + x, 0);
+  let i = 0;
+  while (i < voci.length - 1 && (u -= pesi[i]) >= 0) i++;
+  const scelta = voci[i][0];
+  return { scelta, valore: meta.mappa[scelta], incerto: false, probabilita: probs };
 }

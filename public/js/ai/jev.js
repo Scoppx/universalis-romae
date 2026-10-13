@@ -1,7 +1,7 @@
 // IA con Jev: le decisioni strategiche si chiedono a Jev in modo asincrono e diventano comandi quando
 // la risposta arriva. Il lavoro di fino resta alle regole. Se Jev non risponde, decidono le regole.
-import { isReviewDay, peaceProposals, warDecision, answerProposals, routine, legalWarTargets, diplomacyInitiatives } from './rules.js';
-import { buildReview, buildProposalQuestion, interpretChoice } from './questions.js';
+import { isReviewDay, peaceProposals, warDecision, answerProposals, routine, legalWarTargets, diplomacyInitiatives, isSliderDay, sliderDecision, colonyDecision } from './rules.js';
+import { buildReview, buildProposalQuestion, interpretChoice, buildSliderQuestion, sampleChoice } from './questions.js';
 import { sideOf } from '../sim/war.js';
 
 const inGuerra = (game, id) => Object.values(game.guerre).some(w => sideOf(w, id));
@@ -51,6 +51,13 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
         record.domande.push({ domanda, scelta: accetta ? 'accetta' : 'rifiuta', fonte: v ? (v.incerto ? 'prudenza' : 'jev') : 'regola', probabilita: v ? v.probabilita : null });
         continue;
       }
+      if (meta.tipo === 'slider') {
+        // riforma: scelta di gusto, estratta dalle probabilità con una chiave fissa (il rigioco legge i comandi dal registro)
+        const v = usabile ? sampleChoice(ans, meta, job.seq * 100003 + job.giorno) : null;
+        record.comandi.push(...(v ? (v.valore ? [{ tipo: 'slider', nazione: id, ...v.valore }] : []) : sliderDecision(game, id)));
+        record.domande.push({ domanda: 'riforma', scelta: v ? v.scelta : 'regola', fonte: v ? 'jev' : 'regola', probabilita: v ? v.probabilita : null });
+        continue;
+      }
       if (meta.tipo === 'guerra' && stato.guerra) {
         record.domande.push({ domanda: 'guerra', scelta: null, fonte: 'superata', probabilita: null });
         continue;
@@ -92,7 +99,12 @@ export function createJevAi({ ask, caratteri, maxParallel = 4, scadenza = 60, ma
     if (isReviewDay(game, id)) {
       if (inGuerra(game, id)) cmds.push(...peaceProposals(game, id));
       else cmds.push(...diplomacyInitiatives(game, id));
+      cmds.push(...colonyDecision(game, id));
       const q = buildReview(game, id, caratteri[id] ?? '');
+      if (q) enqueue({ nazione: id, giorno: game.day, req: { state: q.state, questions: q.questions }, meta: q.meta });
+    }
+    if (isSliderDay(game, id)) {
+      const q = buildSliderQuestion(game, id, caratteri[id] ?? '');
       if (q) enqueue({ nazione: id, giorno: game.day, req: { state: q.state, questions: q.questions }, meta: q.meta });
     }
     cmds.push(...routine(game, id));
@@ -116,7 +128,7 @@ export function createReplayAi(records) {
   }
   function controller(game, id) {
     const cmds = [...(perGiorno.get(`${game.day}|${id}`) ?? [])];
-    if (isReviewDay(game, id)) cmds.push(...(inGuerra(game, id) ? peaceProposals(game, id) : diplomacyInitiatives(game, id)));
+    if (isReviewDay(game, id)) cmds.push(...(inGuerra(game, id) ? peaceProposals(game, id) : diplomacyInitiatives(game, id)), ...colonyDecision(game, id));
     cmds.push(...routine(game, id));
     return cmds;
   }
