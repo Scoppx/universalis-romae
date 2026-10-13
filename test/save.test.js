@@ -256,3 +256,14 @@ test('evento orfano del giocatore: scartato al caricamento, la partita riparte',
   assert.equal(r.session.game.eventi.v997, undefined);
   assert.equal(runDays(r.session, 3).giorni, 3);
 });
+
+test('salvataggio vecchio senza difficoltà: la riceve dai dati, normale per i popoli nati in partita', () => {
+  const s = createSession(data, 'roma', 1);
+  const old = JSON.parse(serialize(s));
+  for (const n of Object.values(old.game.nazioni)) delete n.difficolta;
+  for (const d of Object.values(old.game.dormienti)) delete d.difficolta;
+  const r = deserialize(JSON.stringify(old), data);
+  assert.equal(r.ok, true, r.motivo);
+  assert.equal(r.session.game.nazioni.roma.difficolta, 'facile');
+  assert.equal(r.session.game.dormienti.taranto.difficolta, data.popoli.popoli.find(p => p.id === 'taranto').difficolta);
+});

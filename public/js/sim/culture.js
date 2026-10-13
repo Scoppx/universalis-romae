@@ -125,7 +125,7 @@ export function spawnNation(game, provId) {
     id, nome: `Liberi di ${p.nome}`, colore: COLORI[game.ordine.length % COLORI.length],
     cultura: p.cultura, governo: 'tribù', capitale: provId,
     tesoro: p.tasse * b.economia.tasseMese * b.inizio.tesoroMesi, uomini: 0, stabilita: 0, infamia: 0,
-    tratti: {}, vivo: true, tregue: {}, obiettivo: null
+    tratti: {}, vivo: true, tregue: {}, obiettivo: null, difficolta: 'normale'
   };
   game.ordine.push(id);
   initDiplomacy(game);

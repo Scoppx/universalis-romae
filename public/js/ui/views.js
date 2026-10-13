@@ -52,11 +52,23 @@ export function topBar(game, g) {
   };
 }
 
-export function peopleCards(popoli) {
+function formatBonus(d) {
+  if (!d) return '';
+  const parti = [];
+  const pc = (k, v) => `${k} ${v > 1 ? '+' : ''}${Math.round((v - 1) * 100)}%`;
+  if (d.esercito !== undefined && d.esercito !== 1) parti.push(pc('esercito', d.esercito));
+  if (d.tesoro !== undefined && d.tesoro !== 1) parti.push(`tesoro ×${d.tesoro}`);
+  if (d.uomini !== undefined && d.uomini !== 1) parti.push(pc('riserva', d.uomini));
+  if (d.dado) parti.push(`${d.dado > 0 ? '+' : ''}${d.dado} al dado`);
+  return parti.join(', ');
+}
+
+export function peopleCards(popoli, balance = null) {
   return popoli.popoli.filter(p => !p.dormiente)
     .map(p => ({
       id: p.id, nome: p.nome, colore: p.colore, difficolta: p.difficolta, governo: p.governo,
-      capitale: p.capitale, tratti: formatTratti(p.tratti), carattere: p.carattere
+      capitale: p.capitale, tratti: formatTratti(p.tratti), carattere: p.carattere,
+      bonus: formatBonus(balance?.difficolta?.[p.difficolta])
     }))
     .sort((a, b) => DIFFICOLTA.indexOf(a.difficolta) - DIFFICOLTA.indexOf(b.difficolta) || byNome(a, b));
 }

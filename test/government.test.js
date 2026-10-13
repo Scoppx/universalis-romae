@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeGame } from './fixtures.js';
-import { maxManpower, createArmy } from '../public/js/sim/state.js';
+import { makeGame, fixtureMap, fixturePopoli, balance } from './fixtures.js';
+import { createGame } from '../public/js/sim/setup.js';
+import { maxManpower, createArmy, armiesOf } from '../public/js/sim/state.js';
 import { monthlyIncome, monthlyManpower, yearlyUpdate } from '../public/js/sim/economy.js';
 import { checkSlider, moveSlider } from '../public/js/sim/government.js';
 import { checkProposal, changeRelation } from '../public/js/sim/diplomacy.js';
@@ -96,4 +97,20 @@ test('comando slider', () => {
   assert.equal(g.nazioni.roma.slider.governo, -1);
   assert.equal(g.nazioni.roma.ultimoSlider, 0);
   assert.equal(applyCommand(g, { tipo: 'slider', nazione: 'roma', quale: 'governo', verso: -1 }).ok, false);
+});
+
+test('difficoltà: esercito, tesoro, riserva iniziali e dado', () => {
+  const base = makeGame();
+  const pop = structuredClone(fixturePopoli);
+  pop.popoli.find(p => p.id === 'roma').difficolta = 'facile';
+  const g = createGame({ map: fixtureMap, popoli: pop, balance, seed: 1 });
+  const d = balance.difficolta.facile;
+  assert.equal(g.nazioni.roma.difficolta, 'facile');
+  const fanti = a => armiesOf(a, 'roma')[0].fanteria;
+  assert.equal(fanti(g), Math.round(fanti(base) * d.esercito));
+  assert.ok(Math.abs(g.nazioni.roma.tesoro - base.nazioni.roma.tesoro * d.tesoro) < 1e-9);
+  assert.equal(g.nazioni.roma.uomini, Math.round(base.nazioni.roma.uomini * d.uomini));
+  const a = createArmy(g, 'roma', 'c', 1000, 0), b = createArmy(base, 'roma', 'c', 1000, 0);
+  assert.equal(battleModifier(g, g.province.c, [a]), battleModifier(base, base.province.c, [b]) + d.dado);
+  assert.equal(base.nazioni.latini.difficolta, 'normale');
 });

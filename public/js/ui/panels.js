@@ -11,7 +11,8 @@ export function cardsHtml(cards, scelto) {
 export function cardDetailHtml(c) {
   return `<h3>${esc(c.nome)}</h3>` +
     `<div>Difficoltà: <b class="${diffClass(c.difficolta)}">${esc(c.difficolta)}</b> · ${esc(c.governo)}</div>` +
-    `<div class="muto">${esc(c.tratti || 'nessun tratto')}</div><p>${esc(c.carattere)}</p>`;
+    `<div class="muto">${esc(c.tratti || 'nessun tratto')}</div>` +
+    (c.bonus ? `<div class="muto">Bonus della difficoltà: ${esc(c.bonus)}</div>` : '') + `<p>${esc(c.carattere)}</p>`;
 }
 
 export function provinceHtml(v) {

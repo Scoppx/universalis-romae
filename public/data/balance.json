@@ -153,5 +153,26 @@
   },
   "eventi": {
     "scadenza": 60
+  },
+  "difficolta": {
+    "facile": {
+      "esercito": 1.5,
+      "tesoro": 2,
+      "uomini": 1.5,
+      "dado": 1
+    },
+    "normale": {},
+    "difficile": {
+      "esercito": 0.9,
+      "tesoro": 1,
+      "uomini": 0.9,
+      "dado": 0
+    },
+    "molto difficile": {
+      "esercito": 0.8,
+      "tesoro": 0.8,
+      "uomini": 0.8,
+      "dado": 0
+    }
   }
 }

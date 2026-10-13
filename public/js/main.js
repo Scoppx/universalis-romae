@@ -39,7 +39,7 @@ const data = await loadData();
 const canvas = $('mappa');
 const renderer = createRenderer(canvas, data.map, { onReady: () => { ui.sporco = true; } });
 const index = buildIndex(data.map);
-const cards = V.peopleCards(data.popoli);
+const cards = V.peopleCards(data.popoli, data.balance);
 const caratteri = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p.carattere]));
 
 // Jev passa dal server, che tiene la chiave; nel browser non c'è mai.

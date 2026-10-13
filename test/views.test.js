@@ -288,3 +288,11 @@ test('eventi del giocatore e notizie di nascite, governi, eventi storici', () =>
   assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'roma', opzione: 'a', storico: true }, g, 'roma'), null);
   assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'latini', opzione: 'a', storico: false }, g, 'roma'), null);
 });
+
+test('schede dei popoli: bonus della difficoltà', () => {
+  const d = loadData();
+  const cards = V.peopleCards(d.popoli, d.balance);
+  assert.match(cards.find(c => c.id === 'roma').bonus, /esercito \+50%/);
+  assert.match(cards.find(c => c.id === 'roma').bonus, /\+1 al dado/);
+  assert.equal(cards.find(c => c.difficolta === 'normale').bonus, '');
+});
