@@ -292,6 +292,20 @@ document.addEventListener('click', e => {
       break;
     case 'alza-stabilita': comando({ tipo: 'alza_stabilita' }); break;
     case 'dichiara': comando({ tipo: 'dichiara_guerra', contro: id }); break;
+    case 'ambasceria': comando({ tipo: 'ambasceria', verso: id }); break;
+    case 'alleanza':
+    case 'foedus':
+    case 'tributo': {
+      const r = comando({ tipo: 'proponi', genere: el.dataset.azione, verso: id });
+      if (r.ok) avviso('Proposta inviata.');
+      break;
+    }
+    case 'ultimatum': {
+      const r = comando({ tipo: 'proponi', genere: 'ultimatum', verso: id, provincia: $(`ult-${id}`).value });
+      if (r.ok) avviso('Ultimatum inviato.');
+      break;
+    }
+    case 'rompi': comando({ tipo: 'rompi_alleanza', con: id }); break;
     case 'seleziona-esercito': selezionaEsercito(id, { centra: true, aggiungi: e.shiftKey }); break;
     case 'unisci': {
       const r = comando({ tipo: 'unisci', eserciti: ui.selezione.eserciti });
