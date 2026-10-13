@@ -306,6 +306,7 @@ document.addEventListener('click', e => {
       break;
     }
     case 'rompi': comando({ tipo: 'rompi_alleanza', con: id }); break;
+    case 'esci': comando({ tipo: 'esci_foedus' }); break;
     case 'seleziona-esercito': selezionaEsercito(id, { centra: true, aggiungi: e.shiftKey }); break;
     case 'unisci': {
       const r = comando({ tipo: 'unisci', eserciti: ui.selezione.eserciti });

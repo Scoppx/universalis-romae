@@ -54,7 +54,9 @@ export function diplomaziaHtml(list) {
       `<span class="rel" title="relazione ${esc(d.relazione)}"><span style="width:${pct}%"></span></span></div>` +
       '<div class="comandi">' +
       bottone('ambasceria', d.id, 'Ambasceria', d.azioni.ambasceria) +
-      (d.stato === 'alleato' ? bottone('rompi', d.id, 'Rompi alleanza', d.azioni.rompi) : bottone('alleanza', d.id, 'Alleanza', d.azioni.alleanza)) +
+      (d.stato === 'alleato' ? bottone('rompi', d.id, 'Rompi alleanza', d.azioni.rompi)
+        : d.stato === 'protettore' ? bottone('esci', d.id, 'Esci dal foedus (−2 stab.)', d.azioni.esci)
+        : bottone('alleanza', d.id, 'Alleanza', d.azioni.alleanza)) +
       bottone('foedus', d.id, 'Foedus', d.azioni.foedus) +
       bottone('tributo', d.id, 'Tributo', d.azioni.tributo) +
       (d.azioni.ultimatum.province.length

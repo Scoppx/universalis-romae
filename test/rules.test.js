@@ -195,3 +195,12 @@ test('un federato non sceglie guerre', () => {
   g.nazioni.volsci.protettore = 'roma';
   assert.deepEqual(legalWarTargets(g, 'volsci'), []);
 });
+
+test('un federato diventato più forte del protettore esce dal foedus', async () => {
+  const { createArmy } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  g.nazioni.volsci.protettore = 'roma';
+  assert.deepEqual(diplomacyInitiatives(g, 'volsci'), []);
+  createArmy(g, 'volsci', 'c', 20000, 0);
+  assert.deepEqual(diplomacyInitiatives(g, 'volsci'), [{ tipo: 'esci_foedus', nazione: 'volsci' }]);
+});

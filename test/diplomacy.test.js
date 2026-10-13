@@ -183,3 +183,19 @@ test('popolo eliminato: alleanze, foedus e tributi ripuliti', async () => {
   assert.deepEqual(g.nazioni.siculi.alleati, []);
   assert.equal(g.nazioni.latini.tributo, null);
 });
+
+test('uscita dal foedus: costa stabilità e relazione, il protettore ha un pretesto', async () => {
+  const { checkLeaveFoedus } = await import('../public/js/sim/diplomacy.js');
+  const g = makeGame();
+  assert.equal(checkLeaveFoedus(g, 'volsci'), 'non sei in un foedus');
+  g.nazioni.volsci.protettore = 'roma';
+  changeRelation(g, 'roma', 'volsci', 60);
+  assert.equal(applyCommand(g, { tipo: 'esci_foedus', nazione: 'volsci' }).ok, true);
+  assert.equal(g.nazioni.volsci.protettore, null);
+  assert.equal(g.nazioni.volsci.stabilita, -2);
+  assert.equal(relation(g, 'roma', 'volsci'), -40);
+  assert.equal(hasPretext(g, 'roma', 'volsci'), true);
+  g.nazioni.volsci.protettore = 'roma';
+  declareWar(g, 'siculi', 'volsci');
+  assert.equal(checkLeaveFoedus(g, 'volsci'), 'non durante una guerra');
+});

@@ -67,6 +67,8 @@ test('diplomazia: tutti i popoli, confinanti prima, stato, relazione, motivi', (
   d = V.diplomacyView(g, 'roma');
   assert.equal(d[0].stato, 'protettore');
   assert.equal(d[1].azioni.guerra, 'un federato non dichiara guerre');
+  assert.equal(d[0].azioni.esci, null);
+  assert.equal(d[1].azioni.esci, 'non è il tuo protettore');
 });
 
 test('proposte ricevute: titolo e testo per tipo', async () => {
@@ -201,5 +203,5 @@ test('la proposta di foedus avverte che non si torna indietro', async () => {
   createArmy(g, 'roma', 'a', 20000, 0);
   changeRelation(g, 'roma', 'volsci', 60);
   propose(g, 'roma', 'foedus', 'volsci');
-  assert.match(V.pendingProposals(g, 'volsci')[0].testo, /non potrai più uscirne/);
+  assert.match(V.pendingProposals(g, 'volsci')[0].testo, /uscirne costerà/);
 });

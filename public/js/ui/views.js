@@ -3,7 +3,7 @@ import { formatDate } from '../sim/calendar.js';
 import { maxManpower, armiesOf, bordersNation } from '../sim/state.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar } from '../sim/war.js';
-import { relation, coalition, checkProposal, checkEmbassy, allied } from '../sim/diplomacy.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
 const DIFFICOLTA = ['facile', 'normale', 'difficile', 'molto difficile'];
@@ -89,6 +89,7 @@ export function diplomacyView(game, g) {
           ambasceria: checkEmbassy(game, g, id),
           alleanza: checkProposal(game, g, 'alleanza', id),
           rompi: allied(game, g, id) ? null : 'non siete alleati',
+          esci: me.protettore === id ? checkLeaveFoedus(game, g) : 'non è il tuo protettore',
           foedus: checkProposal(game, g, 'foedus', id),
           tributo: checkProposal(game, g, 'tributo', id),
           guerra: checkWar(game, g, id),
@@ -139,7 +140,7 @@ export function pendingProposals(game, g) {
       else if (p.termini.ricevente === g) testo = `${da} offre la pace e ti cede: ${nomi}.`;
       else testo = `${da} chiede la pace e vuole: ${nomi}.`;
     } else if (p.tipo === 'alleanza') testo = `${da} propone un'alleanza.`;
-    else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e non potrai più uscirne finché il protettore esiste.`;
+    else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e uscirne costerà stabilità e darà al protettore un pretesto di guerra.`;
     else if (p.tipo === 'tributo') testo = `${da} chiede un tributo: il 20% delle entrate per 10 anni. Se rifiuti avrà un pretesto per attaccarti.`;
     else if (p.tipo === 'ultimatum') testo = `${da} chiede la provincia di ${game.province[p.provincia].nome}. Se rifiuti avrà un pretesto per attaccarti.`;
     else {
@@ -168,6 +169,7 @@ export function formatLogEntry(e, game, g) {
         ? `${N(e.a)} cede ${P(e.provincia)} a ${N(e.da)}.`
         : `${N(e.da)} e ${N(e.a)}: ${e.genere === 'alleanza' ? 'alleanza' : e.genere === 'foedus' ? 'foedus' : 'tributo'}.`;
     case 'chiamata': return `${N(e.nazione)} entra in guerra al fianco di ${N(e.alleato)}.`;
+    case 'uscita': return `${N(e.nazione)} esce dal foedus di ${N(e.protettore)}.`;
     case 'battaglia':
       return [e.vincitore, e.sconfitto].includes(g) ? `Battaglia a ${P(e.prov)}: vince ${N(e.vincitore)}.` : null;
     case 'assedio':

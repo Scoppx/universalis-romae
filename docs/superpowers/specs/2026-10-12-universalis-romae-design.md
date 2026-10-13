@@ -344,7 +344,9 @@ fortificazioni: sezione 3).
   La pace la firma il capofila di ogni lato e chiude la guerra per tutti.
 - **Foedus**: proposto da un popolo almeno 3 volte più forte, confinante, con relazioni ≥ 50. Il federato non
   dichiara guerre e non stringe alleanze, segue il protettore in guerra e gli manda ogni mese il 20% degli uomini
-  che recluta.
+  che recluta. Il federato può uscirne (non durante una guerra): perde 2 di stabilità, 100 di relazione col
+  protettore, e il protettore ottiene un pretesto di guerra per 5 anni. L'IA esce quando è più forte del
+  protettore. (Aggiunto su richiesta dell'utente durante la tappa 4a.)
 - **Tributo**: chiesto a un vicino; se accetta paga per 10 anni il 20% delle entrate mensili; se rifiuta, chi lo
   chiede ottiene un pretesto di guerra per 5 anni.
 - **Ultimatum**: richiesta di una provincia confinante (non l'ultima). Se accettato la provincia passa (con infamia);

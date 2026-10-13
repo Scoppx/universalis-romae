@@ -333,6 +333,8 @@ try {
   check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.veio.pretesti.roma > 0), 'tributo rifiutato: Veio ha un pretesto');
   await page.evaluate(() => { const g = window.universalis.ui.session.game; g.nazioni.roma.protettore = 'lega_latina'; window.universalis.avanza(0); });
   check(await page.isDisabled('[data-azione="dichiara"][data-id="veio"]'), 'da federato non si dichiara guerra');
+  await page.click('[data-azione="esci"][data-id="lega_latina"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.protettore === null), 'esci dal foedus: di nuovo liberi');
   await page.click('[data-modo="relazioni"]');
   await page.screenshot({ path: 'smoke-diplomazia.png' });
 
