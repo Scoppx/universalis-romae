@@ -182,7 +182,48 @@ export function answerDiplomatic(game, p, accetta) {
   return { ok: true, accettata: true };
 }
 
-// Segnaposto: l'ingresso in guerra dell'alleato arriva con le guerre a più popoli.
-function joinCall() {
-  return { ok: false, motivo: 'chiamata non valida' };
+function joinCall(game, p) {
+  const war = game.guerre[p.guerra], d = D(game);
+  if (!war || !game.nazioni[p.a].vivo || sideOf(war, p.a)) return { ok: false, motivo: 'la guerra non c\'è più' };
+  const side = sideOf(war, p.da);
+  if (!side) return { ok: false, motivo: 'la guerra non c\'è più' };
+  war[side].push(p.a);
+  for (const e of enemiesOf(war, side)) changeRelation(game, p.a, e, d.guerraRelazione);
+  log(game, { tipo: 'chiamata', guerra: war.id, nazione: p.a, alleato: p.da });
+  return { ok: true, accettata: true };
+}
+
+export function coalition(game, x) {
+  if (game.nazioni[x].infamia <= game.balance.infamia.soglia) return [];
+  return game.ordine.filter(o => o !== x && game.nazioni[o].vivo && bordersNation(game, o, x) &&
+    relation(game, o, x) < 0 && !friendly(game, o, x));
+}
+
+// Chi entra da solo quando scoppia una guerra, chi viene chiamato.
+export function onWarDeclared(game, war) {
+  const [att] = war.attaccanti, [dif] = war.difensori;
+  const d = D(game);
+  const puo = (id, contro) => id && game.nazioni[id]?.vivo && !sideOf(war, id) &&
+    !friendly(game, id, contro) && !inTruce(game, id, contro);
+  const difesa = [...game.nazioni[dif].alleati, ...federatiOf(game, dif), game.nazioni[dif].protettore, ...coalition(game, att)];
+  for (const id of difesa) if (puo(id, att)) war.difensori.push(id);
+  for (const id of federatiOf(game, att)) if (puo(id, dif)) war.attaccanti.push(id);
+  for (const id of game.nazioni[att].alleati) {
+    if (!puo(id, dif)) continue;
+    const pid = newId(game, 'p');
+    game.proposte[pid] = { id: pid, tipo: 'chiamata', guerra: war.id, da: att, a: id, giorno: game.day };
+  }
+  for (const a of war.attaccanti) for (const b of war.difensori) changeRelation(game, a, b, d.guerraRelazione);
+}
+
+export function cleanupDead(game, id) {
+  for (const o of game.ordine) {
+    const n = game.nazioni[o];
+    n.alleati = n.alleati.filter(x => x !== id);
+    if (n.protettore === id) n.protettore = null;
+    if (n.tributo?.a === id) n.tributo = null;
+  }
+  game.nazioni[id].alleati = [];
+  game.nazioni[id].protettore = null;
+  game.nazioni[id].tributo = null;
 }

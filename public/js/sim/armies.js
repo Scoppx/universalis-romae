@@ -1,6 +1,7 @@
 // Eserciti: reclutamento, percorsi e movimento giornaliero.
 import { createArmy, strettoKey } from './state.js';
 import { atWar } from './war.js';
+import { friendly } from './diplomacy.js';
 
 export function travelDays(game, from, to) {
   const b = game.balance.movimento;
@@ -10,7 +11,7 @@ export function travelDays(game, from, to) {
 // Si entra in casa propria, dove si controlla, o nelle terre di chi è in guerra con noi.
 export function canEnter(game, nationId, provId) {
   const p = game.province[provId];
-  return p.owner === nationId || p.controller === nationId || atWar(game, nationId, p.owner);
+  return p.owner === nationId || p.controller === nationId || atWar(game, nationId, p.owner) || friendly(game, nationId, p.owner);
 }
 
 // Dijkstra sui giorni di viaggio, solo attraverso province in cui si può entrare.

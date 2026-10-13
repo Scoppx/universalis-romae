@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition } from '../public/js/sim/diplomacy.js';
 import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
@@ -108,4 +108,78 @@ test('ultimatum: provincia ceduta con infamia; non vale più se la provincia cam
   g.province.c.owner = 'latini';
   assert.equal(rispondi(g, 'volsci', q, true).ok, false);
   assert.equal(g.province.c.owner, 'latini');
+});
+
+const allea = (g, a, b) => rispondi(g, b, proponi(g, a, 'alleanza', b).proposta, true);
+
+test('difesa: gli alleati del difensore entrano da soli, quelli amici dell\'attaccante no', () => {
+  const g = makeGame();
+  allea(g, 'volsci', 'siculi');
+  allea(g, 'volsci', 'latini');
+  allea(g, 'roma', 'latini'); // latini alleati di entrambi: restano fuori
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.deepEqual(g.guerre[guerra].difensori, ['volsci', 'siculi']);
+  assert.ok(relation(g, 'roma', 'siculi') <= -100);
+});
+
+test('attacco: gli alleati dell\'attaccante sono chiamati; chi rifiuta rompe l\'alleanza', () => {
+  const g = makeGame();
+  allea(g, 'roma', 'siculi');
+  allea(g, 'roma', 'latini');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const chiamate = Object.values(g.proposte).filter(p => p.tipo === 'chiamata' && p.guerra === guerra);
+  assert.deepEqual(chiamate.map(p => p.a).sort(), ['latini', 'siculi']);
+  rispondi(g, 'siculi', chiamate.find(p => p.a === 'siculi').id, true);
+  assert.deepEqual(g.guerre[guerra].attaccanti, ['roma', 'siculi']);
+  rispondi(g, 'latini', chiamate.find(p => p.a === 'latini').id, false);
+  assert.equal(allied(g, 'roma', 'latini'), false);
+});
+
+test('chiamata per una guerra già finita: non vale', () => {
+  const g = makeGame();
+  allea(g, 'roma', 'siculi');
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const ch = Object.values(g.proposte).find(p => p.tipo === 'chiamata');
+  delete g.guerre[guerra];
+  assert.equal(rispondi(g, 'siculi', ch.id, true).ok, false);
+});
+
+test('coalizione: chi ha troppa infamia trova i vicini ostili uniti', () => {
+  const g = makeGame();
+  g.nazioni.roma.infamia = 25;
+  changeRelation(g, 'roma', 'latini', -80);
+  changeRelation(g, 'roma', 'volsci', -10);
+  assert.deepEqual(coalition(g, 'roma'), ['latini', 'volsci']);
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.deepEqual(g.guerre[guerra].difensori, ['volsci', 'latini']);
+});
+
+test('alleati: passano nelle terre amiche e combattono dalla stessa parte', async () => {
+  const { findPath } = await import('../public/js/sim/armies.js');
+  const { resolveBattles } = await import('../public/js/sim/combat.js');
+  const g = makeGame();
+  allea(g, 'roma', 'latini');
+  assert.equal(findPath(g, 'roma', 'a', 'e').at(-1), 'e');
+  assert.deepEqual(findPath(g, 'roma', 'a', 'd'), ['d']);
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  const { guerra } = declareWar(g, 'volsci', 'roma');
+  assert.deepEqual(g.guerre[guerra].difensori, ['roma', 'latini']);
+  const r = createArmy(g, 'roma', 'b', 1000, 0), l = createArmy(g, 'latini', 'b', 1000, 0), v = createArmy(g, 'volsci', 'b', 1000, 0);
+  resolveBattles(g);
+  assert.deepEqual([r.inBattaglia, l.inBattaglia, v.inBattaglia], [true, true, true]);
+});
+
+test('popolo eliminato: alleanze, foedus e tributi ripuliti', async () => {
+  const { makePeace } = await import('../public/js/sim/war.js');
+  const g = makeGame();
+  allea(g, 'volsci', 'siculi');
+  g.nazioni.latini.tributo = { a: 'volsci', fine: 9999 };
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].difensori = ['volsci']; // i siculi restano fuori per questo test
+  g.province.c.controller = 'roma';
+  g.province.f.controller = 'roma';
+  makePeace(g, guerra, 'roma', { province: ['c', 'f'] });
+  assert.equal(g.nazioni.volsci.vivo, false);
+  assert.deepEqual(g.nazioni.siculi.alleati, []);
+  assert.equal(g.nazioni.latini.tributo, null);
 });

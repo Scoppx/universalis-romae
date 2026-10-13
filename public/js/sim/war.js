@@ -1,6 +1,6 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
 import { newId, log, bordersNation, provincesOf, sumOf } from './state.js';
-import { friendly, answerDiplomatic } from './diplomacy.js';
+import { friendly, answerDiplomatic, onWarDeclared, cleanupDead } from './diplomacy.js';
 
 export function sideOf(war, id) {
   if (war.attaccanti.includes(id)) return 'attaccanti';
@@ -50,6 +50,7 @@ export function declareWar(game, attacker, defender) {
   if (!hasPretext(game, attacker, defender)) A.stabilita = Math.max(-3, A.stabilita - game.balance.guerra.senzaPretesto);
   const id = newId(game, 'g');
   game.guerre[id] = { id, attaccanti: [attacker], difensori: [defender], inizio: game.day, battaglie: 0 };
+  onWarDeclared(game, game.guerre[id]);
   log(game, { tipo: 'guerra', guerra: id, attaccante: attacker, difensore: defender });
   return { ok: true, guerra: id };
 }
@@ -153,6 +154,7 @@ export function checkSurvival(game) {
 
 function eliminate(game, id) {
   game.nazioni[id].vivo = false;
+  cleanupDead(game, id);
   for (const a of Object.values(game.eserciti)) if (a.owner === id) delete game.eserciti[a.id];
   for (const w of Object.values(game.guerre)) {
     w.attaccanti = w.attaccanti.filter(x => x !== id);
