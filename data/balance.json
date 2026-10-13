@@ -131,5 +131,23 @@
     "estremoGuerra": 4,
     "assimilazioneAccentramento": 0.1,
     "malcontentoAccentramento": 0.2
+  },
+  "cultura": {
+    "anniAssimilazione": 15,
+    "malcontentoCultura": 3,
+    "malcontentoColonia": 1,
+    "sogliaRivolta": 3,
+    "rivoltaPerPunto": 0.01,
+    "ribelliPerUomo": 400,
+    "anniIndipendenza": 1,
+    "coloniaCostoBase": 10,
+    "coloniaCostoPerTassa": 3,
+    "coloniaUomini": 1000,
+    "fortificazioneCosti": [
+      15,
+      30,
+      60
+    ],
+    "fortMax": 3
   }
 }

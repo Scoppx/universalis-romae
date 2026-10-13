@@ -2,7 +2,8 @@
 // con JSON.stringify e si ricarica con JSON.parse.
 // game = {
 //   day, rng, nextId, balance,
-//   province: { [id]: { id, nome, owner, controller, cultura, terreno, tasse, uomini, fort, vicini: [id] } },
+//   province: { [id]: { id, nome, owner, controller, cultura, terreno, tasse, uomini, fort, vicini: [id],
+//                       assimilazione, assimilazioneDi, colonia: id|null, ribelliDal: giorno|null } },
 //   stretti: ['a|b'],
 //   nazioni: { [id]: { id, nome, colore, cultura, governo, capitale, tesoro, uomini, stabilita, infamia,
 //                      tratti, vivo, tregue: { [id]: giornoFine }, slider: { societa, guerra, governo }, ultimoSlider } },
@@ -15,6 +16,7 @@
 import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus } from './state.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
+import { initCulture } from './culture.js';
 
 export function createGame({ map, popoli, balance, seed }) {
   const game = {
@@ -51,5 +53,6 @@ export function createGame({ map, popoli, balance, seed }) {
   }
   initDiplomacy(game);
   initGovernment(game);
+  initCulture(game);
   return game;
 }
