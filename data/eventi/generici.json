@@ -1,0 +1,147 @@
+{
+  "eventi": [
+    {
+      "id": "carestia",
+      "titolo": "Carestia",
+      "testo": "Due estati avare e un inverno rigido hanno svuotato i granai. Nei villaggi si mormora e le madri contano le ultime manciate di farro. Il consiglio deve decidere come sfamare il popolo.",
+      "condizioni": { "probabilita": 0.003, "unaVolta": false },
+      "opzioni": [
+        { "id": "compra_grano", "testo": "Comprare grano dai mercanti stranieri, spendendo dal tesoro per sfamare tutti.", "effetti": [{ "tesoroMesi": -3 }] },
+        { "id": "razionare", "testo": "Razionare le scorte e imporre la fame ai più poveri, a costo del malcontento.", "effetti": [{ "stabilita": -1 }] }
+      ],
+      "regola": "compra_grano"
+    },
+    {
+      "id": "pestilenza",
+      "titolo": "Pestilenza",
+      "testo": "Un morbo misterioso corre di casa in casa, portato forse dai pantani o dall'ira degli dèi. I sacerdoti invocano riti, i guaritori scuotono il capo. Il consiglio è chiamato a scegliere.",
+      "condizioni": { "probabilita": 0.002, "unaVolta": false },
+      "opzioni": [
+        { "id": "purificare", "testo": "Offrire sacrifici e riti di purificazione, spendendo ricchezze per placare gli dèi.", "effetti": [{ "tesoroMesi": -2 }] },
+        { "id": "isolare", "testo": "Isolare i villaggi colpiti, lasciando che il morbo falcidi gli uomini validi.", "effetti": [{ "uominiQuota": -0.2 }] }
+      ],
+      "regola": "isolare"
+    },
+    {
+      "id": "buon_raccolto",
+      "titolo": "Buon raccolto",
+      "testo": "La terra è stata generosa: spighe cariche e vendemmia abbondante riempiono i campi. Gli anziani dicono che gli dèi sorridono al popolo. Resta da decidere come usare l'abbondanza.",
+      "condizioni": { "probabilita": 0.004, "unaVolta": false },
+      "opzioni": [
+        { "id": "feste", "testo": "Indire grandi feste per ringraziare gli dèi, rallegrando il popolo a spese del tesoro.", "effetti": [{ "stabilita": 1 }, { "tesoroMesi": -1 }] },
+        { "id": "granai", "testo": "Riempire i granai e vendere le eccedenze ai vicini, ingrossando il tesoro.", "effetti": [{ "tesoroMesi": 3 }] }
+      ],
+      "regola": "granai"
+    },
+    {
+      "id": "piena_del_fiume",
+      "titolo": "Piena del fiume",
+      "testo": "Piogge senza fine hanno gonfiato il fiume, che rompe le rive e inghiotte campi e capanne. La gente cerca scampo sulle alture e attende una decisione del consiglio.",
+      "condizioni": { "probabilita": 0.002, "minProvince": 2, "unaVolta": false },
+      "opzioni": [
+        { "id": "argini", "testo": "Alzare argini e canali con grande fatica e spesa, per proteggere i campi.", "effetti": [{ "tesoroMesi": -2 }] },
+        { "id": "lasciare", "testo": "Lasciare che il fiume faccia il suo corso, subendo morti e malcontento.", "effetti": [{ "uominiQuota": -0.1 }, { "stabilita": -1 }] }
+      ],
+      "regola": "argini"
+    },
+    {
+      "id": "alleanza_matrimoniale",
+      "titolo": "Nozze tra casate",
+      "testo": "I vicini mandano messi con doni e proposte: vorrebbero suggellare l'amicizia con un matrimonio tra le famiglie più illustri. Il consiglio deve rispondere con prudenza.",
+      "condizioni": { "probabilita": 0.002, "guerra": false, "altro": {}, "unaVolta": false },
+      "opzioni": [
+        { "id": "accettare", "testo": "Accettare le nozze e preparare un banchetto, stringendo i legami con quel popolo.", "effetti": [{ "relazione": 40 }, { "tesoroMesi": -1 }] },
+        { "id": "rifiutare", "testo": "Rifiutare l'offerta, offendendo quel popolo e raffreddando i rapporti.", "effetti": [{ "relazione": -20 }] }
+      ],
+      "regola": "accettare"
+    },
+    {
+      "id": "disordini_plebe",
+      "titolo": "Disordini della plebe",
+      "testo": "La gente minuta si accalca nelle piazze: reclama pane, terra e rispetto. I capi delle famiglie più ricche guardano con sospetto le torce accese. Bisogna scegliere in fretta.",
+      "condizioni": { "probabilita": 0.003, "stabilitaMax": 0, "unaVolta": false },
+      "opzioni": [
+        { "id": "concessioni", "testo": "Concedere diritti e terre al popolo minuto, rendendo la società più equa.", "effetti": [{ "slider": { "societa": 1 } }, { "stabilita": 1 }] },
+        { "id": "repressione", "testo": "Reprimere la protesta con la forza, a costo di malcontento e di uomini perduti.", "effetti": [{ "stabilita": -1 }, { "uominiQuota": -0.1 }] }
+      ],
+      "regola": "concessioni"
+    },
+    {
+      "id": "oracolo",
+      "titolo": "Il responso dell'oracolo",
+      "testo": "Un santuario lontano è famoso per i suoi responsi, e i sacerdoti propongono di inviarvi una delegazione con offerte. C'è chi crede e chi sorride dell'usanza.",
+      "condizioni": { "probabilita": 0.002, "unaVolta": false },
+      "opzioni": [
+        { "id": "consultare", "testo": "Inviare doni all'oracolo e seguirne il responso, confortando il popolo devoto.", "effetti": [{ "tesoroMesi": -1 }, { "stabilita": 1 }] },
+        { "id": "ignorare", "testo": "Ignorare l'invito e affidarsi al proprio giudizio.", "effetti": [] }
+      ],
+      "regola": "consultare"
+    },
+    {
+      "id": "incendio",
+      "titolo": "Incendio",
+      "testo": "Una scintilla, un vento di bora, e il fuoco ha divorato capanne, magazzini e palizzate. Tra il fumo la gente invoca aiuto. Il consiglio deve decidere che farne delle rovine.",
+      "condizioni": { "probabilita": 0.002, "minProvince": 3, "unaVolta": false },
+      "opzioni": [
+        { "id": "ricostruire", "testo": "Ricostruire tutto con il denaro del tesoro, sollevando gli sfollati.", "effetti": [{ "tesoroMesi": -3 }] },
+        { "id": "abbandonare", "testo": "Abbandonare le rovine al loro destino, lasciando che gli sfollati si arrangino.", "effetti": [{ "stabilita": -1 }] }
+      ],
+      "regola": "ricostruire"
+    },
+    {
+      "id": "mercanti_stranieri",
+      "titolo": "Mercanti stranieri",
+      "testo": "Una carovana di mercanti giunti dal mare chiede di esporre le proprie merci: ambra, stoffe tinte, vasi dipinti. Alcuni ne apprezzano la ricchezza, altri temono gli usi forestieri.",
+      "condizioni": { "probabilita": 0.002, "unaVolta": false },
+      "opzioni": [
+        { "id": "accogliere", "testo": "Accogliere i mercanti e tassarne i traffici, riempiendo il tesoro.", "effetti": [{ "tesoroMesi": 3 }] },
+        { "id": "cacciare", "testo": "Cacciare gli stranieri per rassicurare chi diffida dei forestieri.", "effetti": [{ "stabilita": 1 }] }
+      ],
+      "regola": "accogliere"
+    },
+    {
+      "id": "eroe_di_guerra",
+      "titolo": "Un eroe di guerra",
+      "testo": "Un guerriero si è distinto in battaglia: ha salvato i compagni e portato a casa il bottino. Il popolo lo acclama per le vie. Il consiglio può onorarlo o farne un capo di nuove leve.",
+      "condizioni": { "probabilita": 0.004, "guerra": true, "unaVolta": false },
+      "opzioni": [
+        { "id": "onorare", "testo": "Onorarlo con un trionfo e doni, rinsaldando il morale del popolo.", "effetti": [{ "stabilita": 1 }, { "tesoroMesi": -1 }] },
+        { "id": "arruolare", "testo": "Metterlo alla testa di nuove leve, chiamando alle armi più uomini.", "effetti": [{ "uominiQuota": 0.15 }] }
+      ],
+      "regola": "arruolare"
+    },
+    {
+      "id": "tradimento",
+      "titolo": "Tradimento",
+      "testo": "In piena guerra è stato scoperto un capo che trattava in segreto con il nemico. Il popolo è inquieto e attende giustizia. Il consiglio deve decidere la sorte del traditore.",
+      "condizioni": { "probabilita": 0.002, "guerra": true, "unaVolta": false },
+      "opzioni": [
+        { "id": "giustiziare", "testo": "Giustiziare il traditore in pubblico: si placa il popolo, ma si guadagna fama di crudeltà.", "effetti": [{ "stabilita": 1 }, { "infamia": 1 }] },
+        { "id": "esiliare", "testo": "Mandarlo in esilio, risparmiandone la vita ma mostrando debolezza.", "effetti": [{ "stabilita": -1 }] }
+      ],
+      "regola": "giustiziare"
+    },
+    {
+      "id": "ambasceria_straniera",
+      "titolo": "Ambasceria straniera",
+      "testo": "Messi di un popolo vicino sono giunti alle nostre porte con parole di amicizia e curiosità. Aspettano di essere ricevuti secondo il costume dell'ospitalità.",
+      "condizioni": { "probabilita": 0.002, "altro": {}, "unaVolta": false },
+      "opzioni": [
+        { "id": "doni", "testo": "Ricevere i messi con doni e un banchetto, guadagnando l'amicizia di quel popolo.", "effetti": [{ "tesoroMesi": -1 }, { "relazione": 30 }] },
+        { "id": "congedo", "testo": "Congedare i messi con freddezza, senza spendere nulla.", "effetti": [{ "relazione": -10 }] }
+      ],
+      "regola": "doni"
+    },
+    {
+      "id": "contesa_confini",
+      "titolo": "Contesa di confini",
+      "testo": "I pastori litigano con quelli del popolo vicino per un pascolo lungo il confine: bastoni, pietre, qualche ferito. Il consiglio deve decidere come trattare la contesa.",
+      "condizioni": { "probabilita": 0.002, "guerra": false, "altro": {}, "unaVolta": false },
+      "opzioni": [
+        { "id": "rivendicare", "testo": "Rivendicare il pascolo a gran voce, ottenendo un buon pretesto ma incrinando i rapporti.", "effetti": [{ "pretesto": true }, { "relazione": -30 }] },
+        { "id": "trattare", "testo": "Trattare con quel popolo e dividere il pascolo, mantenendo la pace a spese del tesoro.", "effetti": [{ "relazione": 20 }, { "tesoroMesi": -1 }] }
+      ],
+      "regola": "trattare"
+    }
+  ]
+}

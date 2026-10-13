@@ -1,0 +1,60 @@
+{
+  "eventi": [
+    {
+      "id": "cacciata_del_re",
+      "titolo": "La cacciata del re",
+      "testo": "Il re è odiato: i nobili ne temono i capricci, il popolo ne subisce le pretese. Un'offesa recente ha fatto traboccare la rabbia e nelle piazze si invoca la fine del potere di uno solo.",
+      "condizioni": { "probabilita": 0.01, "anni": [600, 264], "governi": ["monarchia"], "stabilitaMax": 0, "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "repubblica", "testo": "Cacciare il re e affidare il governo a magistrati eletti ogni anno.", "effetti": [{ "cambia_governo": "repubblica" }, { "stabilita": 1 }] },
+        { "id": "repressione", "testo": "Soffocare la rivolta con le armi e mantenere il re sul trono, a costo di molti uomini.", "effetti": [{ "stabilita": -1 }, { "uominiQuota": -0.2 }] }
+      ],
+      "regola": "repubblica",
+      "storico": true
+    },
+    {
+      "id": "re_delle_tribu",
+      "titolo": "Un re per le tribù",
+      "testo": "Il popolo si è esteso su molte terre e i capi dei clan faticano a intendersi. Gli anziani parlano della necessità di un solo capo, un re che guidi tutti nelle guerre e nella pace.",
+      "condizioni": { "probabilita": 0.01, "governi": ["tribù"], "minProvince": 5, "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "incoronare", "testo": "Incoronare un re e unire sotto di lui le tribù, dando ordine al governo.", "effetti": [{ "cambia_governo": "monarchia" }, { "stabilita": 1 }] },
+        { "id": "consiglio_anziani", "testo": "Restare fedeli al consiglio degli anziani e continuare a decidere insieme.", "effetti": [{ "tesoroMesi": 1 }] }
+      ],
+      "regola": "incoronare"
+    },
+    {
+      "id": "tirannide",
+      "titolo": "L'ombra del tiranno",
+      "testo": "La città è divisa da liti tra le famiglie, e un uomo ambizioso, ricco e amato dalla folla, si offre di mettere ordine con il pugno di ferro. C'è chi lo invoca e chi lo teme.",
+      "condizioni": { "probabilita": 0.02, "governi": ["città-stato"], "stabilitaMax": -2, "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "tiranno", "testo": "Affidare il potere all'uomo ambizioso, rinunciando alle libertà della città.", "effetti": [{ "cambia_governo": "monarchia" }, { "infamia": 2 }] },
+        { "id": "resistere", "testo": "Resistere alla tentazione e difendere le antiche leggi, tra disordini e malcontento.", "effetti": [{ "stabilita": -1 }] }
+      ],
+      "regola": "resistere"
+    },
+    {
+      "id": "lega_dei_popoli",
+      "titolo": "La lega dei popoli",
+      "testo": "Le tribù vicine, minacciate da nemici più forti, propongono di unirsi in una lega con santuari e assemblee comuni. Ciascuno manterrebbe i suoi costumi, ma tutti risponderebbero insieme ai pericoli.",
+      "condizioni": { "probabilita": 0.005, "governi": ["tribù"], "minProvince": 3, "maxProvince": 6, "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "lega", "testo": "Fondare la lega e governare insieme alle altre tribù.", "effetti": [{ "cambia_governo": "lega" }] },
+        { "id": "restare", "testo": "Restare indipendenti e tenersi lontani dagli impegni comuni.", "effetti": [] }
+      ],
+      "regola": "lega"
+    },
+    {
+      "id": "dittatore",
+      "titolo": "Un dittatore per il pericolo",
+      "testo": "La guerra preme sui confini e le magistrature ordinarie tentennano. I senatori chiedono di affidare per un breve tempo poteri straordinari a un solo uomo di provata fermezza.",
+      "condizioni": { "probabilita": 0.02, "governi": ["repubblica"], "guerra": true, "stabilitaMax": 0, "unaVolta": false },
+      "opzioni": [
+        { "id": "nominare", "testo": "Nominare un dittatore con pieni poteri per il tempo del pericolo, a rischio di abusi.", "effetti": [{ "stabilita": 2 }, { "infamia": 1 }] },
+        { "id": "rifiutare", "testo": "Rifiutare poteri straordinari e proseguire con le magistrature ordinarie, tra incertezze.", "effetti": [{ "stabilita": -1 }] }
+      ],
+      "regola": "nominare"
+    }
+  ]
+}
