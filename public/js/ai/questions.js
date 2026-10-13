@@ -4,6 +4,7 @@ import { distancesFrom } from '../sim/armies.js';
 import { armiesOf, sliderOf, provincesOf } from '../sim/state.js';
 import { checkSlider, sliderInterval } from '../sim/government.js';
 import { malcontent } from '../sim/culture.js';
+import { eventDef, describeEffects } from '../sim/events.js';
 import { sideOf, enemiesOf, scoreFor, hasPretext, peaceCost } from '../sim/war.js';
 import { formatDate } from '../sim/calendar.js';
 import { relation } from '../sim/diplomacy.js';
@@ -248,4 +249,21 @@ export function sampleChoice(answer, meta, chiave, temperatura = 0.8) {
   while (i < voci.length - 1 && (u -= pesi[i]) >= 0) i++;
   const scelta = voci[i][0];
   return { scelta, valore: meta.mappa[scelta], incerto: false, probabilita: probs };
+}
+
+export function buildEventQuestion(game, pid, carattere) {
+  const e = game.eventi[pid], def = eventDef(game, e.evento);
+  const state = statoPopolo(game, e.nazione, carattere);
+  state.evento = { titolo: def.titolo, testo: def.testo, ...(e.altro ? { altro: nome(game, e.altro) } : {}) };
+  return {
+    state,
+    questions: {
+      evento: {
+        type: 'choice',
+        instructions: 'Sei il consiglio di `popolo.nome` e decidi secondo `popolo.carattere`. Davanti a `evento`, quale strada scegli?',
+        criteria: Object.fromEntries(def.opzioni.map(o => [o.id, `${o.testo} (${describeEffects(game, e, o)})`]))
+      }
+    },
+    meta: { evento: { tipo: 'evento', evento: pid, mappa: Object.fromEntries(def.opzioni.map(o => [o.id, o.id])), prudente: def.regola } }
+  };
 }

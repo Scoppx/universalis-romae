@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { armiesOf, createArmy, RIBELLI } from '../public/js/sim/state.js';
 import { ensureRebels } from '../public/js/sim/culture.js';
+import { monthlyEvents } from '../public/js/sim/events.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import {
-  isSliderDay, sliderDecision, colonyDecision,
+  isSliderDay, sliderDecision, colonyDecision, eventAnswers,
   rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
 } from '../public/js/ai/rules.js';
 
@@ -245,4 +246,14 @@ test('in guerra con un obiettivo, l\'esercito più vicino va comunque a reprimer
   g.nazioni.roma.obiettivo = 'c';
   const verso = armyOrders(g, 'roma').filter(c => c.tipo === 'muovi').map(c => c.verso).sort();
   assert.deepEqual(verso, ['b', 'c']);
+});
+
+test('regole sugli eventi: scelgono l\'opzione indicata dall\'evento', () => {
+  const g = makeGame(1, [{ id: 'e', titolo: 'E', testo: 'T.', condizioni: { probabilita: 1, popoli: ['roma'] },
+    opzioni: [{ id: 'a', testo: 'A', effetti: [] }, { id: 'b', testo: 'B', effetti: [{ stabilita: 1 }] }], regola: 'b' }]);
+  monthlyEvents(g);
+  const pid = Object.keys(g.eventi)[0];
+  assert.deepEqual(eventAnswers(g, 'roma'), [{ tipo: 'scegli', nazione: 'roma', evento: pid, opzione: 'b' }]);
+  assert.deepEqual(eventAnswers(g, 'latini'), []);
+  assert.ok(rulesController(g, 'roma').some(c => c.tipo === 'scegli'));
 });
