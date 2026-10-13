@@ -10,6 +10,7 @@
     "build-map": "node tools/build-map.js",
     "bench": "node bench.js",
     "smoke": "node tools/smoke.mjs",
+    "validate-events": "node tools/validate-events.js",
     "build-relief": "node tools/build-relief.js"
   },
   "devDependencies": {

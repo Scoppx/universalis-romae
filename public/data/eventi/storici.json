@@ -1,0 +1,88 @@
+{
+  "eventi": [
+    {
+      "id": "ratto_sabine",
+      "titolo": "Il ratto delle donne",
+      "testo": "Il nostro popolo è forte di uomini ma scarso di donne, e i vicini negano loro in sposa alle nostre genti. Qualcuno propone di invitare quel popolo a una grande festa e di approfittare dei giochi per prendere con la forza le loro figlie.",
+      "condizioni": { "probabilita": 0.02, "anni": [753, 700], "culture": ["latina"], "altro": { "preferiti": ["sabini"] }, "unaVolta": "partita" },
+      "opzioni": [
+        { "id": "ratto", "testo": "Rapire le donne durante la festa: il popolo cresce, ma quel popolo ci avrà in odio e avrà un buon motivo per la guerra.", "effetti": [{ "uominiQuota": 0.2 }, { "relazione": -60 }, { "pretestoAltro": true }] },
+        { "id": "trattative", "testo": "Inviare ancora ambasciatori con doni e promesse, cercando le nozze con le buone.", "effetti": [{ "relazione": 20 }, { "tesoroMesi": -2 }] }
+      ],
+      "regola": "ratto",
+      "storico": true
+    },
+    {
+      "id": "superbia_del_re",
+      "titolo": "La superbia del re",
+      "testo": "Il re e la sua casa hanno oltrepassato ogni misura: sprechi, soprusi e ordini crudeli hanno colmato la pazienza dei nobili. In segreto, gli uomini d'onore si chiedono se il trono meriti ancora fedeltà.",
+      "condizioni": { "probabilita": 0.05, "anni": [515, 495], "governi": ["monarchia"], "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "cacciare", "testo": "Cacciare il re e la sua casa, rimettendo il governo a magistrati scelti dal popolo.", "effetti": [{ "cambia_governo": "repubblica" }, { "stabilita": -1 }] },
+        { "id": "tenere", "testo": "Sopportare ancora il re, per timore del disordine, tra l'ira dei nobili.", "effetti": [{ "stabilita": -2 }] }
+      ],
+      "regola": "cacciare",
+      "storico": true
+    },
+    {
+      "id": "orazi_curiazi",
+      "titolo": "Il duello dei campioni",
+      "testo": "Due popoli fratelli sono sul punto di una guerra che li rovinerebbe entrambi. Si propone di affidare la contesa a un duello tra campioni scelti, tre per parte: chi vince decide, e il sangue dei popoli è risparmiato.",
+      "condizioni": { "probabilita": 0.02, "anni": [700, 640], "culture": ["latina"], "altro": { "preferiti": ["lega_latina"], "culture": ["latina"] }, "unaVolta": "partita" },
+      "opzioni": [
+        { "id": "duello", "testo": "Accettare il duello: se i nostri campioni vincono, la gloria rafforza il popolo e dà un pretesto contro il rivale.", "effetti": [{ "stabilita": 1 }, { "pretesto": true }] },
+        { "id": "pace", "testo": "Preferire un patto di amicizia tra i due popoli, senza combattere.", "effetti": [{ "relazione": 30 }] }
+      ],
+      "regola": "duello",
+      "storico": true
+    },
+    {
+      "id": "dodici_tavole",
+      "titolo": "Le leggi scritte",
+      "testo": "Il popolo chiede che le leggi, ora note solo ai sacerdoti e ai nobili, siano incise e mostrate a tutti. Una commissione di saggi è pronta a scrivere regole uguali per ricchi e poveri.",
+      "condizioni": { "probabilita": 0.05, "anni": [460, 440], "governi": ["repubblica", "città-stato"], "unaVolta": "partita" },
+      "opzioni": [
+        { "id": "leggi", "testo": "Incidere le leggi per tutti, ponendo limiti ai privilegi dei nobili.", "effetti": [{ "slider": { "societa": 1 } }, { "stabilita": 1 }] },
+        { "id": "patrizi", "testo": "Lasciare le leggi in mano alle famiglie nobili, accrescendo il loro potere e il malcontento.", "effetti": [{ "slider": { "societa": -1 } }, { "stabilita": -1 }] }
+      ],
+      "regola": "leggi",
+      "storico": true
+    },
+    {
+      "id": "secessione_plebe",
+      "titolo": "La secessione della plebe",
+      "testo": "Oppressa dai debiti e dai privilegi dei nobili, la gente minuta ha lasciato la città per accamparsi su un colle, rifiutandosi di combattere e di lavorare. Senza di loro, la città è senza braccia.",
+      "condizioni": { "probabilita": 0.01, "anni": [500, 280], "governi": ["repubblica"], "stabilitaMax": 0, "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "tribuni", "testo": "Concedere magistrati scelti dalla plebe a sua difesa, per farla tornare.", "effetti": [{ "slider": { "societa": 1 } }, { "stabilita": 1 }] },
+        { "id": "resistere", "testo": "Resistere alle richieste e attendere che la fame riporti la plebe a casa.", "effetti": [{ "stabilita": -2 }] }
+      ],
+      "regola": "tribuni",
+      "storico": true
+    },
+    {
+      "id": "sacco_gallico",
+      "titolo": "I Galli alle porte",
+      "testo": "Dal nord sono calati guerrieri dai lunghi baffi e dai fieri costumi, armati di spade lunghe e carichi di furore. Hanno sconfitto il nostro esercito e ora vogliono essere pagati per andarsene.",
+      "condizioni": { "probabilita": 0.02, "anni": [395, 380], "altro": { "preferiti": ["senoni", "boi", "insubri"], "soloPreferiti": true }, "unaVolta": "partita" },
+      "opzioni": [
+        { "id": "riscatto", "testo": "Pagare un grande riscatto in oro perché gli invasori se ne vadano, umiliando il popolo.", "effetti": [{ "tesoroMesi": -6 }, { "stabilita": -1 }] },
+        { "id": "resistenza", "testo": "Rifiutare il riscatto e resistere in armi: sarà guerra con quel popolo.", "effetti": [{ "guerra": true }] }
+      ],
+      "regola": "riscatto",
+      "storico": true
+    },
+    {
+      "id": "guerre_sannitiche",
+      "titolo": "L'appello dei Campani",
+      "testo": "Le città campane, strette dalle armi dei montanari vicini, chiedono il nostro aiuto e promettono fedeltà in cambio di protezione. Soccorrerle significa sfidare quel popolo, ma lascia intravedere nuovi alleati e nuove terre.",
+      "condizioni": { "probabilita": 0.01, "anni": [345, 290], "guerra": false, "altro": { "preferiti": ["sanniti"], "soloPreferiti": true }, "unaVolta": "popolo" },
+      "opzioni": [
+        { "id": "aiuto_ai_campani", "testo": "Soccorrere i Campani: ne verrà un buon pretesto di guerra, ma il rapporto con quel popolo si guasta.", "effetti": [{ "pretesto": true }, { "relazione": -30 }] },
+        { "id": "neutralita", "testo": "Restare neutrali ed evitare un conflitto, mantenendo buoni rapporti con quel popolo.", "effetti": [{ "relazione": 20 }] }
+      ],
+      "regola": "aiuto_ai_campani",
+      "storico": true
+    }
+  ]
+}

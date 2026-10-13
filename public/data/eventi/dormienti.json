@@ -1,0 +1,522 @@
+{
+  "eventi": [
+    {
+      "id": "coloni_siracusa",
+      "titolo": "Coloni greci: Siracusa",
+      "testo": "Navi corinzie hanno gettato l'ancora presso un isolotto davanti a una fonte d'acqua dolce. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          737,
+          714
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "siracusa",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "siracusa",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_reggio",
+      "titolo": "Coloni greci: Reggio",
+      "testo": "Coloni calcidesi sono sbarcati presso lo stretto, di fronte alla grande isola, e chiedono terra per una nuova città. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          723,
+          700
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "reggio",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "reggio",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_sibari",
+      "titolo": "Coloni greci: Sibari",
+      "testo": "Coloni achei risalgono la costa ionica e cercano una pianura fertile tra due fiumi per fondare una città. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          723,
+          700
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "sibari",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "sibari",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_crotone",
+      "titolo": "Coloni greci: Crotone",
+      "testo": "Un gruppo di coloni achei, guidato da un fondatore consigliato da un oracolo, sbarca su un promontorio verso la costa ionica. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          713,
+          690
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "crotone",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "crotone",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_taranto",
+      "titolo": "Coloni greci: Taranto",
+      "testo": "Esuli giunti dalla Laconia si sono fermati sulle rive di un grande golfo e chiedono di poter fondare lì una città. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          709,
+          686
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "taranto",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "taranto",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_gela",
+      "titolo": "Coloni greci: Gela",
+      "testo": "Coloni di Rodi e di Creta hanno approdato sulla costa meridionale dell'isola e chiedono un fazzoletto di terra presso un fiume. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          691,
+          668
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "gela",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "gela",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_locri",
+      "titolo": "Coloni greci: Locri",
+      "testo": "Coloni giunti dalla Grecia, in cerca di terra, risalgono la costa ionica verso un promontorio di fronte al mare aperto. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          683,
+          660
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "locri",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "locri",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "coloni_neapolis",
+      "titolo": "Coloni greci: Napoli",
+      "testo": "Coloni greci da una città vicina propongono di fondare una nuova città, \"città nuova\", accanto alla vecchia Partenope sul golfo. Parlano una lingua musicale, portano ulivi e vasi dipinti, e chiedono il permesso del consiglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          473,
+          450
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "accogliere",
+          "testo": "Accogliere i coloni e concedere loro terra, ottenendo doni e un nuovo vicino amico.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "neapolis",
+                "esercito": 1,
+                "relazione": 50
+              }
+            },
+            {
+              "tesoroMesi": 3
+            }
+          ]
+        },
+        {
+          "id": "respingere",
+          "testo": "Respingere i coloni con le armi: il nuovo vicino sarà in guerra con noi.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "neapolis",
+                "esercito": 2,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "accogliere",
+      "storico": true
+    },
+    {
+      "id": "invasione_lucani",
+      "titolo": "Invasione dei Lucani",
+      "testo": "Dai monti dell'interno scendono bande di montanari sabellici, bellicosi e numerosi, in cerca di pascoli e di bottino. Le pianure del sud sono il loro bersaglio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          423,
+          400
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "invasione",
+          "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "lucani",
+                "esercito": 3,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "invasione",
+      "storico": true
+    },
+    {
+      "id": "invasione_bruzi",
+      "titolo": "Invasione dei Bruzi",
+      "testo": "Pastori e servi ribelli hanno abbandonato i loro padroni sulle montagne dell'estremo sud. Armati e decisi, si organizzano in un popolo nuovo e feroce.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          359,
+          336
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "invasione",
+          "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "bruzi",
+                "esercito": 3,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "invasione",
+      "storico": true
+    },
+    {
+      "id": "invasione_senoni",
+      "titolo": "Invasione dei Senoni",
+      "testo": "Un popolo celtico dai capelli irti e dalle lunghe spade è disceso dalle Alpi lungo la costa adriatica. Il suo avanzare spaventa ogni villaggio.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          398,
+          375
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "invasione",
+          "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "senoni",
+                "esercito": 4,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "invasione",
+      "storico": true
+    },
+    {
+      "id": "invasione_boi",
+      "titolo": "Invasione dei Boi",
+      "testo": "Guerrieri celtici dalle grandi spade, i Boi, si riversano nella pianura del nord, dilagando verso le terre degli antichi abitanti.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          403,
+          380
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "invasione",
+          "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "boi",
+                "esercito": 4,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "invasione",
+      "storico": true
+    },
+    {
+      "id": "invasione_insubri",
+      "titolo": "Invasione degli Insubri",
+      "testo": "Dalle Alpi scende un'altra tribù celtica, gli Insubri, che occupa le pianure e le rive dei laghi e fonda una propria città.",
+      "condizioni": {
+        "probabilita": 0.08,
+        "anni": [
+          403,
+          380
+        ],
+        "unaVolta": "partita"
+      },
+      "opzioni": [
+        {
+          "id": "invasione",
+          "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
+          "effetti": [
+            {
+              "crea_popolo": {
+                "popolo": "insubri",
+                "esercito": 4,
+                "guerra": true
+              }
+            }
+          ]
+        }
+      ],
+      "regola": "invasione",
+      "storico": true
+    }
+  ]
+}
