@@ -1,5 +1,5 @@
 // Eventi: condizioni, scatto mensile, scelta ed effetti. Il catalogo sta in game.catalogo (non si salva).
-import { log, clamp, bordersNation, provincesOf, maxManpower, newId, sliderOf } from './state.js';
+import { log, clamp, provincesOf, maxManpower, newId, sliderOf } from './state.js';
 import { nextRandom } from './rng.js';
 import { dateFromDay } from './calendar.js';
 import { monthlyIncome } from './economy.js';
@@ -21,7 +21,10 @@ const vivo = (game, id) => Boolean(id && game.nazioni[id]?.vivo && game.ordine.i
 export function resolveOther(game, def, id) {
   const a = def.condizioni.altro;
   if (!a) return null;
-  const ok = o => o !== id && vivo(game, o) && bordersNation(game, id, o) && (!a.culture || a.culture.includes(game.nazioni[o].cultura));
+  // i confinanti si calcolano una volta: controllarli uno per uno ripercorre tutte le province
+  const confinanti = new Set();
+  for (const p of provincesOf(game, id)) for (const v of p.vicini) confinanti.add(game.province[v].owner);
+  const ok = o => o !== id && vivo(game, o) && confinanti.has(o) && (!a.culture || a.culture.includes(game.nazioni[o].cultura));
   const pref = (a.preferiti ?? []).find(ok);
   if (pref) return pref;
   return a.soloPreferiti ? null : game.ordine.find(ok) ?? null;
@@ -40,9 +43,11 @@ export function conditionsHold(game, def, id) {
     const p = game.province[c.provincia];
     if (!p || p.owner !== id || p.controller !== id) return false;
   }
-  const np = provincesOf(game, id).length;
-  if (c.minProvince !== undefined && np < c.minProvince) return false;
-  if (c.maxProvince !== undefined && np > c.maxProvince) return false;
+  if (c.minProvince !== undefined || c.maxProvince !== undefined) {
+    const np = provincesOf(game, id).length;
+    if (c.minProvince !== undefined && np < c.minProvince) return false;
+    if (c.maxProvince !== undefined && np > c.maxProvince) return false;
+  }
   if (c.stabilitaMin !== undefined && n.stabilita < c.stabilitaMin) return false;
   if (c.stabilitaMax !== undefined && n.stabilita > c.stabilitaMax) return false;
   if (c.guerra !== undefined && c.guerra !== inGuerra(game, id)) return false;
