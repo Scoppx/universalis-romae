@@ -287,7 +287,7 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 2b. Mappa realistica e truppe animate (sezione 10).
 3. Jev e pannello Consiglio.
 4a. Diplomazia (sezione 11).
-4b. Governo, slider, cultura, rivolte, colonie, fortificazioni.
+4b. Governo, slider, cultura, rivolte, colonie, fortificazioni (sezione 12).
 5. Eventi e popoli dormienti.
 6. Taratura della difficoltà.
 
@@ -362,3 +362,33 @@ fortificazioni: sezione 3).
 - **Interfaccia**: scheda Diplomazia con tutti i popoli (confinanti prima), barra della relazione, stato e bottoni
   con il motivo quando un'azione non si può fare; finestra per ogni proposta ricevuta; modalità "relazioni" con
   alleati, federati e coalizione.
+
+## 12. Tappa 4b: governo, slider, cultura, rivolte (aggiunta del 2026-10-13)
+
+- **Governo** (effetti fissi; i cambi arrivano con gli eventi della tappa 5): tribù +20% reclute −20% tasse;
+  monarchia: la stabilità tende a +1; repubblica +10% tasse, slider ogni 15 anni; lega: foedus con rapporto 2;
+  città-stato +20% tasse −20% reclute.
+- **Slider** da −5 a +5, uno spostamento ogni 10 anni (15 per le repubbliche): società (patrizi ↔ plebe:
+  +2% tasse per punto verso i patrizi, +3% reclute per punto verso la plebe); guerra (difensiva ↔ offensiva:
+  +1 al dado agli estremi, oltre ±4, in difesa o in attacco); governo (accentramento ↔ autonomia:
+  l'accentramento accelera l'assimilazione del 10% per punto e aggiunge 0,2 di malcontento per punto,
+  l'autonomia il contrario).
+- **Stabilità nel dado**: +1 con stabilità ≥ +2, −1 con stabilità ≤ −2.
+- **Malcontento** (0–10, calcolato): +3 se la cultura della provincia è diversa da quella del padrone, + la
+  stabilità negativa, + o − lo slider di governo, −1 con una colonia.
+- **Assimilazione** (0–100 per le province di altra cultura): sale ogni mese, circa 15 anni di base; tratto
+  "assimilazione", slider e colonia (×2) la cambiano; a 100 la provincia prende la cultura del padrone.
+  Si azzera quando la provincia cambia padrone.
+- **Colonia**: costa denaro e uomini, raddoppia l'assimilazione, −1 al malcontento. **Fortificazione**:
+  livello fino a 3, a pagamento.
+- **Rivolte con eserciti ribelli**: ogni mese, oltre la soglia di malcontento (3), una probabilità di rivolta
+  per punto in più. Nasce un esercito ribelle nella provincia (un "popolo" speciale `ribelli`, in guerra con
+  tutti, fuori da `ordine`), che la assedia. Se i ribelli la tengono per un anno la provincia diventa
+  indipendente: va al popolo vivo della sua cultura che vi confina, altrimenti nasce un popolo nuovo
+  (`liberi_<provincia>`), con l'esercito ribelle come suo esercito. Le regole mandano gli eserciti contro i
+  ribelli anche in pace.
+- **IA**: le regole spostano gli slider con criteri fissi e fondano colonie; Jev sceglie lo slider una volta
+  l'anno (scelta di gusto: estrazione dalle probabilità con temperatura 0,8, con un generatore separato da
+  quello della partita, così il rigioco resta identico).
+- **Interfaccia**: scheda Governo con slider e bottoni (motivo se spenti); scheda provincia con malcontento,
+  assimilazione, colonia e fortificazione; modalità mappa "malcontento"; notizie di rivolte e indipendenze.
