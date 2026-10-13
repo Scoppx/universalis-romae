@@ -195,12 +195,15 @@ export function answerProposals(game, id) {
 
 export function armyOrders(game, id) {
   const cmds = [];
+  const armies = armiesOf(game, id);
+  if (!armies.length) return cmds;
   const enemies = enemiesOfNation(game, id);
   const capital = game.nazioni[id].capitale;
   // province proprie tenute o invase dai ribelli: si reprimono anche in pace
-  const rivolte = Object.values(game.province).filter(p => p.owner === id &&
-    (p.controller === RIBELLI || Object.values(game.eserciti).some(e => e.prov === p.id && e.owner === RIBELLI)));
-  for (const a of armiesOf(game, id)) {
+  const ribelliIn = new Set(Object.values(game.eserciti).filter(e => e.owner === RIBELLI).map(e => e.prov));
+  const rivolte = Object.values(game.province).filter(p => p.owner === id && (p.controller === RIBELLI || ribelliIn.has(p.id)));
+  const pronti = [];
+  for (const a of armies) {
     if (a.inBattaglia || a.percorso.length) continue;
     if (!enemies.length && !rivolte.length) {
       if (a.prov !== capital) cmds.push({ tipo: 'muovi', nazione: id, esercito: a.id, verso: capital });
@@ -209,16 +212,29 @@ export function armyOrders(game, id) {
     const here = game.province[a.prov];
     if (here.controller !== id && (enemies.includes(here.controller) || (here.controller === RIBELLI && here.owner === id))) continue; // sta assediando
     if (a.morale < game.balance.combattimento.moraleMax / 2) continue; // si riprende
-    // solo province tenute da un nemico: quelle occupate da un terzo non si possono assediare
-    const nemiche = Object.values(game.province).filter(p =>
-      enemies.includes(p.controller) && (p.owner === id || enemies.includes(p.owner)));
-    const targets = [...nemiche, ...rivolte.filter(p => !nemiche.includes(p))];
-    const { dist } = distancesFrom(game, id, a.prov);
+    pronti.push({ a, dist: distancesFrom(game, id, a.prov).dist });
+  }
+  if (!pronti.length) return cmds;
+  // contro ogni rivolta va l'esercito più vicino, anche se il consiglio ha scelto un obiettivo
+  const assegnati = new Map();
+  for (const p of [...rivolte].sort((x, y) => (x.id < y.id ? -1 : 1))) {
+    let scelto = null;
+    for (const x of pronti) {
+      if (assegnati.has(x.a.id) || x.dist[p.id] === undefined) continue;
+      if (!scelto || x.dist[p.id] < scelto.dist[p.id] || (x.dist[p.id] === scelto.dist[p.id] && x.a.id < scelto.a.id)) scelto = x;
+    }
+    if (scelto) assegnati.set(scelto.a.id, p.id);
+  }
+  // solo province tenute da un nemico: quelle occupate da un terzo non si possono assediare
+  const nemiche = Object.values(game.province).filter(p =>
+    enemies.includes(p.controller) && (p.owner === id || enemies.includes(p.owner)));
+  const targets = [...nemiche, ...rivolte.filter(p => !nemiche.includes(p))];
+  const ob = game.nazioni[id].obiettivo;
+  for (const { a, dist } of pronti) {
     // obiettivo deciso dal consiglio: un bersaglio nemico, oppure la capitale da presidiare
-    const ob = game.nazioni[id].obiettivo;
     const obValido = ob && dist[ob] !== undefined && (targets.some(p => p.id === ob) ||
       (ob === capital && game.province[ob].owner === id && game.province[ob].controller === id));
-    let best = obValido ? ob : null;
+    let best = assegnati.get(a.id) ?? (obValido ? ob : null);
     if (!best) {
       for (const p of targets) {
         if (dist[p.id] === undefined) continue;

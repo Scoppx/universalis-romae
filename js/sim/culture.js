@@ -106,10 +106,9 @@ export function ensureRebels(game) {
   };
 }
 
-function maybeRevolt(game, provId) {
+function maybeRevolt(game, provId, ribelliIn) {
   const p = game.province[provId], c = C(game);
-  if (p.controller !== p.owner) return;
-  if (Object.values(game.eserciti).some(a => a.prov === provId && a.owner === RIBELLI)) return;
+  if (p.controller !== p.owner || ribelliIn.has(provId)) return;
   const m = malcontent(game, provId);
   if (m <= c.sogliaRivolta) return;
   if (nextRandom(game) >= (m - c.sogliaRivolta) * c.rivoltaPerPunto) return;
@@ -160,6 +159,7 @@ export function independence(game, provId) {
 
 // Ogni mese, in ordine di id: assimilazione (solo se il padrone controlla la provincia), indipendenze, rivolte.
 export function monthlyCulture(game) {
+  const ribelliIn = new Set(Object.values(game.eserciti).filter(a => a.owner === RIBELLI).map(a => a.prov));
   for (const id of Object.keys(game.province).sort()) {
     const p = game.province[id], n = game.nazioni[p.owner];
     if (!n.vivo) continue;
@@ -176,6 +176,6 @@ export function monthlyCulture(game) {
       independence(game, id);
       continue;
     }
-    maybeRevolt(game, id);
+    maybeRevolt(game, id, ribelliIn);
   }
 }
