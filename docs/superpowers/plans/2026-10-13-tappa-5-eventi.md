@@ -783,7 +783,7 @@ process.exit(errori.length ? 1 : 0);
 
 | id | condizioni | opzioni: effetti | regola |
 |---|---|---|---|
-| cacciata_del_re | p 0.02, anni [600, 264], governi [monarchia], stabilitaMax −1, storico | repubblica: cambia_governo repubblica, stabilita +1 · repressione: stabilita −1, uominiQuota −0.2 | repubblica |
+| cacciata_del_re | p 0.01, anni [600, 264], governi [monarchia], stabilitaMax 0, storico | repubblica: cambia_governo repubblica, stabilita +1 · repressione: stabilita −1, uominiQuota −0.2 | repubblica |
 | re_delle_tribu | p 0.01, governi [tribù], minProvince 5 | incoronare: cambia_governo monarchia, stabilita +1 · consiglio_anziani: tesoroMesi +1 | incoronare |
 | tirannide | p 0.02, governi [città-stato], stabilitaMax −2 | tiranno: cambia_governo monarchia, infamia +2 · resistere: stabilita −1 | resistere |
 | lega_dei_popoli | p 0.005, governi [tribù], minProvince 3, maxProvince 6 | lega: cambia_governo lega · restare: (nessuno) | lega |
@@ -794,6 +794,7 @@ process.exit(errori.length ? 1 : 0);
 | id | condizioni | opzioni: effetti | regola |
 |---|---|---|---|
 | ratto_sabine | p 0.02, anni [753, 700], culture [latina], altro {preferiti [sabini]} | ratto: uominiQuota +0.2, relazione −60, pretestoAltro · trattative: relazione +20, tesoroMesi −2 | ratto |
+| superbia_del_re | p 0.05, anni [515, 495], governi [monarchia], unaVolta 'popolo' | cacciare: cambia_governo repubblica, stabilita −1 · tenere: stabilita −2 | cacciare |
 | orazi_curiazi | p 0.02, anni [700, 640], culture [latina], altro {preferiti [lega_latina], culture [latina]} | duello: stabilita +1, pretesto · pace: relazione +30 | duello |
 | dodici_tavole | p 0.05, anni [460, 440], governi [repubblica, città-stato] | leggi: slider {societa +1}, stabilita +1 · patrizi: slider {societa −1}, stabilita −1 | leggi |
 | secessione_plebe | p 0.01, anni [500, 280], governi [repubblica], stabilitaMax 0, unaVolta 'popolo' | tribuni: slider {societa +1}, stabilita +1 · resistere: stabilita −2 | tribuni |
@@ -811,11 +812,11 @@ process.exit(errori.length ? 1 : 0);
 | invasione_boi (400) | boi | invasione: crea_popolo {popolo boi, esercito 4, guerra true} | invasione |
 | invasione_insubri (400) | insubri | invasione: crea_popolo {popolo insubri, esercito 4, guerra true} | invasione |
 
-Totale: 13 + 5 + 6 + 13 = 37 eventi.
+Totale: 13 + 5 + 7 + 13 = 38 eventi. (La monarchia tende a stabilità +1: per questo la cacciata scatta già a stabilità 0, e la superbia del re non chiede stabilità bassa.)
 
-- [ ] **Step 6: verificare** — Run: `npm run validate-events`. Expected: `37 eventi validi`. Run: `node --test test/events-data.test.js`. Expected: 2/2 PASS. Rileggere a campione 5 testi (anacronismi, numeri nel testo delle opzioni). `npm test` (log). Expected: verde; se un test di sessione con dati veri si ferma ora per un evento del giocatore (`runDays` con motivo `evento`), lo si adatta rispondendo all'evento o scegliendo un seme senza eventi nei giorni del test, con una riga `Ruling:`.
+- [ ] **Step 6: verificare** — Run: `npm run validate-events`. Expected: `38 eventi validi`. Run: `node --test test/events-data.test.js`. Expected: 2/2 PASS. Rileggere a campione 5 testi (anacronismi, numeri nel testo delle opzioni). `npm test` (log). Expected: verde; se un test di sessione con dati veri si ferma ora per un evento del giocatore (`runDays` con motivo `evento`), lo si adatta rispondendo all'evento o scegliendo un seme senza eventi nei giorni del test, con una riga `Ruling:`.
 
-- [ ] **Step 7: commit** — `git commit -m "feat: catalogo di 37 eventi e validatore"`.
+- [ ] **Step 7: commit** — `git commit -m "feat: catalogo di 38 eventi e validatore"`.
 
 ---
 
@@ -1166,7 +1167,7 @@ export function eventoHtml(v) {
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: bench a regole** — `node bench.js 100 10 regole > <workspace>/bench-regole.txt`; contare nel registro: popoli dormienti risvegliati (righe con difficoltà dei dormienti e `prov. inizio` 0), Roma vivo e punteggio, riepilogo per difficoltà, tempo. Confronto con la tappa 4b (Roma 55% su 20 semi, 101 s su 10 semi). Nessuna taratura: è la tappa 6.
+- [ ] **Step 1: bench a regole** — `node bench.js 100 10 regole > <workspace>/bench-regole.txt`; contare nel registro: popoli dormienti risvegliati (righe con difficoltà dei dormienti e `prov. inizio` 0), Roma vivo e punteggio, riepilogo per difficoltà, tempo, monarchie diventate repubbliche (voci di log `governo`, contate con un piccolo script sul bench o con una partita a regole da 300 anni) e se Roma è tra queste. Confronto con la tappa 4b (Roma 55% su 20 semi, 101 s su 10 semi). Nessuna taratura: è la tappa 6.
 
 - [ ] **Step 2: Jev reale breve** — con `TYPESAFE_API_KEY`: `node bench.js 20 1 misto <workspace>/jev.jsonl`; contare le domande `evento`, errori e distribuzione delle scelte rispetto alla regola. Senza chiave: `Ruling:` che rimanda la misura.
 
