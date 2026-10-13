@@ -11,18 +11,22 @@
 //   eserciti: { [id]: { id, owner, prov, fanteria, cavalleria, morale, percorso: [id], giorniAlProssimo, inBattaglia } },
 //   guerre: { [id]: { id, attaccanti: [id], difensori: [id], inizio, battaglie } },
 //   proposte: { [id]: { id, tipo: 'pace', guerra, da, a, termini: { ricevente, province: [id] }, giorno } },
-//   log: [{ day, tipo, ... }]     // eventi del giorno corrente
+//   log: [{ day, tipo, ... }],    // eventi del giorno corrente
+//   catalogo: [evento],           // definizioni degli eventi, ordinate per id (non si salva)
+//   eventi: { [id]: { id, evento, nazione, altro, giorno } },   // eventi in attesa di una scelta
+//   eventiFatti: { [eventoId]: [nazione] }
 // }
 import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus } from './state.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { initCulture } from './culture.js';
 
-export function createGame({ map, popoli, balance, seed }) {
+export function createGame({ map, popoli, balance, catalogo = [], seed }) {
   const game = {
     day: 0, rng: seed >>> 0, nextId: 1, balance,
     province: {}, stretti: [], nazioni: {}, ordine: [],
-    eserciti: {}, guerre: {}, proposte: {}, log: []
+    eserciti: {}, guerre: {}, proposte: {}, log: [],
+    catalogo: [...catalogo].sort((a, b) => (a.id < b.id ? -1 : 1)), eventi: {}, eventiFatti: {}
   };
   for (const p of map.province) {
     game.province[p.id] = {

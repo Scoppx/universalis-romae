@@ -39,6 +39,6 @@ export const fixturePopoli = {
   ]
 };
 
-export function makeGame(seed = 1) {
-  return createGame({ map: fixtureMap, popoli: fixturePopoli, balance, seed });
+export function makeGame(seed = 1, catalogo = []) {
+  return createGame({ map: fixtureMap, popoli: fixturePopoli, balance, catalogo, seed });
 }

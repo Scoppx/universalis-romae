@@ -150,5 +150,8 @@
       60
     ],
     "fortMax": 3
+  },
+  "eventi": {
+    "scadenza": 60
   }
 }

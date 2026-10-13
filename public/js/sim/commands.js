@@ -5,6 +5,7 @@ import { raiseStability } from './economy.js';
 import { embassy, propose, breakAlliance, leaveFoedus } from './diplomacy.js';
 import { moveSlider } from './government.js';
 import { foundColony, fortify } from './culture.js';
+import { chooseOption } from './events.js';
 
 export function applyCommand(game, cmd) {
   switch (cmd.tipo) {
@@ -31,6 +32,8 @@ export function applyCommand(game, cmd) {
       return foundColony(game, cmd.nazione, cmd.provincia);
     case 'fortifica':
       return fortify(game, cmd.nazione, cmd.provincia);
+    case 'scegli':
+      return chooseOption(game, cmd.nazione, cmd.evento, cmd.opzione);
     case 'esci_foedus':
       return leaveFoedus(game, cmd.nazione);
     case 'rompi_alleanza':
