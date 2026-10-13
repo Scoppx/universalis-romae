@@ -1,5 +1,5 @@
 // Eventi: condizioni, scatto mensile, scelta ed effetti. Il catalogo sta in game.catalogo (non si salva).
-import { log, clamp, provincesOf, maxManpower, newId, sliderOf } from './state.js';
+import { log, clamp, provincesOf, bordersNation, maxManpower, newId, sliderOf } from './state.js';
 import { nextRandom } from './rng.js';
 import { dateFromDay } from './calendar.js';
 import { monthlyIncome } from './economy.js';
@@ -91,8 +91,8 @@ export function checkChoice(game, id, pid, opzione) {
 function applyEffect(game, e, eff) {
   const [k, v] = Object.entries(eff)[0];
   const id = e.nazione, n = game.nazioni[id];
-  const altro = vivo(game, e.altro) ? e.altro : null;
-  if (ALTRO.includes(k) && !altro) return; // l'altro è sparito: l'effetto su di lui si salta
+  const altro = vivo(game, e.altro) && bordersNation(game, id, e.altro) ? e.altro : null;
+  if (ALTRO.includes(k) && !altro) return; // l'altro è sparito o non confina più: l'effetto su di lui si salta
   const anniPretesto = game.day + 365 * game.balance.diplomazia.pretestoAnni;
   switch (k) {
     case 'stabilita': n.stabilita = clamp(n.stabilita + v, -3, 3); break;
@@ -117,7 +117,10 @@ function applyEffect(game, e, eff) {
       for (const [q, d] of Object.entries(v)) n.slider[q] = clamp(n.slider[q] + d, -lim, lim);
       break;
     }
-    case 'crea_popolo': activateDormant(game, v.popolo, v); break;
+    case 'crea_popolo':
+      // risveglio saltato (la capitale è cambiata di mano): l'evento non conta come fatto e potrà tornare
+      if (!activateDormant(game, v.popolo, v)) game.eventiFatti[e.evento] = (game.eventiFatti[e.evento] ?? []).filter(x => x !== id);
+      break;
     default: break; // il validatore impedisce effetti sconosciuti
   }
 }
