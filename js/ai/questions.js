@@ -72,20 +72,21 @@ export function buildReview(game, id, carattere) {
   const state = statoPopolo(game, id, carattere);
   const questions = {}, meta = {};
   if (!inWar) {
-    const legal = legalWarTargets(game, id);
+    // si chiede solo davanti a un'occasione: chiedere sempre faceva rispondere quasi sempre "pace"
+    const legal = legalWarTargets(game, id).filter(c => c.rapporto >= game.balance.ia.rapportoGuerra);
     if (!legal.length) return null;
     state.vicini_attaccabili = legal.map(c => ({
       nome: nome(game, c.id), rapporto_forze: round2(c.rapporto), pretesto: hasPretext(game, id, c.id),
       province: provincesOf(game, c.id).length, tasse: sumOf(provincesOf(game, c.id), 'tasse')
     }));
     // la pace non è descritta come la scelta saggia: con quel testo Jev non attaccava quasi mai
-    const criteria = { 'nessuna guerra': 'Restare in pace per ora e rafforzarsi: nessuna conquista, ma nessun rischio.' };
+    const criteria = { 'nessuna guerra': 'Lasciar passare l\'occasione: nessun rischio, ma i vicini intanto si rafforzano e l\'occasione può non tornare.' };
     const mappa = { 'nessuna guerra': null };
     for (const c of legal) {
       const N = nome(game, c.id);
       const prov = provincesOf(game, c.id), tasse = sumOf(prov, 'tasse');
       const rischio = c.rapporto >= 2 ? 'rischio basso' : c.rapporto >= 1.3 ? 'rischio medio' : 'rischio alto';
-      criteria[N] = `Dichiarare guerra a ${N} per conquistare le sue terre (${prov.length} province, tasse ${tasse}): ` +
+      criteria[N] = `Cogliere l'occasione: dichiarare guerra a ${N} per conquistare le sue terre (${prov.length} province, tasse ${tasse}): ` +
         `le nostre forze sono ${round2(c.rapporto)} volte le sue, ${rischio}` +
         (hasPretext(game, id, c.id) ? ', e abbiamo un pretesto.' : '; senza pretesto perdiamo stabilità.');
       mappa[N] = c.id;
