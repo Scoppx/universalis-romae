@@ -105,6 +105,7 @@ function validateGame(s, data) {
     if (!Array.isArray(a.percorso) || !a.percorso.every(provincia)) return `esercito ${k}`;
     if (![a.fanteria, a.cavalleria, a.giorniAlProssimo].every(isInt) || a.fanteria < 0 || a.cavalleria < 0) return `esercito ${k}`;
     if (!isNum(a.morale) || a.morale < 0 || typeof a.inBattaglia !== 'boolean') return `esercito ${k}`;
+    if (a.unisciCon !== undefined && a.unisciCon !== null && !(isStr(a.unisciCon) && ID.test(a.unisciCon))) return `esercito ${k}`;
   }
   for (const [k, w] of Object.entries(g.guerre)) {
     if (!ID.test(k) || !isObj(w) || w.id !== k || !isInt(w.inizio) || !isNum(w.battaglie)) return `guerra ${k}`;
@@ -120,6 +121,7 @@ function validateGame(s, data) {
       if (!Array.isArray(p.termini.province) || !p.termini.province.every(provincia)) return `proposta ${k}`;
       if (p.termini.annessione !== undefined && !attiva(p.termini.annessione)) return `proposta ${k}`;
       if (p.termini.denari !== undefined && !(isInt(p.termini.denari) && p.termini.denari >= 0)) return `proposta ${k}`;
+      if (p.termini.assegna !== undefined && !(isObj(p.termini.assegna) && Object.entries(p.termini.assegna).every(([q, x]) => provincia(q) && attiva(x)))) return `proposta ${k}`;
     }
     if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;
   }

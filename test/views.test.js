@@ -215,8 +215,8 @@ test('azioni sulla selezione: unire e dividere', () => {
   const g = makeGame();
   const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
   const b = createArmy(g, 'roma', 'a', 500, 0);
-  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false, motivoUnire: null, motivoDividere: 'seleziona un solo tuo esercito' });
-  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true, motivoUnire: 'seleziona almeno due tuoi eserciti (Shift + clic)', motivoDividere: null });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false, puoRiunire: false, motivoUnire: null, motivoDividere: 'seleziona un solo tuo esercito', motivoRiunire: 'sono già nella stessa provincia: usa Unisci' });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true, puoRiunire: false, motivoUnire: 'seleziona almeno due tuoi eserciti (Shift + clic)', motivoDividere: null, motivoRiunire: 'seleziona almeno due tuoi eserciti (Shift + clic)' });
   b.prov = 'b';
   assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).motivoUnire, 'gli eserciti devono stare nella stessa provincia');
   assert.equal(V.selectionActions(g, 'roma', []).puoDividere, false);
@@ -423,4 +423,17 @@ test('pace con denari: testo della proposta, notizia, massimo chiedibile', () =>
   assert.equal(V.motivoRichiesta([], {}, 0, 42), 'Spunta almeno una provincia o chiedi dei denari.');
   assert.equal(V.motivoRichiesta([], {}, 10, 42), null);
   assert.equal(V.motivoRichiesta([], {}, 50, 42), 'Al più 42 denari: è quanto ha nel tesoro.');
+});
+
+test('eserciti: unisci tutti qui nella provincia, riunisci da province diverse', () => {
+  const g = makeGame();
+  const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
+  assert.equal(V.provinceInfo(g, 'a', 'roma').unibili, null);
+  const b = createArmy(g, 'roma', 'a', 500, 0);
+  assert.deepEqual(V.provinceInfo(g, 'a', 'roma').unibili, [r.id, b.id]);
+  assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).motivoRiunire, 'sono già nella stessa provincia: usa Unisci');
+  b.prov = 'b';
+  const s = V.selectionActions(g, 'roma', [r.id, b.id]);
+  assert.equal(s.puoRiunire, true);
+  assert.equal(V.selectionActions(g, 'roma', [r.id]).motivoRiunire, 'seleziona almeno due tuoi eserciti (Shift + clic)');
 });

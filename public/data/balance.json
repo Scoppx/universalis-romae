@@ -67,7 +67,8 @@
     "puntiBattaglia": 2,
     "maxBattaglie": 25,
     "scadenzaProposta": 30,
-    "quotaPace": 0.5
+    "quotaPace": 0.5,
+    "presaAlleato": 10
   },
   "punteggio": {
     "culturaPropria": 1

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { monthlyIncome } from '../public/js/sim/economy.js';
+import { relation } from '../public/js/sim/diplomacy.js';
 import { armiesOf } from '../public/js/sim/state.js';
 import { orderMove, advanceMovement } from '../public/js/sim/armies.js';
 import {
@@ -213,4 +214,23 @@ test('pace con denari: costo nel punteggio, limite del tesoro, pagamento alla fi
   const e = g.log.find(x => x.tipo === 'pace');
   assert.equal(e.denari, 15);
   assert.equal(e.pagatore, 'volsci');
+});
+
+test('il capofila sceglie chi riceve ogni provincia: un alleato che la occupava se la lega al dito', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const w = g.guerre[guerra];
+  w.attaccanti.push('latini');
+  g.province.c.controller = 'latini';
+  g.province.f.controller = 'roma';
+  assert.equal(validTerms(g, w, 'roma', { province: ['c'], assegna: { c: 'siculi' } }), 'chi riceve una provincia deve essere del tuo schieramento');
+  assert.equal(validTerms(g, w, 'roma', { province: ['c'], assegna: { f: 'roma' } }), 'termini non validi');
+  const rel = relation(g, 'roma', 'latini');
+  assert.deepEqual(makePeace(g, guerra, 'roma', { province: ['c', 'f'], assegna: { c: 'roma' } }), { ok: true });
+  assert.equal(g.province.c.owner, 'roma');
+  assert.equal(g.province.c.controller, 'roma');
+  assert.equal(relation(g, 'roma', 'latini'), rel - g.balance.guerra.presaAlleato);
+  assert.deepEqual(g.log.find(e => e.tipo === 'pace').padroni, ['roma', 'roma']);
 });
