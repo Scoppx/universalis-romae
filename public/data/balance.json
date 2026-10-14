@@ -73,7 +73,7 @@
     "culturaPropria": 1
   },
   "ia": {
-    "rapportoGuerra": 1.5,
+    "rapportoGuerra": 2,
     "pacePunteggio": 30,
     "resaPunteggio": -60,
     "paceBiancaAnni": 3,
@@ -163,7 +163,9 @@
       "tesoro": 2,
       "uomini": 1.5,
       "dado": 1,
-      "capitaleSalva": true
+      "capitaleSalva": true,
+      "reclute": 1,
+      "tasse": 0.5
     },
     "normale": {},
     "difficile": {
