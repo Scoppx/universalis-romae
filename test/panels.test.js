@@ -67,3 +67,18 @@ test('nessun bottone spento senza spiegazione', () => {
   const es = esercitiHtml([], { puoUnire: false, puoDividere: false, motivoUnire: 'seleziona almeno due eserciti', motivoDividere: 'seleziona un esercito solo' });
   assert.deepEqual(spentiSenzaMotivo(es), []);
 });
+
+test('scelta di chi riceve una provincia occupata da un alleato, e nuovi bottoni degli eserciti', () => {
+  const w = {
+    id: 'g1', nemico: { id: 'volsci', nome: 'Volsci' }, ruolo: 'attaccante', capofila: true, punteggio: 50, propostaInAttesa: false,
+    daChiedere: [{ id: 'c', nome: 'C', costo: 50, a: 'latini', verso: evil, owner: 'volsci' }, { id: 'f', nome: 'F', costo: 50, a: 'roma', verso: null, owner: 'volsci' }],
+    daCedere: [], limiti: [{ id: 'volsci', nome: 'Volsci', max: 2 }], limiteMio: 1, denariMax: 0, puntiPer10Denari: 1, annessioni: []
+  };
+  const h = guerreHtml([w]);
+  assert.equal(h.includes('<img'), false);
+  assert.equal((h.match(/<select class="assegna"/g) ?? []).length, 1);
+  assert.match(h, /data-prov="c"/);
+  const es = esercitiHtml([{ id: 'e1', provincia: 'Roma', fanteria: 1, cavalleria: 0, morale: '3.0', destinazione: null, inBattaglia: false }], { puoUnire: false, puoDividere: false, puoRiunire: false, motivoUnire: 'x', motivoDividere: 'y', motivoRiunire: evil });
+  assert.match(es, /data-azione="riunisci"[^>]*disabled title=/);
+  assert.equal(es.includes('<img'), false);
+});

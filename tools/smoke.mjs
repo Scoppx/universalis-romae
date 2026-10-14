@@ -427,6 +427,17 @@ try {
   check(await page.isHidden('#finestra'), 'finestra chiusa dopo l\'ultimo evento');
   await page.screenshot({ path: 'smoke-eventi.png' });
 
+  // eserciti: unisci tutti qui dalla scheda della provincia
+  await page.evaluate(async () => {
+    const { createArmy } = await import('/js/sim/state.js');
+    const g = window.universalis.ui.session.game;
+    createArmy(g, 'roma', 'roma', 500, 0);
+    createArmy(g, 'roma', 'roma', 500, 0);
+    window.universalis.ui.selezione.provincia = 'roma';
+    window.universalis.avanza(0);
+  });
+  await page.click('#provincia [data-azione="unisci-qui"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(a => a.owner === 'roma' && a.prov === 'roma' && !a.percorso.length).length === 1), 'unisci tutti qui: un solo esercito');
   for (const scheda of ['governo', 'diplomazia', 'eserciti', 'guerre']) {
     await page.click(`[data-scheda="${scheda}"]`);
     const muti = await page.evaluate(() => [...document.querySelectorAll('button[disabled], option[disabled], input[disabled], select[disabled]')]

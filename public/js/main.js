@@ -318,8 +318,17 @@ function selezionaEsercito(id, { centra = false, aggiungi = false } = {}) {
   aggiorna();
 }
 
-function proponi(guerra, ricevente, province, denari = 0) {
-  const r = comando({ tipo: 'proponi_pace', guerra, termini: { ricevente, province, ...(denari ? { denari } : {}) } });
+// Province occupate da un alleato che il giocatore ha scelto di prendere per sé.
+function assegnazioni(guerra, province) {
+  const out = {};
+  for (const sel of $('scheda').querySelectorAll(`select.assegna[data-guerra="${guerra}"]`)) {
+    if (sel.value === 'io' && province.includes(sel.dataset.prov)) out[sel.dataset.prov] = ui.session.giocatore;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function proponi(guerra, ricevente, province, denari = 0, assegna = null) {
+  const r = comando({ tipo: 'proponi_pace', guerra, termini: { ricevente, province, ...(denari ? { denari } : {}), ...(assegna ? { assegna } : {}) } });
   if (r.ok) avviso('Proposta inviata.');
 }
 
@@ -373,6 +382,16 @@ document.addEventListener('click', e => {
       if (r.ok) { ui.selezione.eserciti = [r.esercito]; aggiorna(); }
       break;
     }
+    case 'unisci-qui': {
+      const v = V.provinceInfo(ui.session.game, id, ui.session.giocatore);
+      if (v.unibili) { const r = comando({ tipo: 'unisci', eserciti: v.unibili }); if (r.ok) ui.selezione.eserciti = [r.esercito]; }
+      break;
+    }
+    case 'riunisci': {
+      const r = comando({ tipo: 'riunisci', eserciti: ui.selezione.eserciti });
+      if (r.ok) avviso('Gli eserciti marciano per riunirsi.');
+      break;
+    }
     case 'dividi': {
       const [primo] = ui.selezione.eserciti;
       const r = comando({ tipo: 'dividi', esercito: primo });
@@ -384,13 +403,15 @@ document.addEventListener('click', e => {
       const province = [...document.querySelectorAll(`input[name="${el.dataset.azione}-${id}"]:checked`)].map(i => i.value);
       const denari = el.dataset.azione === 'chiedi' ? Math.max(0, Math.floor(Number($(`denari-${id}`)?.value) || 0)) : 0;
       if (!province.length && !denari) { avviso('Scegli almeno una provincia o dei denari.'); break; }
-      proponi(id, el.dataset.azione === 'chiedi' ? ui.session.giocatore : el.dataset.nemico, province, denari);
+      proponi(id, el.dataset.azione === 'chiedi' ? ui.session.giocatore : el.dataset.nemico, province, denari,
+        el.dataset.azione === 'chiedi' ? assegnazioni(id, province) : null);
       break;
     }
     case 'pace-bianca': proponi(id, ui.session.giocatore, []); break;
     case 'annetti': {
       const g = ui.session.game, popolo = el.dataset.popolo;
-      const r = comando({ tipo: 'proponi_pace', guerra: id, termini: { ricevente: ui.session.giocatore, province: provincesOf(g, popolo).map(p => p.id), annessione: popolo } });
+      const province = provincesOf(g, popolo).map(p => p.id), assegna = assegnazioni(id, province);
+      const r = comando({ tipo: 'proponi_pace', guerra: id, termini: { ricevente: ui.session.giocatore, province, annessione: popolo, ...(assegna ? { assegna } : {}) } });
       if (r.ok) avviso('Proposta di annessione inviata.');
       break;
     }

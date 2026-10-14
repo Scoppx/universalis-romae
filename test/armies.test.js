@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { armiesOf, createArmy } from '../public/js/sim/state.js';
 import { applyCommand } from '../public/js/sim/commands.js';
+import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, atWar } from '../public/js/sim/war.js';
 import { travelDays, findPath, orderMove, advanceMovement, recruit, mergeArmies, splitArmy } from '../public/js/sim/armies.js';
 
@@ -114,4 +115,31 @@ test('dividi: due metà con lo stesso morale; troppo piccolo no', () => {
   assert.equal(splitArmy(g, 'roma', p.id).motivo, 'esercito troppo piccolo');
   assert.equal(applyCommand(g, { tipo: 'dividi', nazione: 'roma', esercito: r.id }).ok, true);
   assert.equal(applyCommand(g, { tipo: 'unisci', nazione: 'roma', eserciti: [r.id, res.esercito] }).ok, true);
+});
+
+test('riunisci: gli eserciti marciano verso il più grande e si uniscono all\'arrivo', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  const grande = createArmy(g, 'roma', 'a', 3000, 0);
+  const piccolo = createArmy(g, 'roma', 'b', 1000, 100);
+  assert.equal(applyCommand(g, { tipo: 'riunisci', nazione: 'roma', eserciti: [grande.id] }).motivo, 'servono almeno due eserciti');
+  assert.equal(applyCommand(g, { tipo: 'riunisci', nazione: 'volsci', eserciti: [grande.id, piccolo.id] }).motivo, 'esercito non tuo');
+  assert.deepEqual(applyCommand(g, { tipo: 'riunisci', nazione: 'roma', eserciti: [grande.id, piccolo.id] }), { ok: true, verso: 'a' });
+  assert.deepEqual(piccolo.percorso, ['a']);
+  for (let i = 0; i < 20 && g.eserciti[piccolo.id]; i++) advanceDay(g);
+  assert.equal(g.eserciti[piccolo.id], undefined);
+  assert.equal(grande.fanteria, 4000);
+  assert.equal(grande.cavalleria, 100);
+});
+
+test('riunisci: se il più grande sparisce, chi marciava resta un esercito a sé', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  const grande = createArmy(g, 'roma', 'a', 3000, 0);
+  const piccolo = createArmy(g, 'roma', 'b', 1000, 0);
+  applyCommand(g, { tipo: 'riunisci', nazione: 'roma', eserciti: [grande.id, piccolo.id] });
+  delete g.eserciti[grande.id];
+  for (let i = 0; i < 20; i++) advanceDay(g);
+  assert.ok(g.eserciti[piccolo.id]);
+  assert.equal(g.eserciti[piccolo.id].unisciCon ?? null, null);
 });

@@ -121,3 +121,36 @@ export function splitArmy(game, nationId, id) {
   b.morale = a.morale;
   return { ok: true, esercito: b.id };
 }
+
+// Riunisci: tutti marciano verso il più grande, che si ferma ad aspettarli; si uniscono quando arrivano.
+export function rallyArmies(game, nationId, ids) {
+  if (!Array.isArray(ids) || ids.length < 2 || new Set(ids).size !== ids.length) return { ok: false, motivo: 'servono almeno due eserciti' };
+  const armies = ids.map(id => game.eserciti[id]);
+  if (armies.some(a => !a || a.owner !== nationId)) return { ok: false, motivo: 'esercito non tuo' };
+  if (armies.some(a => a.inBattaglia)) return { ok: false, motivo: 'eserciti in battaglia' };
+  const men = a => a.fanteria + a.cavalleria;
+  const capo = armies.reduce((b, a) => (men(a) > men(b) ? a : b));
+  capo.percorso = [];
+  capo.unisciCon = null;
+  for (const a of armies) {
+    if (a === capo) continue;
+    // chi non trova la strada resta dov'è, senza ordine di unirsi
+    if (a.prov !== capo.prov && !orderMove(game, a.id, capo.prov).ok) continue;
+    a.unisciCon = capo.id;
+  }
+  return { ok: true, verso: capo.prov };
+}
+
+// Ogni giorno, dopo il movimento: chi è arrivato si unisce al capo. Se il capo è sparito, si è mosso
+// o la marcia si è fermata altrove, l'ordine decade.
+export function mergeArrivals(game) {
+  for (const a of Object.values(game.eserciti)) {
+    if (!a.unisciCon || !game.eserciti[a.id]) continue;
+    const capo = game.eserciti[a.unisciCon];
+    if (!capo || capo.owner !== a.owner || capo.percorso.length) { a.unisciCon = null; continue; }
+    if (a.percorso.length || a.inBattaglia || capo.inBattaglia) continue;
+    if (a.prov !== capo.prov) { a.unisciCon = null; continue; }
+    a.unisciCon = null;
+    mergeArmies(game, a.owner, [capo.id, a.id]);
+  }
+}
