@@ -94,6 +94,7 @@ export function peaceCost(game, war, receiver, termini) {
 // Forma dei termini: elenco di id di provincia, senza ripetizioni.
 function malformed(termini) {
   return !termini || !Array.isArray(termini.province) ||
+    (termini.annessione !== undefined && typeof termini.annessione !== 'string') ||
     termini.province.some(id => typeof id !== 'string') ||
     new Set(termini.province).size !== termini.province.length;
 }
@@ -108,17 +109,30 @@ export function validTerms(game, war, receiver, termini) {
   const side = sideOf(war, receiver);
   if (!side) return 'non partecipa';
   const mine = war[side], losers = enemiesOf(war, side);
+  const ann = termini.annessione;
+  if (ann !== undefined) {
+    // un'annessione prende tutto il popolo, e solo quello
+    const tutte = provincesOf(game, ann).map(p => p.id);
+    if (!losers.includes(ann) || tutte.length !== termini.province.length || !tutte.every(id => termini.province.includes(id))) return 'un\'annessione prende tutte le province del popolo';
+  }
   for (const id of termini.province) {
     const p = game.province[id];
     if (!p) return 'provincia inesistente';
     if (!losers.includes(p.owner)) return 'provincia non del nemico';
-    if (!mine.includes(p.controller)) return 'provincia non occupata';
+    if (!mine.includes(p.controller)) return ann ? `non tutte le province di ${game.nazioni[ann].nome} sono occupate` : 'provincia non occupata';
     if (game.nazioni[p.owner].capitale === id && difficultyOf(game, p.owner).capitaleSalva) return 'la capitale non si può cedere';
   }
+  if (ann !== undefined) return null; // l'annessione non ha il limite di quota
   const per = {};
   for (const id of termini.province) per[game.province[id].owner] = (per[game.province[id].owner] ?? 0) + 1;
-  if (Object.entries(per).some(([o, k]) => k > maxCedibili(game, o))) return 'troppe province per una pace';
+  const oltre = Object.entries(per).find(([o, k]) => k > maxCedibili(game, o));
+  if (oltre) return `troppe province di ${game.nazioni[oltre[0]].nome} per una pace (al più ${maxCedibili(game, oltre[0])}): togline qualcuna, oppure annetti tutto il popolo`;
   return null;
+}
+
+// Si può annettere tutto il popolo `owner`? null se sì, altrimenti il motivo.
+export function annexable(game, war, receiver, owner) {
+  return validTerms(game, war, receiver, { province: provincesOf(game, owner).map(p => p.id), annessione: owner });
 }
 
 export function makePeace(game, warId, receiver, termini) {
@@ -206,7 +220,7 @@ export function proposePeace(game, from, warId, termini) {
   const id = newId(game, 'p');
   game.proposte[id] = {
     id, tipo: 'pace', guerra: warId, da: from, a: to,
-    termini: { ricevente: termini.ricevente, province: [...termini.province] }, giorno: game.day
+    termini: { ricevente: termini.ricevente, province: [...termini.province], ...(termini.annessione ? { annessione: termini.annessione } : {}) }, giorno: game.day
   };
   log(game, { tipo: 'proposta', proposta: id, da: from, a: to });
   return { ok: true, proposta: id };
@@ -221,7 +235,7 @@ export function answerProposal(game, nationId, propId, accetta) {
     log(game, { tipo: 'rifiutata', proposta: propId, da: p.da, a: p.a });
     return { ok: true, accettata: false };
   }
-  const r = makePeace(game, p.guerra, p.termini.ricevente, { province: p.termini.province });
+  const r = makePeace(game, p.guerra, p.termini.ricevente, { province: p.termini.province, annessione: p.termini.annessione });
   return r.ok ? { ok: true, accettata: true } : r;
 }
 

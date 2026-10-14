@@ -47,7 +47,7 @@ export function governoHtml(v) {
     `<tr><td>Governo</td><td>${esc(v.governo)}${v.effettiGoverno ? ` <span class="muto">(${esc(v.effettiGoverno)})</span>` : ''}</td></tr>` +
     `<tr><td>Stabilità</td><td>${esc(v.stabilita)}</td></tr>` +
     `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr></table>` +
-    `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? '' : ' disabled'}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
+    `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? '' : ` disabled title="${esc(v.motivoAlzare ?? 'non si può ora')}"`}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
     `<h3>Riforme</h3>${v.slider.map(leva).join('')}`;
 }
 
@@ -86,8 +86,8 @@ export function diplomaziaHtml(list) {
 export function esercitiHtml(list, azioni) {
   if (!list.length) return '<p class="muto">Nessun esercito. Recluta da una tua provincia.</p>';
   return '<div class="comandi">' +
-    `<button data-azione="unisci"${azioni.puoUnire ? '' : ' disabled'}>Unisci</button>` +
-    `<button data-azione="dividi"${azioni.puoDividere ? '' : ' disabled'}>Dividi</button></div>` +
+    `<button data-azione="unisci"${azioni.puoUnire ? '' : ` disabled title="${esc(azioni.motivoUnire ?? 'non si può ora')}"`}>Unisci</button>` +
+    `<button data-azione="dividi"${azioni.puoDividere ? '' : ` disabled title="${esc(azioni.motivoDividere ?? 'non si può ora')}"`}>Dividi</button></div>` +
     list.map(a => `<div class="riga${a.scelto ? ' scelta' : ''}"><span>${esc(a.provincia)}: ` +
       `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
       (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +
@@ -97,23 +97,35 @@ export function esercitiHtml(list, azioni) {
 }
 
 function caselle(nome, list) {
-  return list.map(p => `<label class="riga"><span><input type="checkbox" name="${esc(nome)}" value="${esc(p.id)}"> ${esc(p.nome)}</span>` +
+  return list.map(p => `<label class="riga"><span><input type="checkbox" name="${esc(nome)}" value="${esc(p.id)}" data-owner="${esc(p.owner)}"> ${esc(p.nome)}</span>` +
     `<span class="muto">${p.verso ? `→ ${esc(p.verso)} · ` : ''}costo ${esc(p.costo)}</span></label>`).join('');
+}
+
+// Bottone di una richiesta di province: parte spento; main.js lo riaccende quando le caselle spuntate rispettano i limiti.
+function bottonePace(azione, w, testo, limiti) {
+  return `<button data-azione="${azione}" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}" data-limiti="${esc(JSON.stringify(limiti))}"` +
+    ` disabled title="Spunta almeno una provincia.">${esc(testo)}</button>`;
 }
 
 export function guerreHtml(list) {
   if (!list.length) return '<p class="muto">Nessuna guerra.</p>';
-  return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
-    (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (al più ${esc(w.maxChiedibili)} di ${esc(w.nemico.nome)} per pace):</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
-    (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere:</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
-    '<div class="comandi">' + (!w.capofila
-      ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
-      : w.propostaInAttesa
-      ? '<span class="muto">Proposta in attesa di risposta.</span>'
-      : `<button data-azione="chiedi" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Chiedi le province</button>` +
-        `<button data-azione="cedi" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Cedi e fai la pace</button>` +
-        `<button data-azione="pace-bianca" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Pace bianca</button>`) +
-    '</div></div>').join('');
+  return list.map(w => {
+    const limiti = w.limiti.map(l => `${l.max} ${l.max === 1 ? 'provincia' : 'province'} di ${esc(l.nome)}`).join(', ');
+    const annetti = w.annessioni.map(a => `<button class="piccolo" data-azione="annetti" data-id="${esc(w.id)}" data-popolo="${esc(a.id)}"` +
+      `${a.motivo ? ` disabled title="${esc(a.motivo)}"` : ''}>Annetti ${esc(a.nome)} (+${esc(a.infamia)} infamia)</button>`).join('');
+    const perId = Object.fromEntries(w.limiti.map(l => [l.id, { max: l.max, nome: l.nome }]));
+    const mie = Object.fromEntries(w.daCedere.map(p => [p.owner, { max: w.limiteMio, nome: 'tue' }]));
+    return `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
+      (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (una pace prende al più ${limiti}):</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
+      (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere (al più ${esc(w.limiteMio)} per pace):</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
+      '<div class="comandi">' + (!w.capofila
+        ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
+        : w.propostaInAttesa
+        ? '<span class="muto">Proposta in attesa di risposta.</span>'
+        : bottonePace('chiedi', w, 'Chiedi le province', perId) + bottonePace('cedi', w, 'Cedi e fai la pace', mie) +
+          `<button data-azione="pace-bianca" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Pace bianca</button>`) +
+      '</div>' + (annetti ? `<div class="comandi">${annetti}</div>` : '') + '</div>';
+  }).join('');
 }
 
 export function proposalHtml(p) {
