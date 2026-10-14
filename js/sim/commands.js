@@ -1,6 +1,6 @@
 // Unico ingresso delle decisioni nella simulazione: giocatore, regole e Jev passano da qui.
 import { declareWar, proposePeace, answerProposal } from './war.js';
-import { orderMove, recruit, mergeArmies, splitArmy, rallyArmies } from './armies.js';
+import { orderMove, recruit, mergeArmies, splitArmy, rallyArmies, disbandArmies } from './armies.js';
 import { raiseStability } from './economy.js';
 import { embassy, propose, breakAlliance, leaveFoedus } from './diplomacy.js';
 import { moveSlider } from './government.js';
@@ -44,6 +44,8 @@ export function applyCommand(game, cmd) {
       return embassy(game, cmd.nazione, cmd.verso);
     case 'unisci':
       return mergeArmies(game, cmd.nazione, cmd.eserciti);
+    case 'sciogli':
+      return disbandArmies(game, cmd.nazione, cmd.eserciti);
     case 'riunisci':
       return rallyArmies(game, cmd.nazione, cmd.eserciti);
     case 'dividi':
