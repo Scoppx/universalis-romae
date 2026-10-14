@@ -32,8 +32,8 @@ test('pace: province, infamia, tregua, nuova capitale', () => {
   assert.equal(g.province.c.owner, 'roma');
   assert.equal(g.nazioni.roma.infamia, 4); // 2 + 2 cultura diversa
   assert.equal(g.nazioni.volsci.capitale, 'f');
-  assert.equal(g.nazioni.roma.tregue.volsci, g.day + 1825);
-  assert.equal(g.nazioni.volsci.tregue.roma, g.day + 1825);
+  assert.equal(g.nazioni.roma.tregue.volsci, g.day + g.balance.guerra.tregua);
+  assert.equal(g.nazioni.volsci.tregue.roma, g.day + g.balance.guerra.tregua);
   assert.equal(atWar(g, 'roma', 'volsci'), false);
   assert.deepEqual(g.guerre, {});
 });

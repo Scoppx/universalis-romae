@@ -234,7 +234,7 @@ test('firma dei colori: in modalità relazioni cambia con guerre e tregue', asyn
   makePeace(g, guerra, 'roma', { province: [] });
   const inTregua = fillSignature(g, 'relazioni', 'roma');
   assert.notEqual(inTregua, inGuerra);
-  g.day += 1826; // la tregua scade
+  g.day += g.balance.guerra.tregua + 1; // la tregua scade
   assert.notEqual(fillSignature(g, 'relazioni', 'roma'), inTregua);
   g.province.c.controller = 'roma';
   assert.notEqual(fillSignature(g, 'politica', 'roma'), pol); // le occupazioni contano sempre
