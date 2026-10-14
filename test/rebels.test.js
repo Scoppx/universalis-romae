@@ -137,3 +137,14 @@ test('un popolo nato a metà partita riceve un controller', () => {
   runDays(s, 1);
   assert.equal(s.controllers[nuovo], rulesController);
 });
+
+test('un popolo nato da un\'indipendenza ha tregua con i confinanti e un esercito più grande', () => {
+  const g = makeGame();
+  const r = soloRibelli(g, 'b', 1000);
+  g.province.b.cultura = 'etrusca';
+  g.province.b.controller = RIBELLI;
+  independence(g, 'b');
+  const nuovo = g.province.b.owner;
+  for (const o of ['roma', 'latini', 'volsci']) assert.ok(g.nazioni[nuovo].tregue[o] > g.day && g.nazioni[o].tregue[nuovo] > g.day, o);
+  assert.equal(g.eserciti[r.id].fanteria, Math.round(1000 * g.balance.nuoviPopoli.esercito));
+});
