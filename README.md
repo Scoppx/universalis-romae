@@ -32,6 +32,23 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Popoli dormienti**: le colonie greche (Siracusa, Taranto, Neapolis…) sbarcano vicino alla data storica: chi possiede la provincia sceglie se accoglierle (cede la provincia, ne ha un vicino amico e denaro) o respingerle (nascono armate e in guerra). Lucani, Bruzi e Galli arrivano senza chiedere, con un'invasione.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
 
+## Difficoltà e taratura
+
+Ogni popolo ha un'etichetta di difficoltà con un bonus in `balance.json` (`difficolta`): moltiplicatori dell'esercito, del tesoro e della riserva iniziali (`esercito`, `tesoro`, `uomini`), un modificatore al dado (`dado`), bonus di reclute e tasse per tutta la partita (`reclute`, `tasse`) e, per i facili, la capitale che non si cede né in pace né con un ultimatum (`capitaleSalva`). "Molto difficile" resta senza aiuti: Volsci ed Equi sono duri anche da giocare.
+
+Altre regole contro una guerra troppo letale, tutte in `balance.json`:
+- `guerra.quotaPace`: una pace prende al più questa quota delle province di un popolo (almeno una);
+- `guerra.tregua`: giorni di tregua dopo una pace;
+- `ia.anniDiRespiro`: anni iniziali senza guerre dell'IA;
+- `ia.paceBiancaAnni`, `ia.stanchezzaAnni`: quando l'IA propone e accetta la pace bianca;
+- `ia.rapportoGuerra`: vantaggio di forze che l'IA vuole prima di attaccare;
+- `infamia.perProvincia`: infamia per ogni provincia presa (oltre la soglia l'IA non attacca);
+- `nuoviPopoli`: tregua ed esercito dei popoli nati da un'indipendenza o da un risveglio.
+
+Alla pace ogni provincia va a chi la occupa (il vincitore o un suo alleato).
+
+Il bench controlla gli obiettivi: `node bench.js 100 20 regole` stampa, sotto la tabella, la sopravvivenza per difficoltà (facile ≥ 80% e Roma che cresce, normale 50–65%, difficile 30–45%, molto difficile al più 30%, totale ≥ 55%) con ✓/✗, le guerre per popolo-anno e i popoli nuovi. Per provare una variante senza toccare il file: `--set ia.rapportoGuerra=2` (ripetibile); `--da 21` fa partire i semi da 21.
+
 ## Eventi
 
 Il catalogo sta in `public/data/eventi/` (`generici`, `governo`, `storici`, `dormienti`). `npm run validate-events` lo controlla; il gioco non parte se non è valido. Ogni evento ha `id`, `titolo`, `testo`, `condizioni` (`probabilita` mensile, `anni` a.C. `[da, a]`, `unaVolta` `partita`/`popolo`/`false`, `popoli`, `culture`, `governi`, `provincia`, `minProvince`, `maxProvince`, `stabilitaMin`, `stabilitaMax`, `guerra`, `altro` con `preferiti`, `culture`, `soloPreferiti`), `opzioni` (da 1 a 4, ciascuna con `id`, `testo` ed `effetti`), la `regola` scelta dall'IA a regole e, se serve, `storico: true` (compare nelle notizie di tutti).
