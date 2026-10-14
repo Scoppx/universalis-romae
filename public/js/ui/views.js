@@ -5,7 +5,7 @@ import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
-import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar } from '../sim/war.js';
+import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
@@ -52,11 +52,26 @@ export function topBar(game, g) {
   };
 }
 
-export function peopleCards(popoli) {
+function formatBonus(d) {
+  if (!d) return '';
+  const parti = [];
+  const pc = (k, v) => `${k} ${v > 1 ? '+' : ''}${Math.round((v - 1) * 100)}%`;
+  if (d.esercito !== undefined && d.esercito !== 1) parti.push(pc('esercito', d.esercito));
+  if (d.tesoro !== undefined && d.tesoro !== 1) parti.push(`tesoro ×${d.tesoro}`);
+  if (d.uomini !== undefined && d.uomini !== 1) parti.push(pc('riserva', d.uomini));
+  if (d.dado) parti.push(`${d.dado > 0 ? '+' : ''}${d.dado} al dado`);
+  if (d.reclute) parti.push(`reclute ${d.reclute > 0 ? '+' : ''}${Math.round(d.reclute * 100)}%`);
+  if (d.tasse) parti.push(`tasse ${d.tasse > 0 ? '+' : ''}${Math.round(d.tasse * 100)}%`);
+  if (d.capitaleSalva) parti.push('capitale mai ceduta');
+  return parti.join(', ');
+}
+
+export function peopleCards(popoli, balance = null) {
   return popoli.popoli.filter(p => !p.dormiente)
     .map(p => ({
       id: p.id, nome: p.nome, colore: p.colore, difficolta: p.difficolta, governo: p.governo,
-      capitale: p.capitale, tratti: formatTratti(p.tratti), carattere: p.carattere
+      capitale: p.capitale, tratti: formatTratti(p.tratti), carattere: p.carattere,
+      bonus: formatBonus(balance?.difficolta?.[p.difficolta])
     }))
     .sort((a, b) => DIFFICOLTA.indexOf(a.difficolta) - DIFFICOLTA.indexOf(b.difficolta) || byNome(a, b));
 }
@@ -146,13 +161,15 @@ export function warsView(game, g) {
     return {
       id: w.id,
       nemico: { id: nemici[0], nome: nome(game, nemici[0]) },
+      maxChiedibili: maxCedibili(game, nemici[0]),
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
       capofila: w[side][0] === g,
       punteggio: Math.round(scoreFor(game, w, g)),
-      daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller))
-        .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id) })),
-      daCedere: prov.filter(p => mine.includes(p.owner) && nemici.includes(p.controller))
-        .map(p => ({ id: p.id, nome: p.nome, costo: costo(nemici[0], p.id) })),
+      // solo province che una pace può davvero prendere (niente capitali salve); ognuna va a chi la occupa
+      daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller) && !validTerms(game, w, g, { province: [p.id] }))
+        .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id), a: p.controller, verso: p.controller === g ? null : nome(game, p.controller) })),
+      daCedere: prov.filter(p => mine.includes(p.owner) && nemici.includes(p.controller) && !validTerms(game, w, nemici[0], { province: [p.id] }))
+        .map(p => ({ id: p.id, nome: p.nome, costo: costo(nemici[0], p.id), a: p.controller, verso: nome(game, p.controller) })),
       propostaInAttesa: Object.values(game.proposte).some(p => p.guerra === w.id && p.da === g)
     };
   });
@@ -175,8 +192,14 @@ export function pendingProposals(game, g) {
     let testo;
     if (p.tipo === 'pace') {
       const nomi = p.termini.province.map(id => game.province[id].nome).join(', ');
+      // ogni provincia va a chi la occupa: se non sei tu, il testo lo dice
+      const altrui = p.termini.province.some(id => game.province[id].controller !== g);
+      const conPadrone = p.termini.province.map(id => {
+        const q = game.province[id];
+        return q.controller === g ? q.nome : `${q.nome} (a ${nome(game, q.controller)})`;
+      }).join(', ');
       if (!p.termini.province.length) testo = `${da} propone una pace bianca.`;
-      else if (p.termini.ricevente === g) testo = `${da} offre la pace e ti cede: ${nomi}.`;
+      else if (p.termini.ricevente === g) testo = altrui ? `${da} offre la pace e cede: ${conPadrone}.` : `${da} offre la pace e ti cede: ${nomi}.`;
       else testo = `${da} chiede la pace e vuole: ${nomi}.`;
     } else if (p.tipo === 'alleanza') testo = `${da} propone un'alleanza.`;
     else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e uscirne costerà stabilità e darà al protettore un pretesto di guerra.`;
@@ -198,9 +221,14 @@ export function formatLogEntry(e, game, g) {
     case 'guerra': return `${N(e.attaccante)} dichiara guerra a ${N(e.difensore)}.`;
     case 'pace': {
       const altri = e.parti.filter(x => x !== e.ricevente).map(N).join(', ');
-      return e.province.length
-        ? `Pace tra ${N(e.ricevente)} e ${altri}: ${N(e.ricevente)} ottiene ${e.province.map(P).join(', ')}.`
-        : `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
+      if (!e.province.length) return `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
+      const nomi = [e.ricevente, ...e.parti.filter(x => x !== e.ricevente)].map(N);
+      const tra = `${nomi.slice(0, -1).join(', ')} e ${nomi.at(-1)}`;
+      // ogni provincia va a chi la occupava (salvataggi vecchi: tutte al ricevente)
+      const padroni = e.padroni ?? e.province.map(() => e.ricevente);
+      const per = new Map();
+      e.province.forEach((p, i) => per.set(padroni[i], [...(per.get(padroni[i]) ?? []), P(p)]));
+      return `Pace tra ${tra}: ${[...per].map(([o, l]) => `${N(o)} ottiene ${l.join(', ')}`).join('; ')}.`;
     }
     case 'eliminata': return `${N(e.nazione)} scompare dalla storia.`;
     case 'accordo':

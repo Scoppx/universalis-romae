@@ -98,3 +98,15 @@ test('un risveglio saltato non consuma l\'evento: potrà arrivare di nuovo', () 
   g.province.f.owner = 'siculi'; g.province.f.controller = 'siculi';
   assert.equal(conditionsHold(g, eventDef(g, 'coloni_taranto'), 'siculi'), true);
 });
+
+test('un dormiente accolto ha tregua con i confinanti; uno respinto resta in guerra con il vecchio padrone', () => {
+  const g = makeGame();
+  g.province.f.owner = 'siculi'; g.province.f.controller = 'siculi';
+  activateDormant(g, 'taranto', { esercito: 2, guerra: true });
+  assert.equal(atWar(g, 'taranto', 'siculi'), true);
+  assert.equal(g.nazioni.taranto.tregue.siculi ?? -1, -1); // nessuna tregua con chi lo combatte
+  const h = makeGame();
+  h.province.f.owner = 'siculi'; h.province.f.controller = 'siculi';
+  activateDormant(h, 'taranto', { esercito: 1 });
+  assert.ok(h.nazioni.taranto.tregue.siculi > h.day);
+});

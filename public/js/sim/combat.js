@@ -1,6 +1,6 @@
 // Battaglie giornaliere: ogni giorno un dado 0-9 per parte più i modificatori.
 import { rollD10 } from './rng.js';
-import { armyStrength, clamp, log, sliderOf, RIBELLI } from './state.js';
+import { armyStrength, clamp, log, sliderOf, RIBELLI, difficultyOf } from './state.js';
 import { atWar, warBetween, sideOf } from './war.js';
 import { friendly } from './diplomacy.js';
 
@@ -39,7 +39,7 @@ function men(side) {
 
 export function battleModifier(game, prov, side) {
   const owner = side[0].owner, n = game.nazioni[owner], t = n.tratti, c = game.balance.combattimento;
-  let m = t.battaglia || 0;
+  let m = (t.battaglia || 0) + difficultyOf(game, owner).dado;
   const controlla = side.some(a => a.owner === prov.controller);
   if (controlla) m += c.terreno[prov.terreno];
   if (prov.terreno === 'montagna') m += t.montagna || 0;

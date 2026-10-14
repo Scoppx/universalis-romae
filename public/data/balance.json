@@ -25,7 +25,7 @@
   "infamia": {
     "soglia": 20,
     "caloAnno": 1,
-    "perProvincia": 2,
+    "perProvincia": 5,
     "culturaDiversa": 2
   },
   "movimento": {
@@ -63,23 +63,26 @@
   },
   "guerra": {
     "senzaPretesto": 2,
-    "tregua": 1825,
+    "tregua": 3650,
     "puntiBattaglia": 2,
     "maxBattaglie": 25,
-    "scadenzaProposta": 30
+    "scadenzaProposta": 30,
+    "quotaPace": 0.5
   },
   "punteggio": {
     "culturaPropria": 1
   },
   "ia": {
-    "rapportoGuerra": 1.5,
+    "rapportoGuerra": 2,
     "pacePunteggio": 30,
     "resaPunteggio": -60,
-    "paceBiancaAnni": 3,
+    "paceBiancaAnni": 1,
     "reclutaSoglia": 1000,
     "riservaTesoro": 2,
     "esercitoObiettivo": 0.8,
-    "riservaColonia": 10
+    "riservaColonia": 10,
+    "anniDiRespiro": 5,
+    "stanchezzaAnni": 8
   },
   "diplomazia": {
     "relazioneStessaCultura": 30,
@@ -153,5 +156,33 @@
   },
   "eventi": {
     "scadenza": 60
+  },
+  "difficolta": {
+    "facile": {
+      "esercito": 1.5,
+      "tesoro": 2,
+      "uomini": 1.5,
+      "dado": 1,
+      "capitaleSalva": true,
+      "reclute": 1,
+      "tasse": 0.5
+    },
+    "normale": {},
+    "difficile": {
+      "esercito": 0.9,
+      "tesoro": 1,
+      "uomini": 0.9,
+      "dado": 0
+    },
+    "molto difficile": {
+      "esercito": 0.8,
+      "tesoro": 0.8,
+      "uomini": 0.8,
+      "dado": 0
+    }
+  },
+  "nuoviPopoli": {
+    "tregua": 1825,
+    "esercito": 1.5
   }
 }

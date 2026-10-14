@@ -173,6 +173,7 @@ test('alleati: passano nelle terre amiche e combattono dalla stessa parte', asyn
 test('popolo eliminato: alleanze, foedus e tributi ripuliti', async () => {
   const { makePeace } = await import('../public/js/sim/war.js');
   const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.guerra.quotaPace = 1; // misura la pulizia dopo l'eliminazione
   allea(g, 'volsci', 'siculi');
   g.nazioni.latini.tributo = { a: 'volsci', fine: 9999 };
   const { guerra } = declareWar(g, 'roma', 'volsci');
@@ -266,4 +267,12 @@ test('revisione: ultimatum al massimo uno l\'anno per vicino; chi cede ritira l\
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), 'ultimatum già inviato quest\'anno');
   g.day += 366;
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), null);
+});
+
+test('ultimatum: la capitale di un popolo facile non si può chiedere', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.difficolta.facile = { capitaleSalva: true };
+  g.nazioni.roma.difficolta = 'facile';
+  assert.equal(checkProposal(g, 'latini', 'ultimatum', 'roma', { provincia: 'a' }), 'la capitale non si può chiedere');
 });

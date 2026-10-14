@@ -1,5 +1,5 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
-import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI } from './state.js';
+import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI, difficultyOf } from './state.js';
 import { friendly, answerDiplomatic, onWarDeclared, cleanupDead } from './diplomacy.js';
 
 export function sideOf(war, id) {
@@ -98,6 +98,11 @@ function malformed(termini) {
     new Set(termini.province).size !== termini.province.length;
 }
 
+// Quante province di un popolo può prendere una sola pace: almeno una, al più la quota delle sue province.
+export function maxCedibili(game, owner) {
+  return Math.max(1, Math.floor(provincesOf(game, owner).length * (game.balance.guerra.quotaPace ?? 1)));
+}
+
 export function validTerms(game, war, receiver, termini) {
   if (malformed(termini)) return 'termini non validi';
   const side = sideOf(war, receiver);
@@ -108,7 +113,11 @@ export function validTerms(game, war, receiver, termini) {
     if (!p) return 'provincia inesistente';
     if (!losers.includes(p.owner)) return 'provincia non del nemico';
     if (!mine.includes(p.controller)) return 'provincia non occupata';
+    if (game.nazioni[p.owner].capitale === id && difficultyOf(game, p.owner).capitaleSalva) return 'la capitale non si può cedere';
   }
+  const per = {};
+  for (const id of termini.province) per[game.province[id].owner] = (per[game.province[id].owner] ?? 0) + 1;
+  if (Object.entries(per).some(([o, k]) => k > maxCedibili(game, o))) return 'troppe province per una pace';
   return null;
 }
 
@@ -117,12 +126,13 @@ export function makePeace(game, warId, receiver, termini) {
   if (!war) return { ok: false, motivo: 'guerra inesistente' };
   const err = validTerms(game, war, receiver, termini);
   if (err) return { ok: false, motivo: err };
-  const R = game.nazioni[receiver], inf = game.balance.infamia;
+  const inf = game.balance.infamia, padroni = [];
+  // ogni provincia va a chi la occupa (il ricevente o un suo alleato), che ne paga l'infamia
   for (const id of termini.province) {
-    const p = game.province[id];
+    const p = game.province[id], nuovo = p.controller, R = game.nazioni[nuovo];
     R.infamia += inf.perProvincia + (p.cultura !== R.cultura ? inf.culturaDiversa : 0);
-    p.owner = receiver;
-    p.controller = receiver;
+    p.owner = nuovo;
+    padroni.push(nuovo);
   }
   const parti = [...war.attaccanti, ...war.difensori];
   for (const p of Object.values(game.province)) {
@@ -137,7 +147,7 @@ export function makePeace(game, warId, receiver, termini) {
   for (const p of Object.values(game.proposte)) if (p.guerra === warId) delete game.proposte[p.id];
   checkSurvival(game);
   sendStrandedHome(game);
-  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province] });
+  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province], padroni });
   return { ok: true };
 }
 

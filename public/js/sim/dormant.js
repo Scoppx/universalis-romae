@@ -1,8 +1,9 @@
 // Popoli dormienti: si risvegliano con un evento e prendono la loro provincia capitale dal padrone.
-import { provincesOf, maxManpower, recruitBonus, createArmy, log } from './state.js';
+import { provincesOf, maxManpower, recruitBonus, createArmy, log, difficultyOf } from './state.js';
 import { initDiplomacy, changeRelation } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { checkSurvival, sendStrandedHome, startWar } from './war.js';
+import { protectNewborn } from './culture.js';
 
 // Il risveglio è possibile se la capitale del dormiente è di `id`, controllata da lui, e non è la sua ultima provincia.
 export function dormantReady(game, popolo, id) {
@@ -21,7 +22,7 @@ export function activateDormant(game, popolo, { esercito = 1, guerra = false, re
   game.nazioni[popolo] = {
     id: popolo, nome: d.nome, colore: d.colore, cultura: d.cultura, governo: d.governo, capitale: p.id,
     tesoro: p.tasse * b.economia.tasseMese * b.inizio.tesoroMesi, uomini: 0, stabilita: 0, infamia: 0,
-    tratti: { ...d.tratti }, vivo: true, tregue: {}, obiettivo: null
+    tratti: { ...d.tratti }, vivo: true, tregue: {}, obiettivo: null, difficolta: d.difficolta ?? 'normale'
   };
   game.ordine.push(popolo);
   initDiplomacy(game);
@@ -33,14 +34,17 @@ export function activateDormant(game, popolo, { esercito = 1, guerra = false, re
   p.colonia = null;
   p.ribelliDal = null;
   const n = game.nazioni[popolo], bonus = 1 + recruitBonus(game, popolo);
-  n.uomini = Math.round(maxManpower(game, popolo) * b.inizio.riservaQuota);
+  const diff = difficultyOf(game, popolo);
+  n.tesoro *= diff.tesoro;
+  n.uomini = Math.round(maxManpower(game, popolo) * b.inizio.riservaQuota * diff.uomini);
   createArmy(game, popolo, p.id,
-    Math.round(p.uomini * b.inizio.fanteriaPerUomo * bonus * esercito),
-    Math.round(p.uomini * b.inizio.cavalleriaPerUomo * bonus * esercito));
+    Math.round(p.uomini * b.inizio.fanteriaPerUomo * bonus * esercito * diff.esercito),
+    Math.round(p.uomini * b.inizio.cavalleriaPerUomo * bonus * esercito * diff.esercito));
   log(game, { tipo: 'nascita', nazione: popolo, prov: p.id, da: vecchio });
   if (relazione) changeRelation(game, popolo, vecchio, relazione);
   checkSurvival(game);
   if (guerra) startWar(game, popolo, vecchio);
+  protectNewborn(game, popolo); // tregua con i confinanti, salvo chi lo combatte già
   sendStrandedHome(game);
   return popolo;
 }

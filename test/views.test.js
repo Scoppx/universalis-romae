@@ -146,8 +146,8 @@ test('guerre: punteggio, province da chiedere e da cedere', () => {
   g.province.c.controller = 'roma';
   const [w] = V.warsView(g, 'roma');
   assert.deepEqual([w.id, w.nemico.id, w.ruolo, w.punteggio], [guerra, 'volsci', 'attaccante', 50]);
-  assert.deepEqual(w.daChiedere, [{ id: 'c', nome: 'C', costo: 50 }]);
-  assert.deepEqual(V.warsView(g, 'volsci')[0].daCedere, [{ id: 'c', nome: 'C', costo: 50 }]);
+  assert.deepEqual(w.daChiedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: null }]);
+  assert.deepEqual(V.warsView(g, 'volsci')[0].daCedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: 'roma' }]);
   proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'] });
   assert.equal(V.warsView(g, 'roma')[0].propostaInAttesa, true);
   assert.deepEqual(V.pendingProposals(g, 'volsci').map(p => p.testo), ['roma chiede la pace e vuole: C.']);
@@ -234,7 +234,7 @@ test('firma dei colori: in modalità relazioni cambia con guerre e tregue', asyn
   makePeace(g, guerra, 'roma', { province: [] });
   const inTregua = fillSignature(g, 'relazioni', 'roma');
   assert.notEqual(inTregua, inGuerra);
-  g.day += 1826; // la tregua scade
+  g.day += g.balance.guerra.tregua + 1; // la tregua scade
   assert.notEqual(fillSignature(g, 'relazioni', 'roma'), inTregua);
   g.province.c.controller = 'roma';
   assert.notEqual(fillSignature(g, 'politica', 'roma'), pol); // le occupazioni contano sempre
@@ -287,4 +287,73 @@ test('eventi del giocatore e notizie di nascite, governi, eventi storici', () =>
   assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'latini', opzione: 'a', storico: true }, g, 'roma'), 'latini: Carestia.');
   assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'roma', opzione: 'a', storico: true }, g, 'roma'), null);
   assert.equal(V.formatLogEntry({ tipo: 'evento', evento: 'e', nazione: 'latini', opzione: 'a', storico: false }, g, 'roma'), null);
+});
+
+test('schede dei popoli: bonus della difficoltà', () => {
+  const d = loadData();
+  const cards = V.peopleCards(d.popoli, d.balance);
+  assert.match(cards.find(c => c.id === 'roma').bonus, /esercito \+50%/);
+  assert.match(cards.find(c => c.id === 'roma').bonus, /\+1 al dado/);
+  assert.equal(cards.find(c => c.difficolta === 'normale').bonus, '');
+});
+
+test('guerre: quante province si possono chiedere in una pace', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 0.5;
+  declareWar(g, 'roma', 'latini');
+  g.province.d.controller = 'roma';
+  g.province.e.controller = 'roma';
+  assert.equal(V.warsView(g, 'roma')[0].maxChiedibili, 1);
+});
+
+test('schede dei popoli: bonus di reclute e tasse', () => {
+  const d = loadData();
+  const [roma] = V.peopleCards(d.popoli, { difficolta: { facile: { reclute: 1, tasse: 0.5 } } }).filter(c => c.id === 'roma');
+  assert.equal(roma.bonus, 'reclute +100%, tasse +50%');
+});
+
+test('notizia di pace: ogni provincia al suo nuovo padrone', () => {
+  const g = makeGame();
+  const e = { tipo: 'pace', guerra: 'g1', ricevente: 'roma', parti: ['roma', 'latini', 'volsci'], province: ['c', 'f'], padroni: ['latini', 'roma'] };
+  assert.equal(V.formatLogEntry(e, g, 'siculi'), 'Pace tra roma, latini e volsci: latini ottiene C; roma ottiene F.');
+});
+
+test('schede dei popoli: capitale salva', () => {
+  const d = loadData();
+  const [roma] = V.peopleCards(d.popoli, { difficolta: { facile: { capitaleSalva: true } } }).filter(c => c.id === 'roma');
+  assert.equal(roma.bonus, 'capitale mai ceduta');
+});
+
+test('guerre: per ogni provincia chi la riceve; la capitale salva non si offre', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini');
+  g.province.c.controller = 'latini';
+  g.province.f.controller = 'roma';
+  const w = V.warsView(g, 'roma')[0];
+  assert.deepEqual(w.daChiedere.map(p => [p.id, p.a]), [['c', 'latini'], ['f', 'roma']]);
+  const h = makeGame();
+  h.balance = structuredClone(h.balance);
+  h.balance.difficolta.facile = { capitaleSalva: true };
+  h.nazioni.roma.difficolta = 'facile';
+  declareWar(h, 'volsci', 'roma');
+  h.province.a.controller = 'volsci';
+  h.province.b.controller = 'volsci';
+  assert.deepEqual(V.warsView(h, 'volsci')[0].daChiedere.map(p => p.id), ['b']);
+  assert.deepEqual(V.warsView(h, 'roma')[0].daCedere.map(p => p.id), ['b']);
+});
+
+test('proposta di pace: dice a chi vanno le province che non vanno al giocatore', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini');
+  g.province.c.controller = 'latini';
+  g.province.f.controller = 'roma';
+  proposePeace(g, 'volsci', guerra, { ricevente: 'roma', province: ['c', 'f'] });
+  assert.equal(V.pendingProposals(g, 'roma')[0].testo, 'volsci offre la pace e cede: C (a latini), F.');
 });

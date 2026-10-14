@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runBench } from '../bench.js';
+import { runBench, applicaRitocchi } from '../bench.js';
 
 async function stubAsk({ questions }) {
   const answers = {};
@@ -46,4 +46,36 @@ test('rigioco di un registro con più semi: ogni seme rigioca le sue decisioni',
   assert.ok(records.every(r => r.seme === 1 || r.seme === 2));
   const b = await runBench({ anni: 3, semi: 2, ia: 'jev', records });
   assert.deepEqual(b.righe, a.righe);
+});
+
+test('riepilogo del bench: difficoltà, Roma, guerre, popoli nuovi, obiettivi', async () => {
+  const { riepilogo: r } = await runBench({ anni: 3, semi: 1 });
+  assert.deepEqual(Object.keys(r.perDifficolta).sort(), ['difficile', 'facile', 'molto difficile', 'normale']);
+  assert.ok(r.totale > 0 && r.totale <= 1);
+  assert.equal(r.roma.provinceInizio, 1);
+  assert.ok(r.guerre.perAnno >= 0 && r.guerre.perPopoloAnno.regole >= 0);
+  assert.equal(r.guerre.perPopoloAnno.jev, null); // nessun popolo con Jev
+  assert.ok(r.nuovi.nati >= 0);
+  assert.deepEqual(r.obiettivi.map(o => o.nome), ['facile', 'Roma cresce', 'normale', 'difficile', 'molto difficile', 'totale']);
+  assert.ok(r.obiettivi.every(o => typeof o.ok === 'boolean'));
+  const { righe } = await runBench({ anni: 1, semi: 1 });
+  assert.equal(righe.filter(x => x.iniziale).length, 38); // dormienti e popoli nati dopo non contano
+});
+
+test('ritocchi al bilanciamento e primo seme, per provare varianti in parallelo', async () => {
+  const b = { ia: { rapportoGuerra: 1.5 }, difficolta: { facile: {} } };
+  const r = applicaRitocchi(b, { 'ia.rapportoGuerra': 2, 'difficolta.facile.dado': 2 });
+  assert.equal(r.ia.rapportoGuerra, 2);
+  assert.equal(r.difficolta.facile.dado, 2);
+  assert.equal(b.ia.rapportoGuerra, 1.5); // l'originale non cambia
+  assert.throws(() => applicaRitocchi(b, { 'ia.inesistente.x': 1 }), /ritocco/);
+  const a = await runBench({ anni: 8, semi: 1, primoSeme: 1 });
+  const c = await runBench({ anni: 8, semi: 1, primoSeme: 2 });
+  assert.notDeepEqual(a.righe, c.righe);
+});
+
+test('ritocchi: una chiave finale inesistente è un errore, salvo dentro difficolta', () => {
+  const b = { ia: { rapportoGuerra: 1.5 }, difficolta: { normale: {} } };
+  assert.throws(() => applicaRitocchi(b, { 'ia.rapportoGuera': 3 }), /ritocco/);
+  assert.equal(applicaRitocchi(b, { 'difficolta.normale.dado': 1 }).difficolta.normale.dado, 1);
 });

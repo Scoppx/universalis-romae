@@ -6,9 +6,10 @@ import { ensureRebels } from '../public/js/sim/culture.js';
 import { monthlyEvents } from '../public/js/sim/events.js';
 import { declareWar, proposePeace } from '../public/js/sim/war.js';
 import { advanceDay } from '../public/js/sim/loop.js';
+import { applyCommand } from '../public/js/sim/commands.js';
 import {
   isSliderDay, sliderDecision, colonyDecision, eventAnswers,
-  rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
+  peaceProposals, rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
 } from '../public/js/ai/rules.js';
 
 const allRules = g => Object.fromEntries(g.ordine.map(id => [id, rulesController]));
@@ -22,6 +23,7 @@ test('candidati di guerra: confinanti, fuori tregua, per rapporto di forze', () 
 
 test('strategia: attacca il più debole se il rapporto basta e la stabilità regge', () => {
   const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura la scelta del bersaglio, non il respiro iniziale
   assert.deepEqual(strategy(g, 'roma'), [{ tipo: 'dichiara_guerra', nazione: 'roma', contro: 'volsci' }]);
   g.nazioni.roma.stabilita = -1;
   assert.deepEqual(strategy(g, 'roma'), []);
@@ -125,6 +127,8 @@ test('obiettivo: gli eserciti lo seguono se è valido', () => {
 
 test('bersagli legali e decisione di guerra', () => {
   const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura la scelta del bersaglio, non il respiro iniziale
+  g.balance.ia.rapportoGuerra = 1.5; // né la soglia di forza, che si tara
   assert.deepEqual(legalWarTargets(g, 'roma').map(c => c.id), ['volsci', 'latini']);
   g.nazioni.roma.stabilita = -1;
   assert.deepEqual(legalWarTargets(g, 'roma'), []);
@@ -171,6 +175,7 @@ test('regole: rispondono a ogni tipo di proposta', async () => {
 test('regole: ultimatum invece della guerra contro un vicino molto più debole, poi guerra col pretesto', async () => {
   const { createArmy } = await import('../public/js/sim/state.js');
   const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura la scelta del bersaglio, non il respiro iniziale
   createArmy(g, 'roma', 'a', 20000, 0);
   const [cmd] = ultimatumDecision(g, 'roma');
   assert.equal(cmd.tipo, 'proponi');
@@ -256,4 +261,51 @@ test('regole sugli eventi: scelgono l\'opzione indicata dall\'evento', () => {
   assert.deepEqual(eventAnswers(g, 'roma'), [{ tipo: 'scegli', nazione: 'roma', evento: pid, opzione: 'b' }]);
   assert.deepEqual(eventAnswers(g, 'latini'), []);
   assert.ok(rulesController(g, 'roma').some(c => c.tipo === 'scegli'));
+});
+
+test('respiro iniziale: niente bersagli per le regole né per Jev nei primi anni', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.ia.anniDiRespiro = 5;
+  assert.deepEqual(legalWarTargets(g, 'roma'), []);
+  assert.deepEqual(warDecision(g, 'roma'), []);
+  assert.equal(applyCommand(g, { tipo: 'dichiara_guerra', nazione: 'roma', contro: 'volsci' }).ok, true); // il giocatore può
+  g.day = 5 * 365;
+  assert.ok(legalWarTargets(g, 'latini').length > 0);
+});
+
+test('stanchezza: dopo anni di guerra le regole propongono e accettano la pace bianca', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.ia.stanchezzaAnni = 8;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].battaglie = 20; // roma vince di 20
+  g.day = 8 * 365;
+  assert.ok(peaceProposals(g, 'volsci').some(c => c.termini.province.length === 0));
+  proposePeace(g, 'volsci', guerra, { ricevente: 'volsci', province: [] });
+  assert.equal(answerProposals(g, 'roma').find(c => c.tipo === 'rispondi').accetta, true);
+  g.day = 7 * 365;
+  assert.equal(answerProposals(g, 'roma').find(c => c.tipo === 'rispondi').accetta, false);
+});
+
+// Quante province di un popolo può prendere una sola pace: almeno una, al più la quota delle sue province.
+export function maxCedibili(game, owner) {
+  return Math.max(1, Math.floor(provincesOf(game, owner).length * (game.balance.guerra.quotaPace ?? 1)));
+}
+
+test('chi vince ma non può prendere nulla (capitale salva) propone la pace bianca per stanchezza', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.difficolta.facile = { capitaleSalva: true };
+  g.balance.ia.stanchezzaAnni = 8;
+  g.nazioni.roma.difficolta = 'facile';
+  g.province.b.owner = 'latini'; g.province.b.controller = 'latini'; // a roma resta solo la capitale
+  const { guerra } = declareWar(g, 'volsci', 'latini');
+  g.guerre[guerra].difensori.push('roma');
+  g.province.a.controller = 'volsci';
+  g.guerre[guerra].battaglie = 25;
+  g.day = 3 * 365;
+  assert.ok(peaceProposals(g, 'volsci').every(c => !c.termini.province.includes('a')));
+  g.day = 8 * 365;
+  assert.ok(peaceProposals(g, 'volsci').some(c => c.termini.province.length === 0), JSON.stringify(peaceProposals(g, 'volsci')));
 });

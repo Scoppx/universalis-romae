@@ -6,7 +6,7 @@ import { malcontent, checkColony, colonyCost } from '../sim/culture.js';
 import { eventDef } from '../sim/events.js';
 
 export { power };
-import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost } from '../sim/war.js';
+import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, validTerms } from '../sim/war.js';
 import { distancesFrom } from '../sim/armies.js';
 import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { stabilityCost } from '../sim/economy.js';
@@ -134,6 +134,7 @@ export function legalWarTargets(game, id) {
   const n = game.nazioni[id];
   if (n.protettore) return [];
   if (n.infamia >= game.balance.infamia.soglia) return [];
+  if (game.day < (game.balance.ia.anniDiRespiro ?? 0) * 365) return []; // i primi anni l'IA non attacca
   return warCandidates(game, id).filter(c => hasPretext(game, id, c.id) || n.stabilita >= 0);
 }
 
@@ -158,15 +159,24 @@ export function peaceProposals(game, id) {
       const occupied = Object.values(game.province)
         .filter(p => war[enemySide].includes(p.owner) && war[side].includes(p.controller)).sort(byTax);
       const scelte = [];
-      for (const p of occupied) if (peaceCost(game, war, id, { province: [...scelte, p.id] }) <= s) scelte.push(p.id);
-      if (scelte.length) cmds.push({ tipo: 'proponi_pace', nazione: id, guerra: war.id, termini: { ricevente: id, province: scelte } });
-    } else if (s <= ia.resaPunteggio) {
+      for (const p of occupied) {
+        const t = { province: [...scelte, p.id] };
+        if (peaceCost(game, war, id, t) <= s && !validTerms(game, war, id, t)) scelte.push(p.id);
+      }
+      if (scelte.length) { cmds.push({ tipo: 'proponi_pace', nazione: id, guerra: war.id, termini: { ricevente: id, province: scelte } }); continue; }
+      // vince ma non può prendere nulla (capitale salva, quota, costi): resta la pace bianca per stanchezza
+    }
+    if (s <= ia.resaPunteggio) {
       const lost = Object.values(game.province)
         .filter(p => war[side].includes(p.owner) && war[enemySide].includes(p.controller)).sort(byTax);
       const scelte = [];
-      for (const p of lost) if (peaceCost(game, war, enemyLeader, { province: [...scelte, p.id] }) <= -s) scelte.push(p.id);
+      for (const p of lost) {
+        const t = { province: [...scelte, p.id] };
+        if (peaceCost(game, war, enemyLeader, t) <= -s && !validTerms(game, war, enemyLeader, t)) scelte.push(p.id);
+      }
       cmds.push({ tipo: 'proponi_pace', nazione: id, guerra: war.id, termini: { ricevente: enemyLeader, province: scelte } });
-    } else if (game.day - war.inizio >= ia.paceBiancaAnni * 365 && Math.abs(s) < 10) {
+    } else if (game.day - war.inizio >= ia.paceBiancaAnni * 365 &&
+      (Math.abs(s) < 10 || game.day - war.inizio >= ia.stanchezzaAnni * 365)) { // dopo tanti anni la stanchezza vince
       cmds.push({ tipo: 'proponi_pace', nazione: id, guerra: war.id, termini: { ricevente: id, province: [] } });
     }
   }
@@ -176,6 +186,7 @@ export function peaceProposals(game, id) {
 // Pace: accetta ciò che riceve, cede solo se il costo non supera di 10 il vantaggio del nemico.
 // Altri tipi: relazioni e rapporti di forze.
 export function answerProposals(game, id) {
+  const ia = game.balance.ia;
   const d = game.balance.diplomazia;
   const cmds = [];
   for (const p of Object.values(game.proposte)) {
@@ -185,7 +196,8 @@ export function answerProposals(game, id) {
       case 'pace': {
         const war = game.guerre[p.guerra];
         accetta = p.termini.ricevente === id ||
-          peaceCost(game, war, p.termini.ricevente, p.termini) <= -scoreFor(game, war, id) + 10;
+          peaceCost(game, war, p.termini.ricevente, p.termini) <= -scoreFor(game, war, id) + 10 ||
+          (p.termini.province.length === 0 && game.day - war.inizio >= ia.stanchezzaAnni * 365); // stanchezza di guerra
         break;
       }
       case 'alleanza': accetta = relation(game, id, p.da) >= d.alleanzaMinRelazione; break;

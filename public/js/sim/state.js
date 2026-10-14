@@ -31,15 +31,25 @@ export function sliderOf(game, id) {
   return game.nazioni[id].slider ?? { societa: 0, guerra: 0, governo: 0 };
 }
 
-// Bonus sulle tasse: governo e patrizi (slider della società negativo).
+// Bonus sulle tasse: governo, patrizi (slider della società negativo) e difficoltà.
 export function taxBonus(game, id) {
-  return (governmentOf(game, id).tasse || 0) + Math.max(0, -sliderOf(game, id).societa) * game.balance.slider.tassePatrizi;
+  return (governmentOf(game, id).tasse || 0) + Math.max(0, -sliderOf(game, id).societa) * game.balance.slider.tassePatrizi +
+    difficultyOf(game, id).tasse;
 }
 
-// Bonus sulle reclute: tratto, governo e plebe (slider della società positivo).
+// Bonus sulle reclute: tratto, governo, plebe (slider della società positivo) e difficoltà.
 export function recruitBonus(game, id) {
   return (game.nazioni[id].tratti.reclute || 0) + (governmentOf(game, id).reclute || 0) +
-    Math.max(0, sliderOf(game, id).societa) * game.balance.slider.reclutePlebe;
+    Math.max(0, sliderOf(game, id).societa) * game.balance.slider.reclutePlebe + difficultyOf(game, id).reclute;
+}
+
+// Bonus della difficoltà del popolo (balance.difficolta): normale e valori mancanti sono neutri.
+// esercito, tesoro, uomini moltiplicano i valori iniziali; dado, reclute e tasse valgono per tutta la partita;
+// capitaleSalva: la capitale non si cede né in pace né con un ultimatum.
+export function difficultyOf(game, id) {
+  const d = game.balance.difficolta?.[game.nazioni[id]?.difficolta] ?? {};
+  return { esercito: d.esercito ?? 1, tesoro: d.tesoro ?? 1, uomini: d.uomini ?? 1, dado: d.dado ?? 0, reclute: d.reclute ?? 0, tasse: d.tasse ?? 0,
+    capitaleSalva: Boolean(d.capitaleSalva) };
 }
 
 export function maxManpower(game, nationId) {

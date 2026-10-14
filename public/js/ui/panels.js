@@ -11,7 +11,8 @@ export function cardsHtml(cards, scelto) {
 export function cardDetailHtml(c) {
   return `<h3>${esc(c.nome)}</h3>` +
     `<div>Difficoltà: <b class="${diffClass(c.difficolta)}">${esc(c.difficolta)}</b> · ${esc(c.governo)}</div>` +
-    `<div class="muto">${esc(c.tratti || 'nessun tratto')}</div><p>${esc(c.carattere)}</p>`;
+    `<div class="muto">${esc(c.tratti || 'nessun tratto')}</div>` +
+    (c.bonus ? `<div class="muto">Bonus della difficoltà: ${esc(c.bonus)}</div>` : '') + `<p>${esc(c.carattere)}</p>`;
 }
 
 export function provinceHtml(v) {
@@ -97,13 +98,13 @@ export function esercitiHtml(list, azioni) {
 
 function caselle(nome, list) {
   return list.map(p => `<label class="riga"><span><input type="checkbox" name="${esc(nome)}" value="${esc(p.id)}"> ${esc(p.nome)}</span>` +
-    `<span class="muto">costo ${esc(p.costo)}</span></label>`).join('');
+    `<span class="muto">${p.verso ? `→ ${esc(p.verso)} · ` : ''}costo ${esc(p.costo)}</span></label>`).join('');
 }
 
 export function guerreHtml(list) {
   if (!list.length) return '<p class="muto">Nessuna guerra.</p>';
   return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
-    (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere:</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
+    (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (al più ${esc(w.maxChiedibili)} di ${esc(w.nemico.nome)} per pace):</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
     (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere:</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
     '<div class="comandi">' + (!w.capofila
       ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'

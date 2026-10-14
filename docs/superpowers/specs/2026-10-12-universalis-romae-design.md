@@ -422,7 +422,7 @@ fortificazioni: sezione 3).
 
 - **Obiettivi**, misurati dal bench a regole a 100 anni su 20 semi: popoli vivi per difficoltà — facile (Roma)
   almeno 80% e più province di quante ne aveva all'inizio; normale 50–65%; difficile 30–45%; molto difficile
-  15–30%; in totale almeno il 55% dei popoli iniziali. In modalità Jev, guerre dichiarate per popolo e per anno
+  al più 30% (nessun minimo: Volsci ed Equi restano duri anche per il giocatore, niente bonus per farli sopravvivere); in totale almeno il 55% dei popoli iniziali. In modalità Jev, guerre dichiarate per popolo e per anno
   vicine a quelle delle regole (entro un fattore 1,5).
 - **Riepilogo del bench**: sopravvivenza per difficoltà e totale, Roma (viva, province, punteggio), guerre
   (numero, durata media, guerre per popolo-anno di regole e di Jev), popoli nuovi (nati, vivi), e un ✓/✗ per
@@ -439,3 +439,9 @@ fortificazioni: sezione 3).
   di restare in pace non è più descritta come la più saggia.
 - **Metodo**: si cambia un valore alla volta, si misura su 20 semi, si tiene o si torna indietro; ogni modifica
   tenuta finisce nel registro con i numeri prima e dopo. Le soglie che non si riescono a raggiungere si dichiarano.
+- **Decisioni prese durante la tappa** (2026-10-14): il bonus per difficoltà vale anche per reclute e tasse per
+  tutta la partita, e per i facili la capitale non si cede né in pace né con un ultimatum; alla pace ogni provincia
+  va a chi la occupa (il vincitore o un suo alleato), per tutti; i "molto difficili" non hanno un minimo di
+  sopravvivenza e non ricevono bonus; Jev sceglie la guerra tra tutti i vicini attaccabili (libertà piena) anche se
+  così resta più pacifico delle regole. I popoli dormienti risvegliati hanno la difficoltà dei dati; quelli nati da
+  un'indipendenza sono "normale".
