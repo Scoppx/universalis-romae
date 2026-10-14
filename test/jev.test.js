@@ -122,6 +122,7 @@ test('due risposte di guerra lo stesso giorno: una sola dichiarazione', async ()
 test('guerra diventata illegale prima della risposta: niente dichiarazione', async () => {
   const g = makeGame(1);
   g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura le domande di guerra, non il respiro iniziale
+  g.balance.ia.rapportoGuerra = 1.5; // anche i bersagli sotto la soglia di forza attuale
   const records = [];
   const { ask, rilasci } = rinviato();
   const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
