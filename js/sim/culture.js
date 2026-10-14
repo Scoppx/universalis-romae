@@ -1,9 +1,9 @@
 // Cultura delle province: malcontento, assimilazione, colonie, fortificazioni; rivolte e indipendenze.
-import { clamp, log, sliderOf, RIBELLI, createArmy, newId } from './state.js';
+import { clamp, log, sliderOf, RIBELLI, createArmy, newId, bordersNation } from './state.js';
 import { nextRandom } from './rng.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
-import { checkSurvival, sendStrandedHome } from './war.js';
+import { checkSurvival, sendStrandedHome, atWar } from './war.js';
 
 const C = game => game.balance.cultura;
 const COLORI = ['#7a5c8e', '#4f7f6b', '#a0663a', '#5d6f9e', '#8e5a5a', '#6b8e3f', '#9e8a4f', '#4f8e8e'];
@@ -117,6 +117,16 @@ function maybeRevolt(game, provId, ribelliIn) {
   log(game, { tipo: 'rivolta', prov: provId, nazione: p.owner });
 }
 
+// Un popolo appena nato ha qualche anno di tregua con i confinanti con cui non è già in guerra.
+export function protectNewborn(game, id) {
+  const fine = game.day + game.balance.nuoviPopoli.tregua;
+  for (const o of game.ordine) {
+    if (o === id || !game.nazioni[o].vivo || atWar(game, id, o) || !bordersNation(game, id, o)) continue;
+    game.nazioni[id].tregue[o] = Math.max(game.nazioni[id].tregue[o] ?? -1, fine);
+    game.nazioni[o].tregue[id] = Math.max(game.nazioni[o].tregue[id] ?? -1, fine);
+  }
+}
+
 // Popolo nuovo nato da una provincia indipendente: cultura della provincia, capitale lì, tribù.
 export function spawnNation(game, provId) {
   const p = game.province[provId], b = game.balance;
@@ -139,19 +149,22 @@ export function independence(game, provId) {
   const fratelli = game.ordine.filter(id => id !== vecchio && game.nazioni[id].vivo &&
     game.nazioni[id].cultura === p.cultura && p.vicini.some(v => game.province[v].owner === id));
   const nuovo = fratelli[0] ?? spawnNation(game, provId);
-  if (!fratelli.length) {
-    const fine = game.day + game.balance.guerra.tregua; // l'indipendenza è riconosciuta: niente guerra subito
-    game.nazioni[nuovo].tregue[vecchio] = fine;
-    game.nazioni[vecchio].tregue[nuovo] = fine;
-  }
   p.owner = nuovo;
   p.controller = nuovo;
   p.ribelliDal = null;
   p.assimilazione = 0;
   p.assimilazioneDi = nuovo;
   for (const a of Object.values(game.eserciti)) {
-    if (a.prov === provId && a.owner === RIBELLI) { a.owner = nuovo; a.percorso = []; }
+    if (a.prov === provId && a.owner === RIBELLI) {
+      a.owner = nuovo;
+      a.percorso = [];
+      if (!fratelli.length) { // un popolo appena nato parte con un esercito più grande
+        a.fanteria = Math.round(a.fanteria * game.balance.nuoviPopoli.esercito);
+        a.cavalleria = Math.round(a.cavalleria * game.balance.nuoviPopoli.esercito);
+      }
+    }
   }
+  if (!fratelli.length) protectNewborn(game, nuovo); // l'indipendenza è riconosciuta: qualche anno di tregua
   log(game, { tipo: 'indipendenza', prov: provId, da: vecchio, a: nuovo });
   checkSurvival(game);
   sendStrandedHome(game);

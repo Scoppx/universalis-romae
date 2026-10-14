@@ -3,6 +3,7 @@ import { provincesOf, maxManpower, recruitBonus, createArmy, log, difficultyOf }
 import { initDiplomacy, changeRelation } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { checkSurvival, sendStrandedHome, startWar } from './war.js';
+import { protectNewborn } from './culture.js';
 
 // Il risveglio è possibile se la capitale del dormiente è di `id`, controllata da lui, e non è la sua ultima provincia.
 export function dormantReady(game, popolo, id) {
@@ -43,6 +44,7 @@ export function activateDormant(game, popolo, { esercito = 1, guerra = false, re
   if (relazione) changeRelation(game, popolo, vecchio, relazione);
   checkSurvival(game);
   if (guerra) startWar(game, popolo, vecchio);
+  protectNewborn(game, popolo); // tregua con i confinanti, salvo chi lo combatte già
   sendStrandedHome(game);
   return popolo;
 }

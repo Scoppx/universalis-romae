@@ -177,5 +177,9 @@
       "uomini": 0.8,
       "dado": 0
     }
+  },
+  "nuoviPopoli": {
+    "tregua": 1825,
+    "esercito": 1.5
   }
 }
