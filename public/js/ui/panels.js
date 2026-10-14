@@ -63,6 +63,7 @@ export function diplomaziaHtml(list) {
   const riga = d => {
     const pct = Math.round((d.relazione + 200) / 4);
     return `<div class="dipl"><div class="riga"><span><b>${esc(d.nome)}</b> <span class="muto">${esc(STATI[d.stato])}` +
+      `${d.tregua ? ` ${d.stato === 'tregua' ? '' : '· tregua '}${esc(d.tregua)}` : ''}` +
       `${d.coalizione ? ' · <span class="guerra">coalizione contro di te</span>' : ''}</span></span>` +
       `<span class="rel" title="relazione ${esc(d.relazione)}"><span style="width:${pct}%"></span></span></div>` +
       '<div class="comandi">' +

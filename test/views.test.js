@@ -108,7 +108,7 @@ test('diplomazia: tutti i popoli, confinanti prima, stato, relazione, motivi', (
   makePeace(g, guerra, 'roma', { province: [] });
   d = V.diplomacyView(g, 'roma');
   assert.equal(d[1].stato, 'tregua');
-  assert.equal(d[1].azioni.guerra, 'tregua in corso');
+  assert.match(d[1].azioni.guerra, /^tregua in corso fino al \d+ \w+ \d+ a\.C\.$/);
   g.nazioni.roma.protettore = 'latini';
   d = V.diplomacyView(g, 'roma');
   assert.equal(d[0].stato, 'protettore');
@@ -364,7 +364,7 @@ test('provincia di un vicino: riquadro con il popolo e il motivo se la guerra no
   assert.equal(V.provinceInfo(g, 'g', 'roma').popolo, null); // i siculi non confinano
   assert.equal(V.provinceInfo(g, 'a', 'roma').popolo, null); // provincia propria
   g.nazioni.roma.tregue.volsci = 999;
-  assert.equal(V.provinceInfo(g, 'c', 'roma').popolo.motivo, 'tregua in corso');
+  assert.match(V.provinceInfo(g, 'c', 'roma').popolo.motivo, /^tregua in corso fino al /);
 });
 
 test('conferma di guerra: contro di te, con te, forze e costo', () => {
@@ -447,4 +447,15 @@ test('sciogliere: risparmio al mese e motivo se non si può', () => {
   assert.equal(V.selectionActions(g, 'roma', []).motivoSciogliere, 'seleziona uno o più tuoi eserciti');
   r.inBattaglia = true;
   assert.equal(V.selectionActions(g, 'roma', [r.id]).motivoSciogliere, 'un esercito in battaglia non si scioglie');
+});
+
+test('tregua: la data di fine nella diplomazia e nel motivo della guerra', () => {
+  const g = makeGame();
+  g.nazioni.roma.tregue.volsci = 400; g.nazioni.volsci.tregue.roma = 400;
+  const d = V.diplomacyView(g, 'roma').find(x => x.id === 'volsci');
+  assert.equal(d.stato, 'tregua');
+  assert.equal(d.tregua, 'fino al 26 maggio 752 a.C.');
+  assert.equal(d.azioni.guerra, 'tregua in corso fino al 26 maggio 752 a.C.');
+  assert.equal(V.provinceInfo(g, 'c', 'roma').popolo.motivo, 'tregua in corso fino al 26 maggio 752 a.C.');
+  assert.equal(V.diplomacyView(g, 'roma').find(x => x.id === 'latini').tregua, null);
 });

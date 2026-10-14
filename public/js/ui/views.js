@@ -1,5 +1,5 @@
 // Modelli dei pannelli: dallo stato di gioco ai dati pronti da mostrare. Niente DOM.
-import { formatDate } from '../sim/calendar.js';
+import { formatDate, dateFromDay, MONTH_NAMES } from '../sim/calendar.js';
 import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
@@ -34,6 +34,19 @@ const GOVERNO = {
 };
 const byNome = (a, b) => (a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0);
 const nome = (game, id) => game.nazioni[id]?.nome ?? id;
+
+// "fino al 26 maggio 752 a.C." se g e id sono in tregua, altrimenti null.
+function fineTregua(game, g, id) {
+  if (!inTruce(game, g, id)) return null;
+  const d = dateFromDay(game.nazioni[g].tregue[id]);
+  return `fino al ${d.day} ${MONTH_NAMES[d.month - 1]} ${d.year} a.C.`;
+}
+
+// Motivo per cui non si può dichiarare guerra, con la fine della tregua quando è quella a impedirlo.
+function motivoGuerra(game, g, id) {
+  const m = checkWar(game, g, id);
+  return m === 'tregua in corso' ? `tregua in corso ${fineTregua(game, g, id)}` : m;
+}
 
 export function formatTratti(tratti) {
   return Object.entries(tratti).map(([k, v]) => (TRATTI[k] ? TRATTI[k](v) : `${k} ${v}`)).join(', ');
@@ -105,7 +118,7 @@ export function provinceInfo(game, id, g) {
       .filter(a => a.prov === id && a.owner === g && !a.percorso.length && !a.inBattaglia).map(a => a.id)),
     // provincia di un popolo confinante: menu rapido per la guerra (motivo se non si può)
     popolo: g && p.owner !== g && game.ordine.includes(p.owner) && game.nazioni[p.owner].vivo && bordersNation(game, g, p.owner)
-      ? { id: p.owner, nome: nome(game, p.owner), motivo: checkWar(game, g, p.owner) } : null,
+      ? { id: p.owner, nome: nome(game, p.owner), motivo: motivoGuerra(game, g, p.owner) } : null,
     malcontento: malcontent(game, id),
     assimilazione: p.cultura !== game.nazioni[p.owner].cultura ? Math.floor(p.assimilazione) : null,
     colonia: hasColony(p),
@@ -143,6 +156,7 @@ export function diplomacyView(game, g) {
         .map(p => ({ id: p.id, nome: p.nome }));
       return {
         id, nome: nome(game, id), relazione: relation(game, g, id), confina: bordersNation(game, g, id), stato,
+        tregua: fineTregua(game, g, id),
         coalizione: ostili.includes(id),
         costoGuerra: hasPretext(game, g, id) ? 0 : game.balance.guerra.senzaPretesto,
         azioni: {
@@ -152,7 +166,7 @@ export function diplomacyView(game, g) {
           esci: me.protettore === id ? checkLeaveFoedus(game, g) : 'non è il tuo protettore',
           foedus: checkProposal(game, g, 'foedus', id),
           tributo: checkProposal(game, g, 'tributo', id),
-          guerra: checkWar(game, g, id),
+          guerra: motivoGuerra(game, g, id),
           ultimatum: { motivo: province.length ? null : 'nessuna provincia da chiedere', province }
         }
       };
