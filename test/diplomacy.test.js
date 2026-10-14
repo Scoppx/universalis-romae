@@ -268,3 +268,11 @@ test('revisione: ultimatum al massimo uno l\'anno per vicino; chi cede ritira l\
   g.day += 366;
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), null);
 });
+
+test('ultimatum: la capitale di un popolo facile non si può chiedere', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.difficolta.facile = { capitaleSalva: true };
+  g.nazioni.roma.difficolta = 'facile';
+  assert.equal(checkProposal(g, 'latini', 'ultimatum', 'roma', { provincia: 'a' }), 'la capitale non si può chiedere');
+});

@@ -120,3 +120,35 @@ test('un popolo con una provincia sola può perderla (quota minima una)', () => 
   g.province.g.controller = 'volsci';
   assert.equal(validTerms(g, g.guerre[guerra], 'volsci', { province: ['g'] }), null);
 });
+
+test('alla pace ogni provincia va all\'alleato che la occupa', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini');
+  g.province.c.controller = 'latini';
+  g.province.f.controller = 'roma';
+  const inf = g.nazioni.latini.infamia;
+  assert.deepEqual(makePeace(g, guerra, 'roma', { province: ['c', 'f'] }), { ok: true });
+  assert.equal(g.province.c.owner, 'latini');
+  assert.equal(g.province.f.owner, 'roma');
+  assert.ok(g.nazioni.latini.infamia > inf);
+  const e = g.log.find(x => x.tipo === 'pace');
+  assert.deepEqual(e.padroni, ['latini', 'roma']);
+});
+
+test('capitale salva per i popoli facili: né in pace né con un ultimatum', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  g.balance.difficolta.facile = { capitaleSalva: true };
+  g.nazioni.roma.difficolta = 'facile';
+  const { guerra } = declareWar(g, 'volsci', 'roma');
+  g.province.a.controller = 'volsci';
+  g.province.b.controller = 'volsci';
+  assert.equal(validTerms(g, g.guerre[guerra], 'volsci', { province: ['a'] }), 'la capitale non si può cedere');
+  assert.equal(validTerms(g, g.guerre[guerra], 'volsci', { province: ['b'] }), null);
+  g.nazioni.roma.difficolta = 'normale';
+  assert.equal(validTerms(g, g.guerre[guerra], 'volsci', { province: ['a'] }), null);
+});

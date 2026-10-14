@@ -312,3 +312,15 @@ test('schede dei popoli: bonus di reclute e tasse', () => {
   const [roma] = V.peopleCards(d.popoli, { difficolta: { facile: { reclute: 1, tasse: 0.5 } } }).filter(c => c.id === 'roma');
   assert.equal(roma.bonus, 'reclute +100%, tasse +50%');
 });
+
+test('notizia di pace: ogni provincia al suo nuovo padrone', () => {
+  const g = makeGame();
+  const e = { tipo: 'pace', guerra: 'g1', ricevente: 'roma', parti: ['roma', 'latini', 'volsci'], province: ['c', 'f'], padroni: ['latini', 'roma'] };
+  assert.equal(V.formatLogEntry(e, g, 'siculi'), 'Pace tra roma, latini e volsci: latini ottiene C; roma ottiene F.');
+});
+
+test('schede dei popoli: capitale salva', () => {
+  const d = loadData();
+  const [roma] = V.peopleCards(d.popoli, { difficolta: { facile: { capitaleSalva: true } } }).filter(c => c.id === 'roma');
+  assert.equal(roma.bonus, 'capitale mai ceduta');
+});

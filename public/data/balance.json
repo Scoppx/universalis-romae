@@ -162,7 +162,8 @@
       "esercito": 1.5,
       "tesoro": 2,
       "uomini": 1.5,
-      "dado": 1
+      "dado": 1,
+      "capitaleSalva": true
     },
     "normale": {},
     "difficile": {
