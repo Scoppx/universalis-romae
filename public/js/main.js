@@ -387,6 +387,16 @@ document.addEventListener('click', e => {
       if (v.unibili) { const r = comando({ tipo: 'unisci', eserciti: v.unibili }); if (r.ok) ui.selezione.eserciti = [r.esercito]; }
       break;
     }
+    case 'sciogli': {
+      const r = comando({ tipo: 'sciogli', eserciti: ui.selezione.eserciti });
+      if (r.ok) { ui.selezione.eserciti = []; avviso('Eserciti sciolti: gli uomini sono tornati nella riserva.'); }
+      break;
+    }
+    case 'sciogli-esercito': {
+      const r = comando({ tipo: 'sciogli', eserciti: [id] });
+      if (r.ok) ui.selezione.eserciti = ui.selezione.eserciti.filter(x => x !== id);
+      break;
+    }
     case 'riunisci': {
       const r = comando({ tipo: 'riunisci', eserciti: ui.selezione.eserciti });
       if (r.ok) avviso('Gli eserciti marciano per riunirsi.');
