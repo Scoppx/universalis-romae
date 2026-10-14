@@ -96,8 +96,19 @@ try {
   await page.click('[data-azione="recluta"]');
   const dopo = await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(a => a.owner === 'roma').reduce((s, a) => s + a.fanteria, 0));
   check(dopo === prima + 100, `reclutamento: fanti ${prima} → ${dopo}`);
+  // menu rapido dalla provincia di un vicino: conferma con gli schieramenti, Annulla non fa nulla
+  await clickProvince('veio');
+  await page.click('#provincia [data-azione="prepara-guerra"][data-id="veio"]');
+  const conferma = await page.textContent('#finestra');
+  check(conferma.includes('Dichiarare guerra a Veio?') && conferma.includes('Contro di te') && conferma.includes('Con te'), 'conferma di guerra con gli schieramenti');
+  await page.screenshot({ path: 'smoke-guerra.png' });
+  await page.click('#finestra [data-azione="chiudi"]');
+  check(await page.evaluate(() => Object.keys(window.universalis.ui.session.game.guerre).length === 0), 'annulla: nessuna guerra');
   await page.click('[data-scheda="diplomazia"]');
   await page.click('[data-azione="dichiara"][data-id="veio"]');
+  await page.click('#finestra [data-azione="conferma-guerra"]');
+  check((await page.textContent('#finestra')).includes('Guerra dichiarata'), 'riepilogo dopo la dichiarazione');
+  await page.click('#finestra [data-azione="chiudi"]');
   await page.click('[data-scheda="guerre"]');
   check((await page.textContent('#scheda')).includes('Contro Veio'), 'guerra a Veio nella scheda Guerre');
   await page.click('[data-scheda="eserciti"]');

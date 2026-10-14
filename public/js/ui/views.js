@@ -1,12 +1,12 @@
 // Modelli dei pannelli: dallo stato di gioco ai dati pronti da mostrare. Niente DOM.
 import { formatDate } from '../sim/calendar.js';
-import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf } from '../sim/state.js';
+import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms } from '../sim/war.js';
-import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
 const DIFFICOLTA = ['facile', 'normale', 'difficile', 'molto difficile'];
@@ -100,6 +100,9 @@ export function provinceInfo(game, id, g) {
       uomini: a.fanteria + a.cavalleria, morale: a.morale.toFixed(1)
     })),
     puoReclutare: Boolean(g) && p.owner === g && p.controller === g,
+    // provincia di un popolo confinante: menu rapido per la guerra (motivo se non si può)
+    popolo: g && p.owner !== g && game.ordine.includes(p.owner) && game.nazioni[p.owner].vivo && bordersNation(game, g, p.owner)
+      ? { id: p.owner, nome: nome(game, p.owner), motivo: checkWar(game, g, p.owner) } : null,
     malcontento: malcontent(game, id),
     assimilazione: p.cultura !== game.nazioni[p.owner].cultura ? Math.floor(p.assimilazione) : null,
     colonia: hasColony(p),
@@ -173,6 +176,37 @@ export function warsView(game, g) {
       propostaInAttesa: Object.values(game.proposte).some(p => p.guerra === w.id && p.da === g)
     };
   });
+}
+
+const RUOLI = { bersaglio: 'il popolo che attacchi', alleato: 'suo alleato', federato: 'suo federato', protettore: 'suo protettore', coalizione: 'coalizione contro la tua infamia' };
+
+// Conferma di una dichiarazione di guerra: schieramenti previsti, forze, costo di stabilità.
+export function warConfirmView(game, g, target) {
+  const v = warPreview(game, g, target);
+  const forza = id => Math.round(power(game, id));
+  const nemici = v.nemici.map(x => ({ id: x.id, nome: nome(game, x.id), ruolo: RUOLI[x.ruolo], forza: forza(x.id) }));
+  const miei = [{ id: g, nome: nome(game, g), stato: 'tu', forza: forza(g), conta: true },
+    ...v.federati.map(id => ({ id, nome: nome(game, id), stato: 'tuo federato: entra con te', forza: forza(id), conta: true })),
+    ...v.chiamati.map(c => ({ id: c.id, nome: nome(game, c.id), stato: `alleato chiamato alle armi: ${c.probabile ? 'probabilmente accetta' : 'probabilmente rifiuta'}`, forza: forza(c.id), conta: c.probabile })),
+    ...v.esclusi.map(e => ({ id: e.id, nome: nome(game, e.id), stato: `alleato che non entra: ${e.motivo}`, forza: forza(e.id), conta: false }))];
+  return {
+    bersaglio: { id: target, nome: nome(game, target) }, errore: v.errore, nemici, miei,
+    forzaNemici: nemici.reduce((s, x) => s + x.forza, 0),
+    forzaMiei: miei.filter(x => x.conta).reduce((s, x) => s + x.forza, 0),
+    costo: v.pretesto ? 'Hai un pretesto: nessun costo di stabilità.' : `Senza pretesto: la stabilità scende da ${segno(v.stabilita.prima)} a ${segno(v.stabilita.dopo)}.`
+  };
+}
+
+// Riepilogo subito dopo la dichiarazione: chi combatte davvero e chi deve ancora rispondere alla chiamata.
+export function warSummaryView(game, g, warId) {
+  const w = game.guerre[warId];
+  if (!w) return null;
+  const side = sideOf(w, g);
+  return {
+    miei: w[side].map(id => nome(game, id)),
+    nemici: enemiesOf(w, side).map(id => nome(game, id)),
+    chiamati: Object.values(game.proposte).filter(p => p.tipo === 'chiamata' && p.guerra === warId).map(p => nome(game, p.a))
+  };
 }
 
 export function armiesView(game, g, scelti = []) {
