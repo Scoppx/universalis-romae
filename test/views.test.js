@@ -146,8 +146,8 @@ test('guerre: punteggio, province da chiedere e da cedere', () => {
   g.province.c.controller = 'roma';
   const [w] = V.warsView(g, 'roma');
   assert.deepEqual([w.id, w.nemico.id, w.ruolo, w.punteggio], [guerra, 'volsci', 'attaccante', 50]);
-  assert.deepEqual(w.daChiedere, [{ id: 'c', nome: 'C', costo: 50 }]);
-  assert.deepEqual(V.warsView(g, 'volsci')[0].daCedere, [{ id: 'c', nome: 'C', costo: 50 }]);
+  assert.deepEqual(w.daChiedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: null }]);
+  assert.deepEqual(V.warsView(g, 'volsci')[0].daCedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: 'roma' }]);
   proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'] });
   assert.equal(V.warsView(g, 'roma')[0].propostaInAttesa, true);
   assert.deepEqual(V.pendingProposals(g, 'volsci').map(p => p.testo), ['roma chiede la pace e vuole: C.']);
@@ -323,4 +323,37 @@ test('schede dei popoli: capitale salva', () => {
   const d = loadData();
   const [roma] = V.peopleCards(d.popoli, { difficolta: { facile: { capitaleSalva: true } } }).filter(c => c.id === 'roma');
   assert.equal(roma.bonus, 'capitale mai ceduta');
+});
+
+test('guerre: per ogni provincia chi la riceve; la capitale salva non si offre', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini');
+  g.province.c.controller = 'latini';
+  g.province.f.controller = 'roma';
+  const w = V.warsView(g, 'roma')[0];
+  assert.deepEqual(w.daChiedere.map(p => [p.id, p.a]), [['c', 'latini'], ['f', 'roma']]);
+  const h = makeGame();
+  h.balance = structuredClone(h.balance);
+  h.balance.difficolta.facile = { capitaleSalva: true };
+  h.nazioni.roma.difficolta = 'facile';
+  declareWar(h, 'volsci', 'roma');
+  h.province.a.controller = 'volsci';
+  h.province.b.controller = 'volsci';
+  assert.deepEqual(V.warsView(h, 'volsci')[0].daChiedere.map(p => p.id), ['b']);
+  assert.deepEqual(V.warsView(h, 'roma')[0].daCedere.map(p => p.id), ['b']);
+});
+
+test('proposta di pace: dice a chi vanno le province che non vanno al giocatore', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini');
+  g.province.c.controller = 'latini';
+  g.province.f.controller = 'roma';
+  proposePeace(g, 'volsci', guerra, { ricevente: 'roma', province: ['c', 'f'] });
+  assert.equal(V.pendingProposals(g, 'roma')[0].testo, 'volsci offre la pace e cede: C (a latini), F.');
 });

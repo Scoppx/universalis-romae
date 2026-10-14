@@ -439,3 +439,9 @@ fortificazioni: sezione 3).
   di restare in pace non è più descritta come la più saggia.
 - **Metodo**: si cambia un valore alla volta, si misura su 20 semi, si tiene o si torna indietro; ogni modifica
   tenuta finisce nel registro con i numeri prima e dopo. Le soglie che non si riescono a raggiungere si dichiarano.
+- **Decisioni prese durante la tappa** (2026-10-14): il bonus per difficoltà vale anche per reclute e tasse per
+  tutta la partita, e per i facili la capitale non si cede né in pace né con un ultimatum; alla pace ogni provincia
+  va a chi la occupa (il vincitore o un suo alleato), per tutti; i "molto difficili" non hanno un minimo di
+  sopravvivenza e non ricevono bonus; Jev sceglie la guerra tra tutti i vicini attaccabili (libertà piena) anche se
+  così resta più pacifico delle regole. I popoli dormienti risvegliati hanno la difficoltà dei dati; quelli nati da
+  un'indipendenza sono "normale".

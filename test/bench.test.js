@@ -73,3 +73,9 @@ test('ritocchi al bilanciamento e primo seme, per provare varianti in parallelo'
   const c = await runBench({ anni: 8, semi: 1, primoSeme: 2 });
   assert.notDeepEqual(a.righe, c.righe);
 });
+
+test('ritocchi: una chiave finale inesistente è un errore, salvo dentro difficolta', () => {
+  const b = { ia: { rapportoGuerra: 1.5 }, difficolta: { normale: {} } };
+  assert.throws(() => applicaRitocchi(b, { 'ia.rapportoGuera': 3 }), /ritocco/);
+  assert.equal(applicaRitocchi(b, { 'difficolta.normale.dado': 1 }).difficolta.normale.dado, 1);
+});

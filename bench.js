@@ -28,6 +28,8 @@ export function applicaRitocchi(balance, ritocchi = {}) {
       if (o[p] === null || typeof o[p] !== 'object') throw new Error(`ritocco sconosciuto: ${chiave}`);
       o = o[p];
     }
+    // dentro difficolta le etichette sono oggetti spesso vuoti: lì una chiave nuova è legittima
+    if (!(ultima in o) && parti[0] !== 'difficolta') throw new Error(`ritocco sconosciuto: ${chiave}`);
     o[ultima] = valore;
   }
   return b;

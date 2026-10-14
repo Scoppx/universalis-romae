@@ -292,3 +292,20 @@ test('stanchezza: dopo anni di guerra le regole propongono e accettano la pace b
 export function maxCedibili(game, owner) {
   return Math.max(1, Math.floor(provincesOf(game, owner).length * (game.balance.guerra.quotaPace ?? 1)));
 }
+
+test('chi vince ma non può prendere nulla (capitale salva) propone la pace bianca per stanchezza', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.difficolta.facile = { capitaleSalva: true };
+  g.balance.ia.stanchezzaAnni = 8;
+  g.nazioni.roma.difficolta = 'facile';
+  g.province.b.owner = 'latini'; g.province.b.controller = 'latini'; // a roma resta solo la capitale
+  const { guerra } = declareWar(g, 'volsci', 'latini');
+  g.guerre[guerra].difensori.push('roma');
+  g.province.a.controller = 'volsci';
+  g.guerre[guerra].battaglie = 25;
+  g.day = 3 * 365;
+  assert.ok(peaceProposals(g, 'volsci').every(c => !c.termini.province.includes('a')));
+  g.day = 8 * 365;
+  assert.ok(peaceProposals(g, 'volsci').some(c => c.termini.province.length === 0), JSON.stringify(peaceProposals(g, 'volsci')));
+});

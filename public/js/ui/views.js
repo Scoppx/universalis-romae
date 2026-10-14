@@ -5,7 +5,7 @@ import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
-import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili } from '../sim/war.js';
+import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
@@ -165,10 +165,11 @@ export function warsView(game, g) {
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
       capofila: w[side][0] === g,
       punteggio: Math.round(scoreFor(game, w, g)),
-      daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller))
-        .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id) })),
-      daCedere: prov.filter(p => mine.includes(p.owner) && nemici.includes(p.controller))
-        .map(p => ({ id: p.id, nome: p.nome, costo: costo(nemici[0], p.id) })),
+      // solo province che una pace può davvero prendere (niente capitali salve); ognuna va a chi la occupa
+      daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller) && !validTerms(game, w, g, { province: [p.id] }))
+        .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id), a: p.controller, verso: p.controller === g ? null : nome(game, p.controller) })),
+      daCedere: prov.filter(p => mine.includes(p.owner) && nemici.includes(p.controller) && !validTerms(game, w, nemici[0], { province: [p.id] }))
+        .map(p => ({ id: p.id, nome: p.nome, costo: costo(nemici[0], p.id), a: p.controller, verso: nome(game, p.controller) })),
       propostaInAttesa: Object.values(game.proposte).some(p => p.guerra === w.id && p.da === g)
     };
   });
@@ -191,8 +192,14 @@ export function pendingProposals(game, g) {
     let testo;
     if (p.tipo === 'pace') {
       const nomi = p.termini.province.map(id => game.province[id].nome).join(', ');
+      // ogni provincia va a chi la occupa: se non sei tu, il testo lo dice
+      const altrui = p.termini.province.some(id => game.province[id].controller !== g);
+      const conPadrone = p.termini.province.map(id => {
+        const q = game.province[id];
+        return q.controller === g ? q.nome : `${q.nome} (a ${nome(game, q.controller)})`;
+      }).join(', ');
       if (!p.termini.province.length) testo = `${da} propone una pace bianca.`;
-      else if (p.termini.ricevente === g) testo = `${da} offre la pace e ti cede: ${nomi}.`;
+      else if (p.termini.ricevente === g) testo = altrui ? `${da} offre la pace e cede: ${conPadrone}.` : `${da} offre la pace e ti cede: ${nomi}.`;
       else testo = `${da} chiede la pace e vuole: ${nomi}.`;
     } else if (p.tipo === 'alleanza') testo = `${da} propone un'alleanza.`;
     else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e uscirne costerà stabilità e darà al protettore un pretesto di guerra.`;
