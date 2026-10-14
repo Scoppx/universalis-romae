@@ -1,6 +1,7 @@
 // Regia dell'interfaccia: schermata iniziale, ciclo di gioco, barra, mappa e comandi del giocatore.
 import { createGame } from './sim/setup.js';
 import { applyCommand } from './sim/commands.js';
+import { provincesOf } from './sim/state.js';
 import { createJevAi } from './ai/jev.js';
 import { createRenderer } from './ui/renderer.js';
 import { createCamera, toWorld, toScreen, zoomAt, pan, centerOn } from './ui/camera.js';
@@ -102,6 +103,7 @@ function renderInizio() {
   const c = cards.find(x => x.id === ui.scelto);
   $('inizio-scheda').innerHTML = c ? H.cardDetailHtml(c) : '<p class="muto">Nessun popolo scelto.</p>';
   $('inizio-via').disabled = !c;
+  if (c) $('inizio-via').removeAttribute('title'); else $('inizio-via').title = 'Scegli prima un popolo.';
   ui.sporco = true;
 }
 
@@ -123,7 +125,11 @@ $('inizio-via').addEventListener('click', () => {
 
 // senza Jev (server senza chiave, o sito statico senza server) si gioca solo con le regole
 function senzaJev(nota) {
-  for (const v of ['jev', 'misto']) $('inizio-ia').querySelector(`option[value="${v}"]`).disabled = true;
+  for (const v of ['jev', 'misto']) {
+    const o = $('inizio-ia').querySelector(`option[value="${v}"]`);
+    o.disabled = true;
+    o.title = nota;
+  }
   $('inizio-ia').value = 'regole';
   $('inizio-ia-nota').textContent = nota;
 }
@@ -247,7 +253,19 @@ function aggiorna() {
       g.ordine.filter(id => id !== giocatore).map(id => ({ id, nome: g.nazioni[id].nome })), ui.filtroConsiglio)
   };
   setHtml($('scheda'), schede[ui.scheda]());
+  aggiornaBottoniPace();
 }
+
+// I bottoni delle richieste di province si spengono, con il motivo, se le caselle spuntate non vanno bene.
+function aggiornaBottoniPace() {
+  for (const b of $('scheda').querySelectorAll('button[data-azione="chiedi"], button[data-azione="cedi"]')) {
+    const owners = [...$('scheda').querySelectorAll(`input[name="${b.dataset.azione}-${b.dataset.id}"]:checked`)].map(i => i.dataset.owner);
+    const motivo = V.motivoRichiesta(owners, JSON.parse(b.dataset.limiti));
+    b.disabled = Boolean(motivo);
+    if (motivo) b.title = motivo; else b.removeAttribute('title');
+  }
+}
+$('scheda').addEventListener('change', aggiornaBottoniPace);
 
 // Ridisegna solo se l'HTML cambia, e conserva caselle spuntate, numeri scritti e focus.
 const ultimoHtml = new WeakMap();
@@ -275,7 +293,7 @@ function avviso(testo) {
   el.textContent = testo;
   el.hidden = false;
   clearTimeout(avvisoTimer);
-  avvisoTimer = setTimeout(() => { el.hidden = true; }, 3000);
+  avvisoTimer = setTimeout(() => { el.hidden = true; }, 6000); // abbastanza per leggere un motivo lungo
 }
 
 function comando(cmd) {
@@ -366,6 +384,12 @@ document.addEventListener('click', e => {
       break;
     }
     case 'pace-bianca': proponi(id, ui.session.giocatore, []); break;
+    case 'annetti': {
+      const g = ui.session.game, popolo = el.dataset.popolo;
+      const r = comando({ tipo: 'proponi_pace', guerra: id, termini: { ricevente: ui.session.giocatore, province: provincesOf(g, popolo).map(p => p.id), annessione: popolo } });
+      if (r.ok) avviso('Proposta di annessione inviata.');
+      break;
+    }
     case 'rispondi': {
       $('finestra').hidden = true;
       comando({ tipo: 'rispondi', proposta: id, accetta: el.dataset.accetta === '1' });

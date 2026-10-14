@@ -146,8 +146,8 @@ test('guerre: punteggio, province da chiedere e da cedere', () => {
   g.province.c.controller = 'roma';
   const [w] = V.warsView(g, 'roma');
   assert.deepEqual([w.id, w.nemico.id, w.ruolo, w.punteggio], [guerra, 'volsci', 'attaccante', 50]);
-  assert.deepEqual(w.daChiedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: null }]);
-  assert.deepEqual(V.warsView(g, 'volsci')[0].daCedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: 'roma' }]);
+  assert.deepEqual(w.daChiedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: null, owner: 'volsci' }]);
+  assert.deepEqual(V.warsView(g, 'volsci')[0].daCedere, [{ id: 'c', nome: 'C', costo: 50, a: 'roma', verso: 'roma', owner: 'volsci' }]);
   proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'] });
   assert.equal(V.warsView(g, 'roma')[0].propostaInAttesa, true);
   assert.deepEqual(V.pendingProposals(g, 'volsci').map(p => p.testo), ['roma chiede la pace e vuole: C.']);
@@ -215,10 +215,10 @@ test('azioni sulla selezione: unire e dividere', () => {
   const g = makeGame();
   const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
   const b = createArmy(g, 'roma', 'a', 500, 0);
-  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false });
-  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false, motivoUnire: null, motivoDividere: 'seleziona un solo tuo esercito' });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true, motivoUnire: 'seleziona almeno due tuoi eserciti (Shift + clic)', motivoDividere: null });
   b.prov = 'b';
-  assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).puoUnire, false);
+  assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).motivoUnire, 'gli eserciti devono stare nella stessa provincia');
   assert.equal(V.selectionActions(g, 'roma', []).puoDividere, false);
   assert.deepEqual(V.armiesView(g, 'roma', [b.id]).map(a => a.scelto), [false, true]);
 });
@@ -385,4 +385,27 @@ test('riepilogo dopo la dichiarazione: schieramenti e alleati chiamati', () => {
   assert.deepEqual(r.nemici, ['volsci']);
   assert.deepEqual(r.miei, ['roma']);
   assert.deepEqual(r.chiamati, []);
+});
+
+test('guerre: annessione quando il tuo schieramento occupa tutto il popolo, limiti per popolo', () => {
+  const g = makeGame();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.province.c.controller = 'roma';
+  let w = V.warsView(g, 'roma')[0];
+  assert.deepEqual(w.limiti, [{ id: 'volsci', nome: 'volsci', max: 1 }]);
+  assert.deepEqual(w.annessioni.map(a => [a.id, a.motivo]), [['volsci', 'non tutte le province di volsci sono occupate']]);
+  g.province.f.controller = 'roma';
+  w = V.warsView(g, 'roma')[0];
+  assert.equal(w.annessioni[0].motivo, null);
+  assert.equal(w.annessioni[0].infamia, 2 * (g.balance.infamia.perProvincia + g.balance.infamia.culturaDiversa));
+  assert.deepEqual(w.annessioni[0].province.sort(), ['c', 'f']);
+  proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'] });
+  assert.equal(V.warsView(g, 'roma')[0].annessioni[0].motivo, 'hai già una proposta in attesa');
+});
+
+test('richiesta di province: motivo per cui il bottone è spento', () => {
+  const limiti = { volsci: { max: 1, nome: 'Volsci' } };
+  assert.equal(V.motivoRichiesta([], limiti), 'Spunta almeno una provincia.');
+  assert.equal(V.motivoRichiesta(['volsci'], limiti), null);
+  assert.equal(V.motivoRichiesta(['volsci', 'volsci'], limiti), 'Al più 1 provincia di Volsci per pace: togline qualcuna, oppure annetti tutto il popolo.');
 });

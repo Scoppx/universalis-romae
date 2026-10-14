@@ -111,6 +111,20 @@ try {
   await page.click('#finestra [data-azione="chiudi"]');
   await page.click('[data-scheda="guerre"]');
   check((await page.textContent('#scheda')).includes('Contro Veio'), 'guerra a Veio nella scheda Guerre');
+  check((await page.getAttribute('#scheda [data-azione="chiedi"]', 'title') ?? '').includes('Spunta'), 'chiedi spento finché non spunti una provincia');
+  await page.evaluate(() => {
+    const g = window.universalis.ui.session.game;
+    for (const p of Object.values(g.province)) if (p.owner === 'veio') p.controller = 'roma';
+    window.universalis.avanza(0);
+  });
+  await page.click('#scheda [data-azione="annetti"][data-popolo="veio"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.proposte).some(p => p.termini?.annessione === 'veio')), 'annessione di Veio proposta');
+  await page.evaluate(() => {
+    const g = window.universalis.ui.session.game;
+    g.proposte = {};
+    for (const p of Object.values(g.province)) if (p.owner === 'veio') p.controller = 'veio';
+    window.universalis.avanza(0);
+  });
   await page.click('[data-scheda="eserciti"]');
   await page.click('#scheda [data-azione="seleziona-esercito"]');
   check(await page.evaluate(() => window.universalis.ui.selezione.eserciti.length > 0), 'esercito selezionato');
@@ -405,6 +419,12 @@ try {
   check(await page.isHidden('#finestra'), 'finestra chiusa dopo l\'ultimo evento');
   await page.screenshot({ path: 'smoke-eventi.png' });
 
+  for (const scheda of ['governo', 'diplomazia', 'eserciti', 'guerre']) {
+    await page.click(`[data-scheda="${scheda}"]`);
+    const muti = await page.evaluate(() => [...document.querySelectorAll('button[disabled], option[disabled], input[disabled], select[disabled]')]
+      .filter(e => !e.title).map(e => e.outerHTML.slice(0, 80)));
+    check(muti.length === 0, `scheda ${scheda}: ogni elemento spento ha una spiegazione${muti.length ? ': ' + muti.join(' | ') : ''}`);
+  }
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
 } catch (e) {

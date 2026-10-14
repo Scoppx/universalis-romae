@@ -267,3 +267,13 @@ test('salvataggio vecchio senza difficoltà: la riceve dai dati, normale per i p
   assert.equal(r.session.game.nazioni.roma.difficolta, 'facile');
   assert.equal(r.session.game.dormienti.taranto.difficolta, data.popoli.popoli.find(p => p.id === 'taranto').difficolta);
 });
+
+test('proposta di annessione: salvata e controllata', () => {
+  const s = createSession(data, 'roma', 1);
+  const x = JSON.parse(serialize(s));
+  x.game.guerre.g1 = { id: 'g1', attaccanti: ['roma'], difensori: ['veio'], inizio: 0, battaglie: 0 };
+  x.game.proposte.p1 = { id: 'p1', tipo: 'pace', guerra: 'g1', da: 'roma', a: 'veio', giorno: 0, termini: { ricevente: 'roma', province: ['veio'], annessione: 'veio' } };
+  assert.equal(deserialize(JSON.stringify(x), data).ok, true);
+  x.game.proposte.p1.termini.annessione = 'atlantide';
+  assert.equal(deserialize(JSON.stringify(x), data).ok, false);
+});

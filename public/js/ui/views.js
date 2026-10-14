@@ -1,11 +1,11 @@
 // Modelli dei pannelli: dallo stato di gioco ai dati pronti da mostrare. Niente DOM.
 import { formatDate } from '../sim/calendar.js';
-import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power } from '../sim/state.js';
+import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
-import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms } from '../sim/war.js';
+import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
@@ -120,6 +120,7 @@ export function governmentView(game, g) {
     effettiGoverno: Object.entries(governmentOf(game, g)).map(([k, v]) => (GOVERNO[k] ? GOVERNO[k](v) : `${k} ${v}`)).join(', '),
     stabilita: segno(n.stabilita), tratti: formatTratti(n.tratti),
     costoStabilita: costo.toFixed(1), puoAlzare: n.stabilita < 3 && n.tesoro >= costo,
+    motivoAlzare: n.stabilita >= 3 ? 'la stabilità è già al massimo (+3)' : n.tesoro < costo ? `servono ${costo.toFixed(1)} denari, ne hai ${n.tesoro.toFixed(1)}` : null,
     slider: LEVE.map(l => ({ ...l, valore: segno(s[l.quale]), meno: checkSlider(game, g, l.quale, -1), piu: checkSlider(game, g, l.quale, 1) }))
   };
 }
@@ -170,10 +171,25 @@ export function warsView(game, g) {
       punteggio: Math.round(scoreFor(game, w, g)),
       // solo province che una pace può davvero prendere (niente capitali salve); ognuna va a chi la occupa
       daChiedere: prov.filter(p => nemici.includes(p.owner) && mine.includes(p.controller) && !validTerms(game, w, g, { province: [p.id] }))
-        .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id), a: p.controller, verso: p.controller === g ? null : nome(game, p.controller) })),
+        .map(p => ({ id: p.id, nome: p.nome, costo: costo(g, p.id), a: p.controller, verso: p.controller === g ? null : nome(game, p.controller), owner: p.owner })),
       daCedere: prov.filter(p => mine.includes(p.owner) && nemici.includes(p.controller) && !validTerms(game, w, nemici[0], { province: [p.id] }))
-        .map(p => ({ id: p.id, nome: p.nome, costo: costo(nemici[0], p.id), a: p.controller, verso: nome(game, p.controller) })),
-      propostaInAttesa: Object.values(game.proposte).some(p => p.guerra === w.id && p.da === g)
+        .map(p => ({ id: p.id, nome: p.nome, costo: costo(nemici[0], p.id), a: p.controller, verso: nome(game, p.controller), owner: p.owner })),
+      propostaInAttesa: Object.values(game.proposte).some(p => p.guerra === w.id && p.da === g),
+      // quante province di ciascun popolo può prendere una pace, e quante delle tue
+      limiti: nemici.filter(id => provincesOf(game, id).length).map(id => ({ id, nome: nome(game, id), max: maxCedibili(game, id) })),
+      limiteMio: maxCedibili(game, g),
+      annessioni: nemici.filter(id => provincesOf(game, id).length).map(id => {
+        const prov = provincesOf(game, id);
+        const inf = game.balance.infamia, mia = game.nazioni[g];
+        const motivo = w[side][0] !== g ? 'la pace la firma il capofila del tuo schieramento'
+          : Object.values(game.proposte).some(p => p.guerra === w.id && p.da === g) ? 'hai già una proposta in attesa'
+          : annexable(game, w, g, id);
+        return {
+          id, nome: nome(game, id), province: prov.map(p => p.id), motivo,
+          // l'infamia la paga chi occupa ogni provincia: qui quella che pagheresti tu
+          infamia: prov.filter(p => p.controller === g).reduce((s, p) => s + inf.perProvincia + (p.cultura !== mia.cultura ? inf.culturaDiversa : 0), 0)
+        };
+      })
     };
   });
 }
@@ -314,10 +330,24 @@ export function selectionActions(game, g, ids) {
   const fermi = armies.every(a => !a.percorso.length && !a.inBattaglia);
   const min = game.balance.combattimento.minimoUomini;
   const uno = armies.length === 1 ? armies[0] : null;
-  return {
-    puoUnire: armies.length >= 2 && armies.length === ids.length && fermi && armies.every(a => a.prov === armies[0].prov),
-    puoDividere: Boolean(uno) && !uno.inBattaglia &&
-      Math.floor(uno.fanteria / 2) + Math.floor(uno.cavalleria / 2) >= min &&
-      Math.ceil(uno.fanteria / 2) + Math.ceil(uno.cavalleria / 2) >= min
-  };
+  const motivoUnire = armies.length < 2 ? 'seleziona almeno due tuoi eserciti (Shift + clic)'
+    : armies.length !== ids.length ? 'nella selezione ci sono eserciti non tuoi'
+    : !fermi ? 'gli eserciti in marcia o in battaglia non si uniscono'
+    : !armies.every(a => a.prov === armies[0].prov) ? 'gli eserciti devono stare nella stessa provincia' : null;
+  const motivoDividere = !uno ? 'seleziona un solo tuo esercito'
+    : uno.inBattaglia ? 'un esercito in battaglia non si divide'
+    : Math.floor(uno.fanteria / 2) + Math.floor(uno.cavalleria / 2) < min || Math.ceil(uno.fanteria / 2) + Math.ceil(uno.cavalleria / 2) < min
+      ? `troppo piccolo: ogni metà deve avere almeno ${min} uomini` : null;
+  return { puoUnire: !motivoUnire, puoDividere: !motivoDividere, motivoUnire, motivoDividere };
+}
+
+// Perché il bottone di una richiesta di province è spento (null se si può inviare). owners: il padrone di ogni casella spuntata.
+export function motivoRichiesta(owners, limiti) {
+  if (!owners.length) return 'Spunta almeno una provincia.';
+  const conta = {};
+  for (const o of owners) conta[o] = (conta[o] ?? 0) + 1;
+  const oltre = Object.entries(conta).find(([o, k]) => limiti[o] && k > limiti[o].max);
+  if (!oltre) return null;
+  const l = limiti[oltre[0]];
+  return `Al più ${l.max} ${l.max === 1 ? 'provincia' : 'province'} di ${l.nome} per pace: togline qualcuna, oppure annetti tutto il popolo.`;
 }
