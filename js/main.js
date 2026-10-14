@@ -121,11 +121,17 @@ $('inizio-via').addEventListener('click', () => {
   avvia(createSession(data, ui.scelto, seme, ia, ia === 'regole' ? null : creaAi()));
 });
 
-fetch('api/jev').then(r => r.json()).then(({ disponibile }) => {
-  if (disponibile) { $('inizio-ia-nota').textContent = 'Jev disponibile.'; return; }
+// senza Jev (server senza chiave, o sito statico senza server) si gioca solo con le regole
+function senzaJev(nota) {
   for (const v of ['jev', 'misto']) $('inizio-ia').querySelector(`option[value="${v}"]`).disabled = true;
-  $('inizio-ia-nota').textContent = 'Jev non disponibile: avvia il server con TYPESAFE_API_KEY per usarlo.';
-}).catch(() => { $('inizio-ia-nota').textContent = 'Jev non disponibile.'; });
+  $('inizio-ia').value = 'regole';
+  $('inizio-ia-nota').textContent = nota;
+}
+
+fetch('api/jev').then(r => { if (!r.ok) throw new Error(`api/jev: ${r.status}`); return r.json(); }).then(({ disponibile }) => {
+  if (disponibile) { $('inizio-ia-nota').textContent = 'Jev disponibile.'; return; }
+  senzaJev('Jev non disponibile: avvia il server con TYPESAFE_API_KEY per usarlo.');
+}).catch(() => senzaJev('Jev non disponibile in questa versione: gli altri popoli giocano con le regole.'));
 
 function avvia(session) {
   ui.session = session;
