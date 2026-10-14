@@ -30,7 +30,7 @@ test('pace: province, infamia, tregua, nuova capitale', () => {
   assert.equal(makePeace(g, w.id, 'roma', { province: ['f'] }).motivo, 'provincia non occupata');
   assert.equal(makePeace(g, w.id, 'roma', { province: ['c'] }).ok, true);
   assert.equal(g.province.c.owner, 'roma');
-  assert.equal(g.nazioni.roma.infamia, 4); // 2 + 2 cultura diversa
+  assert.equal(g.nazioni.roma.infamia, g.balance.infamia.perProvincia + g.balance.infamia.culturaDiversa); // provincia di cultura diversa
   assert.equal(g.nazioni.volsci.capitale, 'f');
   assert.equal(g.nazioni.roma.tregue.volsci, g.day + g.balance.guerra.tregua);
   assert.equal(g.nazioni.volsci.tregue.roma, g.day + g.balance.guerra.tregua);
