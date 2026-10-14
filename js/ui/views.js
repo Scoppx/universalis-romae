@@ -178,6 +178,8 @@ export function warsView(game, g) {
       // quante province di ciascun popolo può prendere una pace, e quante delle tue
       limiti: nemici.filter(id => provincesOf(game, id).length).map(id => ({ id, nome: nome(game, id), max: maxCedibili(game, id) })),
       limiteMio: maxCedibili(game, g),
+      denariMax: Math.max(0, Math.floor(game.nazioni[nemici[0]].tesoro)), // al più quanto ha nel tesoro il capofila nemico
+      puntiPer10Denari: Math.round(peaceCost(game, w, g, { province: [], denari: 10 }) * 10) / 10,
       annessioni: nemici.filter(id => provincesOf(game, id).length).map(id => {
         const prov = provincesOf(game, id);
         const inf = game.balance.infamia, mia = game.nazioni[g];
@@ -248,9 +250,10 @@ export function pendingProposals(game, g) {
         const q = game.province[id];
         return q.controller === g ? q.nome : `${q.nome} (a ${nome(game, q.controller)})`;
       }).join(', ');
-      if (!p.termini.province.length) testo = `${da} propone una pace bianca.`;
-      else if (p.termini.ricevente === g) testo = altrui ? `${da} offre la pace e cede: ${conPadrone}.` : `${da} offre la pace e ti cede: ${nomi}.`;
-      else testo = `${da} chiede la pace e vuole: ${nomi}.`;
+      const soldi = p.termini.denari ? `${p.termini.province.length ? ' e ' : ''}${p.termini.denari} denari` : '';
+      if (!p.termini.province.length && !p.termini.denari) testo = `${da} propone una pace bianca.`;
+      else if (p.termini.ricevente === g) testo = altrui ? `${da} offre la pace e cede: ${conPadrone}${soldi}.` : `${da} offre la pace e ti cede: ${nomi}${soldi}.`;
+      else testo = `${da} chiede la pace e vuole: ${nomi}${soldi}.`;
     } else if (p.tipo === 'alleanza') testo = `${da} propone un'alleanza.`;
     else if (p.tipo === 'foedus') testo = `${da} ti offre un foedus: protezione in cambio di obbedienza e di uomini. Attenzione: non potrai più dichiarare guerre né allearti, e uscirne costerà stabilità e darà al protettore un pretesto di guerra.`;
     else if (p.tipo === 'tributo') testo = `${da} chiede un tributo: il 20% delle entrate per 10 anni. Se rifiuti avrà un pretesto per attaccarti.`;
@@ -271,14 +274,15 @@ export function formatLogEntry(e, game, g) {
     case 'guerra': return `${N(e.attaccante)} dichiara guerra a ${N(e.difensore)}.`;
     case 'pace': {
       const altri = e.parti.filter(x => x !== e.ricevente).map(N).join(', ');
-      if (!e.province.length) return `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
+      if (!e.province.length && !e.denari) return `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
       const nomi = [e.ricevente, ...e.parti.filter(x => x !== e.ricevente)].map(N);
       const tra = `${nomi.slice(0, -1).join(', ')} e ${nomi.at(-1)}`;
       // ogni provincia va a chi la occupava (salvataggi vecchi: tutte al ricevente)
       const padroni = e.padroni ?? e.province.map(() => e.ricevente);
       const per = new Map();
       e.province.forEach((p, i) => per.set(padroni[i], [...(per.get(padroni[i]) ?? []), P(p)]));
-      return `Pace tra ${tra}: ${[...per].map(([o, l]) => `${N(o)} ottiene ${l.join(', ')}`).join('; ')}.`;
+      const soldi = e.denari ? `; ${N(e.pagatore)} paga ${e.denari} denari` : '';
+      return `Pace tra ${tra}: ${[...per].map(([o, l]) => `${N(o)} ottiene ${l.join(', ')}`).join('; ')}${soldi}.`;
     }
     case 'eliminata': return `${N(e.nazione)} scompare dalla storia.`;
     case 'accordo':
@@ -342,8 +346,10 @@ export function selectionActions(game, g, ids) {
 }
 
 // Perché il bottone di una richiesta di province è spento (null se si può inviare). owners: il padrone di ogni casella spuntata.
-export function motivoRichiesta(owners, limiti) {
-  if (!owners.length) return 'Spunta almeno una provincia.';
+// denariMax null: richiesta senza denari (cedere province).
+export function motivoRichiesta(owners, limiti, denari = 0, denariMax = null) {
+  if (denariMax !== null && denari > denariMax) return `Al più ${denariMax} denari: è quanto ha nel tesoro.`;
+  if (!owners.length && !denari) return denariMax === null ? 'Spunta almeno una provincia.' : 'Spunta almeno una provincia o chiedi dei denari.';
   const conta = {};
   for (const o of owners) conta[o] = (conta[o] ?? 0) + 1;
   const oltre = Object.entries(conta).find(([o, k]) => limiti[o] && k > limiti[o].max);
