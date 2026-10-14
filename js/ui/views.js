@@ -62,6 +62,7 @@ function formatBonus(d) {
   if (d.dado) parti.push(`${d.dado > 0 ? '+' : ''}${d.dado} al dado`);
   if (d.reclute) parti.push(`reclute ${d.reclute > 0 ? '+' : ''}${Math.round(d.reclute * 100)}%`);
   if (d.tasse) parti.push(`tasse ${d.tasse > 0 ? '+' : ''}${Math.round(d.tasse * 100)}%`);
+  if (d.capitaleSalva) parti.push('capitale mai ceduta');
   return parti.join(', ');
 }
 
@@ -213,9 +214,14 @@ export function formatLogEntry(e, game, g) {
     case 'guerra': return `${N(e.attaccante)} dichiara guerra a ${N(e.difensore)}.`;
     case 'pace': {
       const altri = e.parti.filter(x => x !== e.ricevente).map(N).join(', ');
-      return e.province.length
-        ? `Pace tra ${N(e.ricevente)} e ${altri}: ${N(e.ricevente)} ottiene ${e.province.map(P).join(', ')}.`
-        : `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
+      if (!e.province.length) return `Pace bianca tra ${N(e.ricevente)} e ${altri}.`;
+      const nomi = [e.ricevente, ...e.parti.filter(x => x !== e.ricevente)].map(N);
+      const tra = `${nomi.slice(0, -1).join(', ')} e ${nomi.at(-1)}`;
+      // ogni provincia va a chi la occupava (salvataggi vecchi: tutte al ricevente)
+      const padroni = e.padroni ?? e.province.map(() => e.ricevente);
+      const per = new Map();
+      e.province.forEach((p, i) => per.set(padroni[i], [...(per.get(padroni[i]) ?? []), P(p)]));
+      return `Pace tra ${tra}: ${[...per].map(([o, l]) => `${N(o)} ottiene ${l.join(', ')}`).join('; ')}.`;
     }
     case 'eliminata': return `${N(e.nazione)} scompare dalla storia.`;
     case 'accordo':

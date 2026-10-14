@@ -44,10 +44,12 @@ export function recruitBonus(game, id) {
 }
 
 // Bonus della difficoltà del popolo (balance.difficolta): normale e valori mancanti sono neutri.
-// esercito, tesoro, uomini moltiplicano i valori iniziali; dado, reclute e tasse valgono per tutta la partita.
+// esercito, tesoro, uomini moltiplicano i valori iniziali; dado, reclute e tasse valgono per tutta la partita;
+// capitaleSalva: la capitale non si cede né in pace né con un ultimatum.
 export function difficultyOf(game, id) {
   const d = game.balance.difficolta?.[game.nazioni[id]?.difficolta] ?? {};
-  return { esercito: d.esercito ?? 1, tesoro: d.tesoro ?? 1, uomini: d.uomini ?? 1, dado: d.dado ?? 0, reclute: d.reclute ?? 0, tasse: d.tasse ?? 0 };
+  return { esercito: d.esercito ?? 1, tesoro: d.tesoro ?? 1, uomini: d.uomini ?? 1, dado: d.dado ?? 0, reclute: d.reclute ?? 0, tasse: d.tasse ?? 0,
+    capitaleSalva: Boolean(d.capitaleSalva) };
 }
 
 export function maxManpower(game, nationId) {

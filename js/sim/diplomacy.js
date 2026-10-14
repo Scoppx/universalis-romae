@@ -1,5 +1,5 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
-import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf } from './state.js';
+import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf } from './state.js';
 import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
@@ -125,6 +125,7 @@ export function checkProposal(game, from, genere, to, extra = {}) {
       if (!p || p.owner !== to || p.controller !== to) return 'provincia non valida';
       if (!p.vicini.some(v => game.province[v].owner === from)) return 'provincia non confinante';
       if (provincesOf(game, to).length < 2) return 'è la sua ultima provincia';
+      if (B.capitale === p.id && difficultyOf(game, to).capitaleSalva) return 'la capitale non si può chiedere';
       return null;
     }
     default:
