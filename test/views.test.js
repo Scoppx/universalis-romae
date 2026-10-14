@@ -296,3 +296,13 @@ test('schede dei popoli: bonus della difficoltà', () => {
   assert.match(cards.find(c => c.id === 'roma').bonus, /\+1 al dado/);
   assert.equal(cards.find(c => c.difficolta === 'normale').bonus, '');
 });
+
+test('guerre: quante province si possono chiedere in una pace', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 0.5;
+  declareWar(g, 'roma', 'latini');
+  g.province.d.controller = 'roma';
+  g.province.e.controller = 'roma';
+  assert.equal(V.warsView(g, 'roma')[0].maxChiedibili, 1);
+});

@@ -7,6 +7,7 @@ import { monthlyEvents } from '../public/js/sim/events.js';
 
 test('in pace: domanda di guerra con i soli bersagli legali e la scelta di restare in pace', () => {
   const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura le domande di guerra, non il respiro iniziale
   const q = buildReview(g, 'roma', 'Ambiziosa.');
   assert.deepEqual(Object.keys(q.questions), ['guerra']);
   assert.equal(q.questions.guerra.type, 'choice');

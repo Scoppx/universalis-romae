@@ -66,7 +66,8 @@
     "tregua": 1825,
     "puntiBattaglia": 2,
     "maxBattaglie": 25,
-    "scadenzaProposta": 30
+    "scadenzaProposta": 30,
+    "quotaPace": 0.5
   },
   "punteggio": {
     "culturaPropria": 1
@@ -79,7 +80,9 @@
     "reclutaSoglia": 1000,
     "riservaTesoro": 2,
     "esercitoObiettivo": 0.8,
-    "riservaColonia": 10
+    "riservaColonia": 10,
+    "anniDiRespiro": 5,
+    "stanchezzaAnni": 8
   },
   "diplomazia": {
     "relazioneStessaCultura": 30,

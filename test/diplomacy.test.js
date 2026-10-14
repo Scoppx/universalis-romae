@@ -173,6 +173,7 @@ test('alleati: passano nelle terre amiche e combattono dalla stessa parte', asyn
 test('popolo eliminato: alleanze, foedus e tributi ripuliti', async () => {
   const { makePeace } = await import('../public/js/sim/war.js');
   const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.guerra.quotaPace = 1; // misura la pulizia dopo l'eliminazione
   allea(g, 'volsci', 'siculi');
   g.nazioni.latini.tributo = { a: 'volsci', fine: 9999 };
   const { guerra } = declareWar(g, 'roma', 'volsci');

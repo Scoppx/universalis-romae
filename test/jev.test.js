@@ -30,6 +30,7 @@ async function play(game, controllers, ai, giorni) {
 
 test('Jev decide: guerre dichiarate da Jev, registro completo', async () => {
   const g = makeGame(5);
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura le domande di guerra, non il respiro iniziale
   const records = [];
   const ai = createJevAi({ ask: stubAsk, caratteri, onRecord: r => records.push(r) });
   await play(g, buildControllers(g, 'jev', ai), ai, 365 * 3);
@@ -105,6 +106,7 @@ const GUERRA = ['nessuna guerra', 'volsci', 'latini'];
 
 test('due risposte di guerra lo stesso giorno: una sola dichiarazione', async () => {
   const g = makeGame(1);
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura le domande di guerra, non il respiro iniziale
   const records = [];
   const { ask, rilasci } = rinviato();
   const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
@@ -119,6 +121,7 @@ test('due risposte di guerra lo stesso giorno: una sola dichiarazione', async ()
 
 test('guerra diventata illegale prima della risposta: niente dichiarazione', async () => {
   const g = makeGame(1);
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura le domande di guerra, non il respiro iniziale
   const records = [];
   const { ask, rilasci } = rinviato();
   const ai = createJevAi({ ask, caratteri, onRecord: r => records.push(r) });
