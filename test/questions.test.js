@@ -8,7 +8,6 @@ import { monthlyEvents } from '../public/js/sim/events.js';
 test('in pace: domanda di guerra con i soli bersagli legali e la scelta di restare in pace', () => {
   const g = makeGame();
   g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura le domande di guerra, non il respiro iniziale
-  g.balance.ia.rapportoGuerra = 1.5; // anche i bersagli sotto la soglia di forza attuale
   const q = buildReview(g, 'roma', 'Ambiziosa.');
   assert.deepEqual(Object.keys(q.questions), ['guerra']);
   assert.equal(q.questions.guerra.type, 'choice');
@@ -119,25 +118,11 @@ test('domanda di guerra: guadagno e rischio per ogni bersaglio, la pace non è l
   const g = makeGame();
   g.balance = structuredClone(g.balance);
   g.balance.ia.anniDiRespiro = 0;
-  g.balance.ia.rapportoGuerra = 1.5;
   const q = buildReview(g, 'roma', 'Ambiziosa.');
   const c = q.questions.guerra.criteria;
-  assert.equal(c['nessuna guerra'], 'Lasciar passare l\'occasione: nessun rischio, ma i vicini intanto si rafforzano e l\'occasione può non tornare.');
+  assert.equal(c['nessuna guerra'], 'Restare in pace per ora e rafforzarsi: nessuna conquista, ma nessun rischio.');
   assert.match(c.volsci, /conquistare/);
   assert.match(c.volsci, /2 province, tasse 2/);
   assert.match(c.volsci, /rischio/);
   assert.deepEqual(q.state.vicini_attaccabili.find(v => v.nome === 'volsci').province, 2);
-});
-
-test('domanda di guerra solo davanti a un\'occasione: bersagli con il vantaggio di forze delle regole', () => {
-  const g = makeGame();
-  g.balance = structuredClone(g.balance);
-  g.balance.ia.anniDiRespiro = 0;
-  g.balance.ia.rapportoGuerra = 2;
-  const q = buildReview(g, 'roma', 'Ambiziosa.');
-  assert.deepEqual(Object.keys(q.questions.guerra.criteria), ['nessuna guerra', 'volsci']); // i latini (1,95) non bastano
-  assert.equal(q.questions.guerra.criteria['nessuna guerra'], 'Lasciar passare l\'occasione: nessun rischio, ma i vicini intanto si rafforzano e l\'occasione può non tornare.');
-  assert.match(q.questions.guerra.criteria.volsci, /^Cogliere l'occasione: dichiarare guerra a volsci/);
-  g.balance.ia.rapportoGuerra = 5;
-  assert.equal(buildReview(g, 'roma', 'Ambiziosa.'), null); // nessuna occasione: nessuna domanda
 });
