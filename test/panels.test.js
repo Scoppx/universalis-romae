@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml } from '../public/js/ui/panels.js';
+import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml } from '../public/js/ui/panels.js';
 
 const evil = '<img src=x onerror=alert(1)>';
 
@@ -22,4 +22,19 @@ test('ogni valore inserito nell\'HTML è protetto, anche i "numeri"', () => {
   assert.equal(gov.includes('<img'), false);
   assert.equal(eventoHtml({ id: evil, titolo: evil, testo: evil, opzioni: [{ id: evil, testo: evil, effetti: evil }] }).includes('<img'), false);
   assert.equal(rankingHtml('Fine', [{ pos: 1, nome: 'Roma', punteggio: evil, vivo: true, tu: true }]).includes('<img'), false);
+});
+
+test('menu e finestre di guerra: tutto protetto', () => {
+  const p = provinceHtml({
+    id: 'c', nome: 'C', proprietario: { id: 'volsci', nome: 'Volsci' }, occupante: null, cultura: 'volsca',
+    terreno: 'monte', tasse: 1, uomini: 1, fort: 0, puoReclutare: false, malcontento: 0, assimilazione: null, colonia: false, azioni: null,
+    eserciti: [], popolo: { id: evil, nome: evil, motivo: evil }
+  });
+  assert.equal(p.includes('<img'), false);
+  assert.match(p, /data-azione="prepara-guerra"/);
+  const c = guerraConfermaHtml({ bersaglio: { id: evil, nome: evil }, errore: null, costo: evil, forzaMiei: evil, forzaNemici: evil,
+    nemici: [{ nome: evil, ruolo: evil, forza: evil }], miei: [{ nome: evil, stato: evil, forza: evil }] });
+  assert.equal(c.includes('<img'), false);
+  assert.match(c, /data-azione="conferma-guerra"/);
+  assert.equal(guerraRiepilogoHtml({ miei: [evil], nemici: [evil], chiamati: [evil] }).includes('<img'), false);
 });

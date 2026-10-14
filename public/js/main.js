@@ -318,7 +318,19 @@ document.addEventListener('click', e => {
     case 'slider': comando({ tipo: 'slider', quale: el.dataset.quale, verso: Number(el.dataset.verso) }); break;
     case 'colonia': comando({ tipo: 'colonia', provincia: id }); break;
     case 'fortifica': comando({ tipo: 'fortifica', provincia: id }); break;
-    case 'dichiara': comando({ tipo: 'dichiara_guerra', contro: id }); break;
+    case 'dichiara':
+    case 'prepara-guerra':
+      setPaused(ui.clock, true); // si decide a gioco fermo
+      finestra(H.guerraConfermaHtml(V.warConfirmView(ui.session.game, ui.session.giocatore, id)));
+      aggiorna();
+      break;
+    case 'conferma-guerra': {
+      $('finestra').hidden = true;
+      const r = comando({ tipo: 'dichiara_guerra', contro: id });
+      if (r.ok) finestra(H.guerraRiepilogoHtml(V.warSummaryView(ui.session.game, ui.session.giocatore, r.guerra)));
+      break;
+    }
+    case 'apri-diplomazia': document.querySelector('[data-scheda="diplomazia"]').click(); break;
     case 'ambasceria': comando({ tipo: 'ambasceria', verso: id }); break;
     case 'alleanza':
     case 'foedus':

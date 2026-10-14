@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview } from '../public/js/sim/diplomacy.js';
 import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
@@ -275,4 +275,30 @@ test('ultimatum: la capitale di un popolo facile non si può chiedere', () => {
   g.balance.difficolta.facile = { capitaleSalva: true };
   g.nazioni.roma.difficolta = 'facile';
   assert.equal(checkProposal(g, 'latini', 'ultimatum', 'roma', { provincia: 'a' }), 'la capitale non si può chiedere');
+});
+
+test('anteprima di guerra: chi entra contro di te e cosa fanno i tuoi alleati, come la dichiarazione vera', () => {
+  const g = makeGame();
+  allea(g, 'volsci', 'siculi');          // alleato del bersaglio: entra
+  allea(g, 'roma', 'latini');            // tuo alleato: chiamato
+  changeRelation(g, 'roma', 'latini', 30); // 30 + 30 = 60 ≥ 50: probabilmente accetta
+  const v = warPreview(g, 'roma', 'volsci');
+  assert.equal(v.errore, null);
+  assert.deepEqual(v.nemici, [{ id: 'volsci', ruolo: 'bersaglio' }, { id: 'siculi', ruolo: 'alleato' }]);
+  assert.deepEqual(v.chiamati, [{ id: 'latini', probabile: true }]);
+  assert.deepEqual(v.esclusi, []);
+  assert.equal(v.pretesto, false);
+  assert.deepEqual(v.stabilita, { prima: 0, dopo: -2 });
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  assert.deepEqual(g.guerre[guerra].difensori, ['volsci', 'siculi']);
+  assert.ok(Object.values(g.proposte).some(p => p.tipo === 'chiamata' && p.a === 'latini'));
+});
+
+test('anteprima di guerra: alleato che non può entrare, motivo di una guerra impossibile', () => {
+  const g = makeGame();
+  allea(g, 'roma', 'latini');
+  allea(g, 'latini', 'volsci');          // i latini sono amici del bersaglio
+  const v = warPreview(g, 'roma', 'volsci');
+  assert.deepEqual(v.esclusi, [{ id: 'latini', motivo: 'è amico di chi attacchi' }]);
+  assert.equal(warPreview(g, 'roma', 'siculi').errore, 'nessun confine');
 });

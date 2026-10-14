@@ -357,3 +357,32 @@ test('proposta di pace: dice a chi vanno le province che non vanno al giocatore'
   proposePeace(g, 'volsci', guerra, { ricevente: 'roma', province: ['c', 'f'] });
   assert.equal(V.pendingProposals(g, 'roma')[0].testo, 'volsci offre la pace e cede: C (a latini), F.');
 });
+
+test('provincia di un vicino: riquadro con il popolo e il motivo se la guerra non si può', () => {
+  const g = makeGame();
+  assert.deepEqual(V.provinceInfo(g, 'c', 'roma').popolo, { id: 'volsci', nome: 'volsci', motivo: null });
+  assert.equal(V.provinceInfo(g, 'g', 'roma').popolo, null); // i siculi non confinano
+  assert.equal(V.provinceInfo(g, 'a', 'roma').popolo, null); // provincia propria
+  g.nazioni.roma.tregue.volsci = 999;
+  assert.equal(V.provinceInfo(g, 'c', 'roma').popolo.motivo, 'tregua in corso');
+});
+
+test('conferma di guerra: contro di te, con te, forze e costo', () => {
+  const g = makeGame();
+  const v = V.warConfirmView(g, 'roma', 'volsci');
+  assert.equal(v.bersaglio.nome, 'volsci');
+  assert.deepEqual(v.nemici.map(x => [x.nome, x.ruolo]), [['volsci', 'il popolo che attacchi']]);
+  assert.deepEqual(v.miei.map(x => [x.nome, x.stato]), [['roma', 'tu']]);
+  assert.ok(v.forzaMiei > v.forzaNemici);
+  assert.equal(v.costo, 'Senza pretesto: la stabilità scende da 0 a -2.');
+  assert.equal(v.errore, null);
+});
+
+test('riepilogo dopo la dichiarazione: schieramenti e alleati chiamati', () => {
+  const g = makeGame();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const r = V.warSummaryView(g, 'roma', guerra);
+  assert.deepEqual(r.nemici, ['volsci']);
+  assert.deepEqual(r.miei, ['roma']);
+  assert.deepEqual(r.chiamati, []);
+});

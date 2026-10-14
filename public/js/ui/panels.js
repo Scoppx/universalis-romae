@@ -35,7 +35,7 @@ export function provinceHtml(v) {
     bottone('fortifica', v.id, v.azioni.fortifica.costo === null ? 'Fortificazione al massimo' : `Fortifica (${v.azioni.fortifica.costo} denari)`, v.azioni.fortifica.motivo) +
     '</div>' : '';
   return `<h2>${esc(v.nome)}</h2><table>${righe.map(([k, x]) => `<tr><td>${k}</td><td>${esc(x)}</td></tr>`).join('')}</table>` +
-    `<h3>Eserciti</h3>${eserciti}${recluta}${azioni}`;
+    `<h3>Eserciti</h3>${eserciti}${recluta}${azioni}${popoloHtml(v.popolo)}`;
 }
 
 export function governoHtml(v) {
@@ -146,4 +146,35 @@ export function eventoHtml(v) {
   return `<h2>${esc(v.titolo)}</h2><p>${esc(v.testo)}</p>` + v.opzioni.map(o =>
     `<div class="opzione"><button data-azione="scegli" data-id="${esc(v.id)}" data-opzione="${esc(o.id)}">${esc(o.testo)}</button>` +
     `<div class="muto">${esc(o.effetti)}</div></div>`).join('');
+}
+
+// Riquadro della provincia di un vicino: guerra in un clic (spenta con il motivo) e scorciatoia alla diplomazia.
+function popoloHtml(p) {
+  if (!p) return '';
+  return `<h3>${esc(p.nome)}</h3><div class="comandi">` +
+    bottone('prepara-guerra', p.id, 'Dichiara guerra…', p.motivo) +
+    `<button class="piccolo" data-azione="apri-diplomazia" data-id="${esc(p.id)}">Diplomazia</button></div>`;
+}
+
+export function guerraConfermaHtml(v) {
+  if (v.errore) {
+    return `<h2>Guerra a ${esc(v.bersaglio.nome)}</h2><p>Non puoi dichiarare guerra: ${esc(v.errore)}.</p>` +
+      '<div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
+  }
+  const riga = (nome, testo, forza) => `<tr><td>${esc(nome)}</td><td class="muto">${esc(testo)}</td><td>${esc(forza)}</td></tr>`;
+  return `<h2>Dichiarare guerra a ${esc(v.bersaglio.nome)}?</h2>` +
+    `<h3>Contro di te</h3><table><tr><th></th><th></th><th class="muto">forza</th></tr>${v.nemici.map(x => riga(x.nome, x.ruolo, x.forza)).join('')}</table>` +
+    `<h3>Con te</h3><table><tr><th></th><th></th><th class="muto">forza</th></tr>${v.miei.map(x => riga(x.nome, x.stato, x.forza)).join('')}</table>` +
+    `<p>Forze: <b>${esc(v.forzaMiei)}</b> (tu e chi entra di sicuro o probabilmente) contro <b>${esc(v.forzaNemici)}</b>.</p>` +
+    `<p>${esc(v.costo)}</p>` +
+    `<div class="comandi"><button data-azione="conferma-guerra" data-id="${esc(v.bersaglio.id)}">Dichiara guerra</button>` +
+    '<button data-azione="chiudi">Annulla</button></div>';
+}
+
+export function guerraRiepilogoHtml(v) {
+  return '<h2>Guerra dichiarata</h2>' +
+    `<p>Dalla tua parte: <b>${v.miei.map(esc).join(', ')}</b>.</p>` +
+    `<p>Contro di te: <b>${v.nemici.map(esc).join(', ')}</b>.</p>` +
+    (v.chiamati.length ? `<p>Alleati chiamati alle armi (risponderanno nei prossimi giorni): ${v.chiamati.map(esc).join(', ')}.</p>` : '<p class="muto">Nessun alleato da chiamare.</p>') +
+    '<div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
 }

@@ -1,6 +1,6 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
 import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf } from './state.js';
-import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome } from './war.js';
+import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome, checkWar, hasPretext } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
 const D = game => game.balance.diplomazia;
@@ -212,6 +212,32 @@ export function coalition(game, x) {
 }
 
 // Chi entra da solo quando scoppia una guerra, chi viene chiamato.
+// Anteprima di una dichiarazione di guerra: le stesse regole di onWarDeclared, senza toccare lo stato.
+export function warPreview(game, att, dif) {
+  const errore = checkWar(game, att, dif);
+  const war = { attaccanti: [att], difensori: [dif] };
+  const B = game.nazioni[dif];
+  const nemici = [{ id: dif, ruolo: 'bersaglio' }];
+  const difesa = [...B.alleati.map(id => [id, 'alleato']), ...federatiOf(game, dif).map(id => [id, 'federato']),
+    [B.protettore, 'protettore'], ...coalition(game, att).map(id => [id, 'coalizione'])];
+  for (const [id, ruolo] of difesa) {
+    if (puoEntrare(game, war, id, war.attaccanti)) { war.difensori.push(id); nemici.push({ id, ruolo }); }
+  }
+  const federati = [];
+  for (const id of federatiOf(game, att)) if (puoEntrare(game, war, id, war.difensori)) { war.attaccanti.push(id); federati.push(id); }
+  const chiamati = [], esclusi = [];
+  for (const id of game.nazioni[att].alleati) {
+    if (!game.nazioni[id]?.vivo) continue;
+    if (puoEntrare(game, war, id, war.difensori)) chiamati.push({ id, probabile: relation(game, id, att) >= D(game).chiamataMinRelazione });
+    else esclusi.push({ id, motivo: sideOf(war, id) ? 'combatterebbe dall\'altra parte' : war.difensori.some(x => friendly(game, id, x)) ? 'è amico di chi attacchi' : 'è in tregua con chi attacchi' });
+  }
+  const n = game.nazioni[att], pretesto = hasPretext(game, att, dif);
+  return {
+    errore, nemici, federati, chiamati, esclusi, pretesto,
+    stabilita: { prima: n.stabilita, dopo: pretesto ? n.stabilita : Math.max(-3, n.stabilita - game.balance.guerra.senzaPretesto) }
+  };
+}
+
 export function onWarDeclared(game, war) {
   const [att] = war.attaccanti, [dif] = war.difensori;
   const d = D(game);
