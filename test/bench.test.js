@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runBench } from '../bench.js';
+import { runBench, applicaRitocchi } from '../bench.js';
 
 async function stubAsk({ questions }) {
   const answers = {};
@@ -60,4 +60,16 @@ test('riepilogo del bench: difficoltà, Roma, guerre, popoli nuovi, obiettivi', 
   assert.ok(r.obiettivi.every(o => typeof o.ok === 'boolean'));
   const { righe } = await runBench({ anni: 1, semi: 1 });
   assert.equal(righe.filter(x => x.iniziale).length, 38); // dormienti e popoli nati dopo non contano
+});
+
+test('ritocchi al bilanciamento e primo seme, per provare varianti in parallelo', async () => {
+  const b = { ia: { rapportoGuerra: 1.5 }, difficolta: { facile: {} } };
+  const r = applicaRitocchi(b, { 'ia.rapportoGuerra': 2, 'difficolta.facile.dado': 2 });
+  assert.equal(r.ia.rapportoGuerra, 2);
+  assert.equal(r.difficolta.facile.dado, 2);
+  assert.equal(b.ia.rapportoGuerra, 1.5); // l'originale non cambia
+  assert.throws(() => applicaRitocchi(b, { 'ia.inesistente.x': 1 }), /ritocco/);
+  const a = await runBench({ anni: 8, semi: 1, primoSeme: 1 });
+  const c = await runBench({ anni: 8, semi: 1, primoSeme: 2 });
+  assert.notDeepEqual(a.righe, c.righe);
 });

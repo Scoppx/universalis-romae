@@ -17,8 +17,24 @@ import { createAsk } from './jev-api.js';
 // Obiettivi della tappa 6 (bench a regole, 100 anni, 20 semi): quota di popoli vivi per difficoltà e in totale.
 export const OBIETTIVI = { facile: [0.8, 1], normale: [0.5, 0.65], difficile: [0.3, 0.45], 'molto difficile': [0.15, 0.3], totale: [0.55, 1] };
 
-export async function runBench({ anni, semi, ia = 'regole', ask = null, registro = null, records = null }) {
+// Ritocchi al bilanciamento per una sola corsa: { 'ia.rapportoGuerra': 2 }. Una chiave che non esiste è un errore.
+export function applicaRitocchi(balance, ritocchi = {}) {
+  const b = structuredClone(balance);
+  for (const [chiave, valore] of Object.entries(ritocchi)) {
+    const parti = chiave.split('.'), ultima = parti.pop();
+    let o = b;
+    for (const p of parti) {
+      if (o[p] === null || typeof o[p] !== 'object') throw new Error(`ritocco sconosciuto: ${chiave}`);
+      o = o[p];
+    }
+    o[ultima] = valore;
+  }
+  return b;
+}
+
+export async function runBench({ anni, semi, ia = 'regole', ask = null, registro = null, records = null, ritocchi = {}, primoSeme = 1 }) {
   const data = loadData();
+  data.balance = applicaRitocchi(data.balance, ritocchi);
   const info = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p]));
   const caratteri = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p.carattere]));
   const totali = { richieste: 0, tokenInput: 0, fonti: { jev: 0, prudenza: 0, regola: 0, superata: 0 } };
@@ -32,7 +48,7 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
   const acc = {};
   let tipo = {};
   const g6 = { guerre: 0, durate: [], dichiarate: { regole: 0, jev: 0 }, anniPopolo: { regole: 0, jev: 0 }, nati: 0, nuoviVivi: 0 };
-  for (let seed = 1; seed <= semi; seed++) {
+  for (let seed = primoSeme; seed < primoSeme + semi; seed++) {
     semeCorrente = seed;
     const game = createGame({ ...data, seed });
     // ogni seme rigioca solo le sue decisioni (i registri vecchi, senza seme, valgono per il seme 1)
@@ -129,9 +145,20 @@ function table(res, anni, semi, ia, ms) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const anni = Number(process.argv[2] ?? 100), semi = Number(process.argv[3] ?? 5);
-  const modo = process.argv[4] ?? 'regole', file = process.argv[5] ?? null;
-  const opts = { anni, semi, ia: modo };
+  // opzioni: --set chiave=valore (ripetibile, valore JSON) e --da N (primo seme)
+  const args = [], ritocchi = {};
+  let primoSeme = 1;
+  for (let i = 2; i < process.argv.length; i++) {
+    const a = process.argv[i];
+    if (a === '--set') {
+      const [k, v] = process.argv[++i].split('=');
+      ritocchi[k] = JSON.parse(v);
+    } else if (a === '--da') primoSeme = Number(process.argv[++i]);
+    else args.push(a);
+  }
+  const anni = Number(args[0] ?? 100), semi = Number(args[1] ?? 5);
+  const modo = args[2] ?? 'regole', file = args[3] ?? null;
+  const opts = { anni, semi, ia: modo, ritocchi, primoSeme };
   if (modo === 'rigioca') {
     opts.ia = 'misto';
     opts.records = readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l));
@@ -149,5 +176,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const res = await runBench(opts);
   const out = table(res, anni, semi, opts.ia, performance.now() - t0);
   console.log(out);
-  writeFileSync(`bench-${modo}.txt`, out + '\n');
+  if (!Object.keys(ritocchi).length && primoSeme === 1) writeFileSync(`bench-${modo}.txt`, out + '\n'); // le varianti non sovrascrivono il risultato di riferimento
 }
