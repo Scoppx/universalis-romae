@@ -25,7 +25,7 @@
   "infamia": {
     "soglia": 20,
     "caloAnno": 1,
-    "perProvincia": 2,
+    "perProvincia": 4,
     "culturaDiversa": 2
   },
   "movimento": {
@@ -76,7 +76,7 @@
     "rapportoGuerra": 2,
     "pacePunteggio": 30,
     "resaPunteggio": -60,
-    "paceBiancaAnni": 3,
+    "paceBiancaAnni": 1,
     "reclutaSoglia": 1000,
     "riservaTesoro": 2,
     "esercitoObiettivo": 0.8,
