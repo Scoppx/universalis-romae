@@ -188,6 +188,7 @@ try {
     const fine = u.session.game.day + 400;
     while (u.session.game.day < fine) {
       u.session.game.proposte = {};
+      u.session.game.eventi = {}; // anche gli eventi del giocatore fermano il tempo
       window.universalis.avanza(fine - u.session.game.day);
     }
     document.getElementById('finestra').hidden = true;
