@@ -1,7 +1,7 @@
 // Un giorno di simulazione. Ordine fisso: decisioni, movimento, battaglie, assedi, morale,
 // scadenze; poi, sul giorno nuovo, economia, diplomazia, cultura ed eventi mensili e aggiornamento annuale.
 import { applyCommand } from './commands.js';
-import { advanceMovement } from './armies.js';
+import { advanceMovement, mergeArrivals } from './armies.js';
 import { resolveBattles, recoverMorale } from './combat.js';
 import { advanceSieges } from './siege.js';
 import { expireProposals } from './war.js';
@@ -20,6 +20,7 @@ export function advanceDay(game, controllers = {}) {
     }
   }
   advanceMovement(game);
+  mergeArrivals(game);
   resolveBattles(game);
   advanceSieges(game);
   recoverMorale(game);

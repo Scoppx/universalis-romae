@@ -35,7 +35,7 @@ export function provinceHtml(v) {
     bottone('fortifica', v.id, v.azioni.fortifica.costo === null ? 'Fortificazione al massimo' : `Fortifica (${v.azioni.fortifica.costo} denari)`, v.azioni.fortifica.motivo) +
     '</div>' : '';
   return `<h2>${esc(v.nome)}</h2><table>${righe.map(([k, x]) => `<tr><td>${k}</td><td>${esc(x)}</td></tr>`).join('')}</table>` +
-    `<h3>Eserciti</h3>${eserciti}${recluta}${azioni}${popoloHtml(v.popolo)}`;
+    `<h3>Eserciti</h3>${eserciti}${v.unibili ? `<div class="comandi"><button data-azione="unisci-qui" data-id="${esc(v.id)}">Unisci tutti qui</button></div>` : ''}${recluta}${azioni}${popoloHtml(v.popolo)}`;
 }
 
 export function governoHtml(v) {
@@ -87,7 +87,8 @@ export function esercitiHtml(list, azioni) {
   if (!list.length) return '<p class="muto">Nessun esercito. Recluta da una tua provincia.</p>';
   return '<div class="comandi">' +
     `<button data-azione="unisci"${azioni.puoUnire ? '' : ` disabled title="${esc(azioni.motivoUnire ?? 'non si può ora')}"`}>Unisci</button>` +
-    `<button data-azione="dividi"${azioni.puoDividere ? '' : ` disabled title="${esc(azioni.motivoDividere ?? 'non si può ora')}"`}>Dividi</button></div>` +
+    `<button data-azione="dividi"${azioni.puoDividere ? '' : ` disabled title="${esc(azioni.motivoDividere ?? 'non si può ora')}"`}>Dividi</button>` +
+    `<button data-azione="riunisci"${azioni.puoRiunire ? ` title="Tutti marciano verso il più grande e si uniscono all'arrivo"` : ` disabled title="${esc(azioni.motivoRiunire ?? 'non si può ora')}"`}>Riunisci</button></div>` +
     list.map(a => `<div class="riga${a.scelto ? ' scelta' : ''}"><span>${esc(a.provincia)}: ` +
       `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
       (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +
@@ -96,9 +97,13 @@ export function esercitiHtml(list, azioni) {
     '<p class="muto">Clic sul soldatino per selezionarlo, Maiuscolo+clic o Maiuscolo+trascina per sceglierne più d\'uno, clic destro sulla destinazione.</p>';
 }
 
-function caselle(nome, list) {
+// guerra: se data, le province occupate da un alleato hanno la scelta di chi le riceve (all'alleato o a te)
+function caselle(nome, list, guerra = null) {
   return list.map(p => `<label class="riga"><span><input type="checkbox" name="${esc(nome)}" value="${esc(p.id)}" data-owner="${esc(p.owner)}"> ${esc(p.nome)}</span>` +
-    `<span class="muto">${p.verso ? `→ ${esc(p.verso)} · ` : ''}costo ${esc(p.costo)}</span></label>`).join('');
+    (guerra && p.verso
+      ? `<span class="muto"><select class="assegna" id="assegna-${esc(guerra)}-${esc(p.id)}" data-guerra="${esc(guerra)}" data-prov="${esc(p.id)}"><option value="${esc(p.a)}">a ${esc(p.verso)} (la occupa)</option>` +
+        `<option value="io">a te (l'alleato se ne ricorda)</option></select> · costo ${esc(p.costo)}</span>`
+      : `<span class="muto">${p.verso ? `→ ${esc(p.verso)} · ` : ''}costo ${esc(p.costo)}</span>`) + '</label>').join('');
 }
 
 // Bottone di una richiesta di province: parte spento; main.js lo riaccende quando le caselle spuntate rispettano i limiti.
@@ -117,7 +122,7 @@ export function guerreHtml(list) {
     const perId = Object.fromEntries(w.limiti.map(l => [l.id, { max: l.max, nome: l.nome }]));
     const mie = Object.fromEntries(w.daCedere.map(p => [p.owner, { max: w.limiteMio, nome: 'tue' }]));
     return `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
-      (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (una pace prende al più ${limiti}):</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
+      (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (una pace prende al più ${limiti}):</div>${caselle(`chiedi-${w.id}`, w.daChiedere, w.capofila ? w.id : null)}` : '') +
       (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere (al più ${esc(w.limiteMio)} per pace):</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
       '<div class="comandi">' + (!w.capofila
         ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'

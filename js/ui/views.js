@@ -100,6 +100,9 @@ export function provinceInfo(game, id, g) {
       uomini: a.fanteria + a.cavalleria, morale: a.morale.toFixed(1)
     })),
     puoReclutare: Boolean(g) && p.owner === g && p.controller === g,
+    // due o più tuoi eserciti fermi qui: si possono unire con un clic
+    unibili: (ids => (ids.length >= 2 ? ids : null))(Object.values(game.eserciti)
+      .filter(a => a.prov === id && a.owner === g && !a.percorso.length && !a.inBattaglia).map(a => a.id)),
     // provincia di un popolo confinante: menu rapido per la guerra (motivo se non si può)
     popolo: g && p.owner !== g && game.ordine.includes(p.owner) && game.nazioni[p.owner].vivo && bordersNation(game, g, p.owner)
       ? { id: p.owner, nome: nome(game, p.owner), motivo: checkWar(game, g, p.owner) } : null,
@@ -342,7 +345,10 @@ export function selectionActions(game, g, ids) {
     : uno.inBattaglia ? 'un esercito in battaglia non si divide'
     : Math.floor(uno.fanteria / 2) + Math.floor(uno.cavalleria / 2) < min || Math.ceil(uno.fanteria / 2) + Math.ceil(uno.cavalleria / 2) < min
       ? `troppo piccolo: ogni metà deve avere almeno ${min} uomini` : null;
-  return { puoUnire: !motivoUnire, puoDividere: !motivoDividere, motivoUnire, motivoDividere };
+  const motivoRiunire = armies.length < 2 || armies.length !== ids.length ? 'seleziona almeno due tuoi eserciti (Shift + clic)'
+    : armies.some(a => a.inBattaglia) ? 'un esercito in battaglia non può partire'
+    : armies.every(a => a.prov === armies[0].prov) ? 'sono già nella stessa provincia: usa Unisci' : null;
+  return { puoUnire: !motivoUnire, puoDividere: !motivoDividere, puoRiunire: !motivoRiunire, motivoUnire, motivoDividere, motivoRiunire };
 }
 
 // Perché il bottone di una richiesta di province è spento (null se si può inviare). owners: il padrone di ogni casella spuntata.

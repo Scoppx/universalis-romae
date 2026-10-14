@@ -1,6 +1,6 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
 import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI, difficultyOf } from './state.js';
-import { friendly, answerDiplomatic, onWarDeclared, cleanupDead } from './diplomacy.js';
+import { friendly, answerDiplomatic, onWarDeclared, cleanupDead, changeRelation } from './diplomacy.js';
 import { monthlyIncome } from './economy.js';
 
 export function sideOf(war, id) {
@@ -106,6 +106,8 @@ function malformed(termini) {
   return !termini || !Array.isArray(termini.province) ||
     (termini.annessione !== undefined && typeof termini.annessione !== 'string') ||
     (termini.denari !== undefined && !(Number.isInteger(termini.denari) && termini.denari >= 0)) ||
+    (termini.assegna !== undefined && (termini.assegna === null || typeof termini.assegna !== 'object' || Array.isArray(termini.assegna) ||
+      !Object.entries(termini.assegna).every(([k, v]) => typeof v === 'string' && termini.province.includes(k)))) ||
     termini.province.some(id => typeof id !== 'string') ||
     new Set(termini.province).size !== termini.province.length;
 }
@@ -121,6 +123,8 @@ export function validTerms(game, war, receiver, termini) {
   if (!side) return 'non partecipa';
   const mine = war[side], losers = enemiesOf(war, side);
   const ann = termini.annessione;
+  // chi riceve una provincia (se il capofila lo sceglie) deve essere del suo schieramento
+  if (termini.assegna && Object.values(termini.assegna).some(x => !mine.includes(x))) return 'chi riceve una provincia deve essere del tuo schieramento';
   if (ann !== undefined) {
     // un'annessione prende tutto il popolo, e solo quello
     const tutte = provincesOf(game, ann).map(p => p.id);
@@ -154,9 +158,12 @@ export function makePeace(game, warId, receiver, termini) {
   const inf = game.balance.infamia, padroni = [];
   // ogni provincia va a chi la occupa (il ricevente o un suo alleato), che ne paga l'infamia
   for (const id of termini.province) {
-    const p = game.province[id], nuovo = p.controller, R = game.nazioni[nuovo];
+    const p = game.province[id], nuovo = termini.assegna?.[id] ?? p.controller, R = game.nazioni[nuovo];
     R.infamia += inf.perProvincia + (p.cultura !== R.cultura ? inf.culturaDiversa : 0);
+    // prendere una provincia occupata da un alleato: l'alleato se lo ricorda
+    if (nuovo !== p.controller) changeRelation(game, nuovo, p.controller, -game.balance.guerra.presaAlleato);
     p.owner = nuovo;
+    p.controller = nuovo;
     padroni.push(nuovo);
   }
   const parti = [...war.attaccanti, ...war.difensori];
@@ -243,7 +250,7 @@ export function proposePeace(game, from, warId, termini) {
   const id = newId(game, 'p');
   game.proposte[id] = {
     id, tipo: 'pace', guerra: warId, da: from, a: to,
-    termini: { ricevente: termini.ricevente, province: [...termini.province], ...(termini.annessione ? { annessione: termini.annessione } : {}), ...(termini.denari ? { denari: termini.denari } : {}) }, giorno: game.day
+    termini: { ricevente: termini.ricevente, province: [...termini.province], ...(termini.annessione ? { annessione: termini.annessione } : {}), ...(termini.denari ? { denari: termini.denari } : {}), ...(termini.assegna ? { assegna: { ...termini.assegna } } : {}) }, giorno: game.day
   };
   log(game, { tipo: 'proposta', proposta: id, da: from, a: to });
   return { ok: true, proposta: id };
@@ -258,7 +265,7 @@ export function answerProposal(game, nationId, propId, accetta) {
     log(game, { tipo: 'rifiutata', proposta: propId, da: p.da, a: p.a });
     return { ok: true, accettata: false };
   }
-  const r = makePeace(game, p.guerra, p.termini.ricevente, { province: p.termini.province, annessione: p.termini.annessione, denari: p.termini.denari });
+  const r = makePeace(game, p.guerra, p.termini.ricevente, { province: p.termini.province, annessione: p.termini.annessione, denari: p.termini.denari, assegna: p.termini.assegna });
   return r.ok ? { ok: true, accettata: true } : r;
 }
 
