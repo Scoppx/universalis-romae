@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Obiettivi (bench a regole, 100 anni, 20 semi): facile ≥ 80% vivo e province finali > iniziali; normale 50–65%; difficile 30–45%; molto difficile 15–30%; totale ≥ 55% dei popoli iniziali. Jev: guerre per popolo-anno entro un fattore 1,5 da quelle delle regole.
+- Obiettivi (bench a regole, 100 anni, 20 semi): facile ≥ 80% vivo e province finali > iniziali; normale 50–65%; difficile 30–45%; molto difficile ≤ 30% (nessun minimo, nessun bonus per farli sopravvivere: scelta dell'utente del 2026-10-14); totale ≥ 55% dei popoli iniziali. Jev: guerre per popolo-anno entro un fattore 1,5 da quelle delle regole.
 - I numeri si tarano in `public/data/balance.json`, non nel codice.
 - Simulazione deterministica; comandi solo da `applyCommand`.
 - `TYPESAFE_API_KEY` solo lato server; i revisori non chiamano TypeSafe.

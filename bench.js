@@ -15,7 +15,8 @@ import { rulesController } from './public/js/ai/rules.js';
 import { createAsk } from './jev-api.js';
 
 // Obiettivi della tappa 6 (bench a regole, 100 anni, 20 semi): quota di popoli vivi per difficoltà e in totale.
-export const OBIETTIVI = { facile: [0.8, 1], normale: [0.5, 0.65], difficile: [0.3, 0.45], 'molto difficile': [0.15, 0.3], totale: [0.55, 1] };
+// I "molto difficili" non hanno un minimo: devono restare duri anche per il giocatore (scelta dell'utente).
+export const OBIETTIVI = { facile: [0.8, 1], normale: [0.5, 0.65], difficile: [0.3, 0.45], 'molto difficile': [0, 0.3], totale: [0.55, 1] };
 
 // Ritocchi al bilanciamento per una sola corsa: { 'ia.rapportoGuerra': 2 }. Una chiave che non esiste è un errore.
 export function applicaRitocchi(balance, ritocchi = {}) {

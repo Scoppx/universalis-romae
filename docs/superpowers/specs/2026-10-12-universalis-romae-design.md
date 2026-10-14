@@ -422,7 +422,7 @@ fortificazioni: sezione 3).
 
 - **Obiettivi**, misurati dal bench a regole a 100 anni su 20 semi: popoli vivi per difficoltà — facile (Roma)
   almeno 80% e più province di quante ne aveva all'inizio; normale 50–65%; difficile 30–45%; molto difficile
-  15–30%; in totale almeno il 55% dei popoli iniziali. In modalità Jev, guerre dichiarate per popolo e per anno
+  al più 30% (nessun minimo: Volsci ed Equi restano duri anche per il giocatore, niente bonus per farli sopravvivere); in totale almeno il 55% dei popoli iniziali. In modalità Jev, guerre dichiarate per popolo e per anno
   vicine a quelle delle regole (entro un fattore 1,5).
 - **Riepilogo del bench**: sopravvivenza per difficoltà e totale, Roma (viva, province, punteggio), guerre
   (numero, durata media, guerre per popolo-anno di regole e di Jev), popoli nuovi (nati, vivi), e un ✓/✗ per
