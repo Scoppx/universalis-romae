@@ -348,7 +348,13 @@ export function selectionActions(game, g, ids) {
   const motivoRiunire = armies.length < 2 || armies.length !== ids.length ? 'seleziona almeno due tuoi eserciti (Shift + clic)'
     : armies.some(a => a.inBattaglia) ? 'un esercito in battaglia non può partire'
     : armies.every(a => a.prov === armies[0].prov) ? 'sono già nella stessa provincia: usa Unisci' : null;
-  return { puoUnire: !motivoUnire, puoDividere: !motivoDividere, puoRiunire: !motivoRiunire, motivoUnire, motivoDividere, motivoRiunire };
+  const motivoSciogliere = !armies.length ? 'seleziona uno o più tuoi eserciti'
+    : armies.some(a => a.inBattaglia) ? 'un esercito in battaglia non si scioglie' : null;
+  const risparmio = (armies.reduce((s, a) => s + a.fanteria + 2 * a.cavalleria, 0) / 1000 * game.balance.economia.mantenimento1000).toFixed(2);
+  return {
+    puoUnire: !motivoUnire, puoDividere: !motivoDividere, puoRiunire: !motivoRiunire, puoSciogliere: !motivoSciogliere,
+    motivoUnire, motivoDividere, motivoRiunire, motivoSciogliere, risparmio
+  };
 }
 
 // Perché il bottone di una richiesta di province è spento (null se si può inviare). owners: il padrone di ogni casella spuntata.

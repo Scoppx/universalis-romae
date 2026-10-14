@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
-import { armiesOf, createArmy } from '../public/js/sim/state.js';
+import { armiesOf, createArmy, maxManpower } from '../public/js/sim/state.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, atWar } from '../public/js/sim/war.js';
@@ -142,4 +142,18 @@ test('riunisci: se il più grande sparisce, chi marciava resta un esercito a sé
   for (let i = 0; i < 20; i++) advanceDay(g);
   assert.ok(g.eserciti[piccolo.id]);
   assert.equal(g.eserciti[piccolo.id].unisciCon ?? null, null);
+});
+
+test('sciogliere un esercito: non costa più, gli uomini tornano nella riserva fino al massimo', () => {
+  const g = makeGame();
+  const [r] = armiesOf(g, 'roma');
+  const uomini = r.fanteria + r.cavalleria, prima = g.nazioni.roma.uomini;
+  assert.equal(applyCommand(g, { tipo: 'sciogli', nazione: 'volsci', eserciti: [r.id] }).motivo, 'esercito non tuo');
+  r.inBattaglia = true;
+  assert.equal(applyCommand(g, { tipo: 'sciogli', nazione: 'roma', eserciti: [r.id] }).motivo, 'un esercito in battaglia non si scioglie');
+  r.inBattaglia = false;
+  assert.deepEqual(applyCommand(g, { tipo: 'sciogli', nazione: 'roma', eserciti: [r.id] }), { ok: true });
+  assert.equal(g.eserciti[r.id], undefined);
+  assert.equal(g.nazioni.roma.uomini, Math.min(maxManpower(g, 'roma'), prima + uomini));
+  assert.equal(applyCommand(g, { tipo: 'sciogli', nazione: 'roma', eserciti: [] }).motivo, 'nessun esercito scelto');
 });

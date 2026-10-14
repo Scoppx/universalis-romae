@@ -22,7 +22,8 @@ export function provinceHtml(v) {
     ...(v.colonia ? [['Colonia', 'sì']] : [])];
   const eserciti = v.eserciti.length
     ? v.eserciti.map(e => `<div class="riga"><span>${esc(e.nazione)}: ${esc(e.uomini)} uomini, morale ${esc(e.morale)}</span>` +
-      (e.mio ? `<button data-azione="seleziona-esercito" data-id="${esc(e.id)}">Seleziona</button>` : '') + '</div>').join('')
+      (e.mio ? `<button data-azione="seleziona-esercito" data-id="${esc(e.id)}">Seleziona</button>` +
+        `<button class="piccolo" data-azione="sciogli-esercito" data-id="${esc(e.id)}" title="Gli uomini tornano nella riserva e non li paghi più">Sciogli</button>` : '') + '</div>').join('')
     : '<p class="muto">Nessun esercito.</p>';
   const recluta = v.puoReclutare
     ? '<h3>Recluta</h3><div class="comandi">' +
@@ -88,7 +89,9 @@ export function esercitiHtml(list, azioni) {
   return '<div class="comandi">' +
     `<button data-azione="unisci"${azioni.puoUnire ? '' : ` disabled title="${esc(azioni.motivoUnire ?? 'non si può ora')}"`}>Unisci</button>` +
     `<button data-azione="dividi"${azioni.puoDividere ? '' : ` disabled title="${esc(azioni.motivoDividere ?? 'non si può ora')}"`}>Dividi</button>` +
-    `<button data-azione="riunisci"${azioni.puoRiunire ? ` title="Tutti marciano verso il più grande e si uniscono all'arrivo"` : ` disabled title="${esc(azioni.motivoRiunire ?? 'non si può ora')}"`}>Riunisci</button></div>` +
+    `<button data-azione="riunisci"${azioni.puoRiunire ? ` title="Tutti marciano verso il più grande e si uniscono all'arrivo"` : ` disabled title="${esc(azioni.motivoRiunire ?? 'non si può ora')}"`}>Riunisci</button>` +
+    // etichetta fissa: se cambiasse lunghezza la riga andrebbe a capo e i bottoni sotto si sposterebbero durante il clic
+    `<button data-azione="sciogli"${azioni.puoSciogliere ? ` title="Risparmi ${esc(azioni.risparmio)} denari al mese: gli uomini tornano nella riserva"` : ` disabled title="${esc(azioni.motivoSciogliere ?? 'non si può ora')}"`}>Sciogli</button></div>` +
     list.map(a => `<div class="riga${a.scelto ? ' scelta' : ''}"><span>${esc(a.provincia)}: ` +
       `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
       (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +

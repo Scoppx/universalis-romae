@@ -438,6 +438,9 @@ try {
   });
   await page.click('#provincia [data-azione="unisci-qui"]');
   check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).filter(a => a.owner === 'roma' && a.prov === 'roma' && !a.percorso.length).length === 1), 'unisci tutti qui: un solo esercito');
+  const riservaPrima = await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.uomini);
+  await page.click('#provincia [data-azione="sciogli-esercito"]');
+  check(await page.evaluate(p => window.universalis.ui.session.game.nazioni.roma.uomini > p, riservaPrima), 'sciogli: gli uomini tornano nella riserva');
   for (const scheda of ['governo', 'diplomazia', 'eserciti', 'guerre']) {
     await page.click(`[data-scheda="${scheda}"]`);
     const muti = await page.evaluate(() => [...document.querySelectorAll('button[disabled], option[disabled], input[disabled], select[disabled]')]

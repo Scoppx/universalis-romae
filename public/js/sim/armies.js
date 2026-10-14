@@ -1,5 +1,5 @@
 // Eserciti: reclutamento, percorsi e movimento giornaliero.
-import { createArmy, strettoKey } from './state.js';
+import { createArmy, strettoKey, maxManpower } from './state.js';
 import { atWar } from './war.js';
 import { friendly } from './diplomacy.js';
 
@@ -153,4 +153,18 @@ export function mergeArrivals(game) {
     a.unisciCon = null;
     mergeArmies(game, a.owner, [capo.id, a.id]);
   }
+}
+
+// Sciogliere: l'esercito sparisce e non si paga più; gli uomini tornano nella riserva, fino al massimo.
+export function disbandArmies(game, nationId, ids) {
+  if (!Array.isArray(ids) || !ids.length) return { ok: false, motivo: 'nessun esercito scelto' };
+  const armies = ids.map(id => game.eserciti[id]);
+  if (armies.some(a => !a || a.owner !== nationId)) return { ok: false, motivo: 'esercito non tuo' };
+  if (armies.some(a => a.inBattaglia)) return { ok: false, motivo: 'un esercito in battaglia non si scioglie' };
+  const n = game.nazioni[nationId];
+  for (const a of armies) {
+    n.uomini = Math.min(maxManpower(game, nationId), n.uomini + a.fanteria + a.cavalleria);
+    delete game.eserciti[a.id];
+  }
+  return { ok: true };
 }

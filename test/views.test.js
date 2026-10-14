@@ -215,8 +215,8 @@ test('azioni sulla selezione: unire e dividere', () => {
   const g = makeGame();
   const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
   const b = createArmy(g, 'roma', 'a', 500, 0);
-  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { puoUnire: true, puoDividere: false, puoRiunire: false, motivoUnire: null, motivoDividere: 'seleziona un solo tuo esercito', motivoRiunire: 'sono già nella stessa provincia: usa Unisci' });
-  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { puoUnire: false, puoDividere: true, puoRiunire: false, motivoUnire: 'seleziona almeno due tuoi eserciti (Shift + clic)', motivoDividere: null, motivoRiunire: 'seleziona almeno due tuoi eserciti (Shift + clic)' });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id, b.id]), { ...V.selectionActions(g, 'roma', [r.id, b.id]), puoUnire: true, puoDividere: false, puoRiunire: false, motivoUnire: null, motivoDividere: 'seleziona un solo tuo esercito', motivoRiunire: 'sono già nella stessa provincia: usa Unisci' });
+  assert.deepEqual(V.selectionActions(g, 'roma', [r.id]), { ...V.selectionActions(g, 'roma', [r.id]), puoUnire: false, puoDividere: true, puoRiunire: false, motivoUnire: 'seleziona almeno due tuoi eserciti (Shift + clic)', motivoDividere: null, motivoRiunire: 'seleziona almeno due tuoi eserciti (Shift + clic)' });
   b.prov = 'b';
   assert.equal(V.selectionActions(g, 'roma', [r.id, b.id]).motivoUnire, 'gli eserciti devono stare nella stessa provincia');
   assert.equal(V.selectionActions(g, 'roma', []).puoDividere, false);
@@ -436,4 +436,15 @@ test('eserciti: unisci tutti qui nella provincia, riunisci da province diverse',
   const s = V.selectionActions(g, 'roma', [r.id, b.id]);
   assert.equal(s.puoRiunire, true);
   assert.equal(V.selectionActions(g, 'roma', [r.id]).motivoRiunire, 'seleziona almeno due tuoi eserciti (Shift + clic)');
+});
+
+test('sciogliere: risparmio al mese e motivo se non si può', () => {
+  const g = makeGame();
+  const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
+  const s = V.selectionActions(g, 'roma', [r.id]);
+  assert.equal(s.puoSciogliere, true);
+  assert.equal(s.risparmio, ((r.fanteria + 2 * r.cavalleria) / 1000 * g.balance.economia.mantenimento1000).toFixed(2));
+  assert.equal(V.selectionActions(g, 'roma', []).motivoSciogliere, 'seleziona uno o più tuoi eserciti');
+  r.inBattaglia = true;
+  assert.equal(V.selectionActions(g, 'roma', [r.id]).motivoSciogliere, 'un esercito in battaglia non si scioglie');
 });
