@@ -5,7 +5,7 @@ import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
-import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar } from '../sim/war.js';
+import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
@@ -158,6 +158,7 @@ export function warsView(game, g) {
     return {
       id: w.id,
       nemico: { id: nemici[0], nome: nome(game, nemici[0]) },
+      maxChiedibili: maxCedibili(game, nemici[0]),
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
       capofila: w[side][0] === g,
       punteggio: Math.round(scoreFor(game, w, g)),

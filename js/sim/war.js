@@ -98,6 +98,11 @@ function malformed(termini) {
     new Set(termini.province).size !== termini.province.length;
 }
 
+// Quante province di un popolo può prendere una sola pace: almeno una, al più la quota delle sue province.
+export function maxCedibili(game, owner) {
+  return Math.max(1, Math.floor(provincesOf(game, owner).length * (game.balance.guerra.quotaPace ?? 1)));
+}
+
 export function validTerms(game, war, receiver, termini) {
   if (malformed(termini)) return 'termini non validi';
   const side = sideOf(war, receiver);
@@ -109,6 +114,9 @@ export function validTerms(game, war, receiver, termini) {
     if (!losers.includes(p.owner)) return 'provincia non del nemico';
     if (!mine.includes(p.controller)) return 'provincia non occupata';
   }
+  const per = {};
+  for (const id of termini.province) per[game.province[id].owner] = (per[game.province[id].owner] ?? 0) + 1;
+  if (Object.entries(per).some(([o, k]) => k > maxCedibili(game, o))) return 'troppe province per una pace';
   return null;
 }
 

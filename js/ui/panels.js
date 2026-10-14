@@ -104,7 +104,7 @@ function caselle(nome, list) {
 export function guerreHtml(list) {
   if (!list.length) return '<p class="muto">Nessuna guerra.</p>';
   return list.map(w => `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
-    (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere:</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
+    (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (al più ${esc(w.maxChiedibili)} di ${esc(w.nemico.nome)} per pace):</div>${caselle(`chiedi-${w.id}`, w.daChiedere)}` : '') +
     (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere:</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
     '<div class="comandi">' + (!w.capofila
       ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
