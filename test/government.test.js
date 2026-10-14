@@ -103,8 +103,11 @@ test('difficoltà: esercito, tesoro, riserva iniziali e dado', () => {
   const base = makeGame();
   const pop = structuredClone(fixturePopoli);
   pop.popoli.find(p => p.id === 'roma').difficolta = 'facile';
-  const g = createGame({ map: fixtureMap, popoli: pop, balance, seed: 1 });
-  const d = balance.difficolta.facile;
+  // bilanciamento del test: solo i bonus iniziali e il dado (reclute e tasse hanno il loro test)
+  const bal = structuredClone(balance);
+  bal.difficolta.facile = { esercito: 1.5, tesoro: 2, uomini: 1.5, dado: 1 };
+  const g = createGame({ map: fixtureMap, popoli: pop, balance: bal, seed: 1 });
+  const d = bal.difficolta.facile;
   assert.equal(g.nazioni.roma.difficolta, 'facile');
   const fanti = a => armiesOf(a, 'roma')[0].fanteria;
   assert.equal(fanti(g), Math.round(fanti(base) * d.esercito));

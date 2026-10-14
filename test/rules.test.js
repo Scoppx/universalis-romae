@@ -128,6 +128,7 @@ test('obiettivo: gli eserciti lo seguono se è valido', () => {
 test('bersagli legali e decisione di guerra', () => {
   const g = makeGame();
   g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0; // misura la scelta del bersaglio, non il respiro iniziale
+  g.balance.ia.rapportoGuerra = 1.5; // né la soglia di forza, che si tara
   assert.deepEqual(legalWarTargets(g, 'roma').map(c => c.id), ['volsci', 'latini']);
   g.nazioni.roma.stabilita = -1;
   assert.deepEqual(legalWarTargets(g, 'roma'), []);
