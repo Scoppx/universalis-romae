@@ -98,7 +98,7 @@ export function esercitiHtml(list, azioni) {
 
 function caselle(nome, list) {
   return list.map(p => `<label class="riga"><span><input type="checkbox" name="${esc(nome)}" value="${esc(p.id)}"> ${esc(p.nome)}</span>` +
-    `<span class="muto">costo ${esc(p.costo)}</span></label>`).join('');
+    `<span class="muto">${p.verso ? `→ ${esc(p.verso)} · ` : ''}costo ${esc(p.costo)}</span></label>`).join('');
 }
 
 export function guerreHtml(list) {

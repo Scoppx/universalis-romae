@@ -163,8 +163,10 @@ export function peaceProposals(game, id) {
         const t = { province: [...scelte, p.id] };
         if (peaceCost(game, war, id, t) <= s && !validTerms(game, war, id, t)) scelte.push(p.id);
       }
-      if (scelte.length) cmds.push({ tipo: 'proponi_pace', nazione: id, guerra: war.id, termini: { ricevente: id, province: scelte } });
-    } else if (s <= ia.resaPunteggio) {
+      if (scelte.length) { cmds.push({ tipo: 'proponi_pace', nazione: id, guerra: war.id, termini: { ricevente: id, province: scelte } }); continue; }
+      // vince ma non può prendere nulla (capitale salva, quota, costi): resta la pace bianca per stanchezza
+    }
+    if (s <= ia.resaPunteggio) {
       const lost = Object.values(game.province)
         .filter(p => war[side].includes(p.owner) && war[enemySide].includes(p.controller)).sort(byTax);
       const scelte = [];
