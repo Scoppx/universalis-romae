@@ -409,3 +409,18 @@ test('richiesta di province: motivo per cui il bottone è spento', () => {
   assert.equal(V.motivoRichiesta(['volsci'], limiti), null);
   assert.equal(V.motivoRichiesta(['volsci', 'volsci'], limiti), 'Al più 1 provincia di Volsci per pace: togline qualcuna, oppure annetti tutto il popolo.');
 });
+
+test('pace con denari: testo della proposta, notizia, massimo chiedibile', () => {
+  const g = makeGame();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.nazioni.volsci.tesoro = 42.7;
+  g.province.c.controller = 'roma';
+  assert.equal(V.warsView(g, 'roma')[0].denariMax, 42);
+  proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'], denari: 30 });
+  assert.equal(V.pendingProposals(g, 'volsci')[0].testo, 'roma chiede la pace e vuole: C e 30 denari.');
+  const e = { tipo: 'pace', guerra: 'g1', ricevente: 'roma', parti: ['roma', 'volsci'], province: ['c'], padroni: ['roma'], denari: 30, pagatore: 'volsci' };
+  assert.equal(V.formatLogEntry(e, g, 'siculi'), 'Pace tra roma e volsci: roma ottiene C; volsci paga 30 denari.');
+  assert.equal(V.motivoRichiesta([], {}, 0, 42), 'Spunta almeno una provincia o chiedi dei denari.');
+  assert.equal(V.motivoRichiesta([], {}, 10, 42), null);
+  assert.equal(V.motivoRichiesta([], {}, 50, 42), 'Al più 42 denari: è quanto ha nel tesoro.');
+});

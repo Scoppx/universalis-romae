@@ -197,7 +197,7 @@ export function answerProposals(game, id) {
         const war = game.guerre[p.guerra];
         accetta = p.termini.ricevente === id ||
           peaceCost(game, war, p.termini.ricevente, p.termini) <= -scoreFor(game, war, id) + 10 ||
-          (p.termini.province.length === 0 && game.day - war.inizio >= ia.stanchezzaAnni * 365); // stanchezza di guerra
+          (p.termini.province.length === 0 && !p.termini.denari && game.day - war.inizio >= ia.stanchezzaAnni * 365); // stanchezza: solo la pace bianca
         break;
       }
       case 'alleanza': accetta = relation(game, id, p.da) >= d.alleanzaMinRelazione; break;

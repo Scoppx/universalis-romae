@@ -260,12 +260,15 @@ function aggiorna() {
 function aggiornaBottoniPace() {
   for (const b of $('scheda').querySelectorAll('button[data-azione="chiedi"], button[data-azione="cedi"]')) {
     const owners = [...$('scheda').querySelectorAll(`input[name="${b.dataset.azione}-${b.dataset.id}"]:checked`)].map(i => i.dataset.owner);
-    const motivo = V.motivoRichiesta(owners, JSON.parse(b.dataset.limiti));
+    const conDenari = b.dataset.denariMax !== undefined;
+    const denari = conDenari ? Math.max(0, Math.floor(Number(document.getElementById(`denari-${b.dataset.id}`)?.value) || 0)) : 0;
+    const motivo = V.motivoRichiesta(owners, JSON.parse(b.dataset.limiti), denari, conDenari ? Number(b.dataset.denariMax) : null);
     b.disabled = Boolean(motivo);
     if (motivo) b.title = motivo; else b.removeAttribute('title');
   }
 }
 $('scheda').addEventListener('change', aggiornaBottoniPace);
+$('scheda').addEventListener('input', aggiornaBottoniPace);
 
 // Ridisegna solo se l'HTML cambia, e conserva caselle spuntate, numeri scritti e focus.
 const ultimoHtml = new WeakMap();
@@ -315,8 +318,8 @@ function selezionaEsercito(id, { centra = false, aggiungi = false } = {}) {
   aggiorna();
 }
 
-function proponi(guerra, ricevente, province) {
-  const r = comando({ tipo: 'proponi_pace', guerra, termini: { ricevente, province } });
+function proponi(guerra, ricevente, province, denari = 0) {
+  const r = comando({ tipo: 'proponi_pace', guerra, termini: { ricevente, province, ...(denari ? { denari } : {}) } });
   if (r.ok) avviso('Proposta inviata.');
 }
 
@@ -379,8 +382,9 @@ document.addEventListener('click', e => {
     case 'chiedi':
     case 'cedi': {
       const province = [...document.querySelectorAll(`input[name="${el.dataset.azione}-${id}"]:checked`)].map(i => i.value);
-      if (!province.length) { avviso('Scegli almeno una provincia.'); break; }
-      proponi(id, el.dataset.azione === 'chiedi' ? ui.session.giocatore : el.dataset.nemico, province);
+      const denari = el.dataset.azione === 'chiedi' ? Math.max(0, Math.floor(Number($(`denari-${id}`)?.value) || 0)) : 0;
+      if (!province.length && !denari) { avviso('Scegli almeno una provincia o dei denari.'); break; }
+      proponi(id, el.dataset.azione === 'chiedi' ? ui.session.giocatore : el.dataset.nemico, province, denari);
       break;
     }
     case 'pace-bianca': proponi(id, ui.session.giocatore, []); break;
