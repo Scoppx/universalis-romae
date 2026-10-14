@@ -43,12 +43,12 @@ test('scheda Guerre: limiti, annessione e bottoni spenti con il motivo, tutto pr
   const w = {
     id: 'g1', nemico: { id: 'volsci', nome: evil }, ruolo: 'attaccante', capofila: true, punteggio: 50, propostaInAttesa: false,
     daChiedere: [{ id: 'c', nome: evil, costo: 50, a: 'roma', verso: null, owner: 'volsci' }], daCedere: [],
-    limiti: [{ id: 'volsci', nome: evil, max: 1 }], limiteMio: 1,
+    limiti: [{ id: 'volsci', nome: evil, max: 1 }], limiteMio: 1, denariMax: evil, puntiPer10Denari: evil,
     annessioni: [{ id: 'volsci', nome: evil, province: ['c', 'f'], infamia: 14, motivo: evil }]
   };
   const h = guerreHtml([w]);
   assert.equal(h.includes('<img'), false);
-  assert.match(h, /data-azione="chiedi"[^>]*disabled title="Spunta almeno una provincia\."/);
+  assert.match(h, /data-azione="chiedi"[^>]*disabled title="Spunta almeno una provincia o chiedi dei denari\."/);
   assert.match(h, /data-azione="annetti"[^>]*disabled title=/);
   assert.match(h, /data-owner="volsci"/);
   const ok = guerreHtml([{ ...w, annessioni: [{ ...w.annessioni[0], nome: 'Volsci', motivo: null }] }]);

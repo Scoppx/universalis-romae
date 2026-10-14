@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
+import { monthlyIncome } from '../public/js/sim/economy.js';
 import { armiesOf } from '../public/js/sim/state.js';
 import { orderMove, advanceMovement } from '../public/js/sim/armies.js';
 import {
@@ -188,4 +189,28 @@ test('annessione: non con una capitale salva, non con una lista diversa dalle pr
   assert.equal(annexable(g, w, 'volsci', 'roma'), null);
   assert.equal(validTerms(g, w, 'volsci', { province: ['a'], annessione: 'roma' }), 'un\'annessione prende tutte le province del popolo');
   assert.equal(validTerms(g, w, 'volsci', { province: ['a', 'b'], annessione: 'latini' }), 'un\'annessione prende tutte le province del popolo');
+});
+
+test('pace con denari: costo nel punteggio, limite del tesoro, pagamento alla firma', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 1;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const w = g.guerre[guerra];
+  g.nazioni.volsci.tesoro = 50;
+  const anno = 12 * Math.max(1, monthlyIncome(g, 'volsci'));
+  assert.ok(Math.abs(peaceCost(g, w, 'roma', { province: [], denari: 10 }) - 100 * 10 / (2 * anno)) < 1e-9);
+  assert.equal(proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: [], denari: 60 }).motivo, 'al più 50 denari: è quanto ha volsci nel tesoro');
+  assert.equal(proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: [], denari: -5 }).motivo, 'termini non validi');
+  g.province.c.controller = 'roma';
+  const t0 = g.nazioni.roma.tesoro;
+  const r = proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'], denari: 20 });
+  assert.equal(g.proposte[r.proposta].termini.denari, 20);
+  g.nazioni.volsci.tesoro = 15; // nel frattempo ha speso: paga quello che ha
+  assert.deepEqual(answerProposal(g, 'volsci', r.proposta, true), { ok: true, accettata: true });
+  assert.ok(Math.abs(g.nazioni.roma.tesoro - (t0 + 15)) < 1e-9);
+  assert.equal(g.nazioni.volsci.tesoro, 0);
+  const e = g.log.find(x => x.tipo === 'pace');
+  assert.equal(e.denari, 15);
+  assert.equal(e.pagatore, 'volsci');
 });

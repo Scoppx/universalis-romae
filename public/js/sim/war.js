@@ -1,6 +1,7 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
 import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI, difficultyOf } from './state.js';
 import { friendly, answerDiplomatic, onWarDeclared, cleanupDead } from './diplomacy.js';
+import { monthlyIncome } from './economy.js';
 
 export function sideOf(war, id) {
   if (war.attaccanti.includes(id)) return 'attaccanti';
@@ -85,16 +86,26 @@ export function scoreFor(game, war, nationId) {
 }
 
 // Costo in punteggio delle province chieste da `receiver`.
+// Chi paga i denari di una pace: il capofila dello schieramento che perde.
+export function payerOf(war, receiver) {
+  return enemiesOf(war, sideOf(war, receiver))[0];
+}
+
+// Costo in punteggio di ciò che chiede `receiver`: province (in quota delle tasse dei perdenti) e denari
+// (due anni di entrate del pagatore valgono quanto prendergli tutto, cioè 100).
 export function peaceCost(game, war, receiver, termini) {
   const losers = enemiesOf(war, sideOf(war, receiver));
   const total = sumOf(Object.values(game.province).filter(p => losers.includes(p.owner)), 'tasse');
-  return termini.province.reduce((s, id) => s + 100 * game.province[id].tasse / total, 0);
+  const province = termini.province.reduce((s, id) => s + 100 * game.province[id].tasse / total, 0);
+  const denari = termini.denari ? 100 * termini.denari / (2 * 12 * Math.max(1, monthlyIncome(game, payerOf(war, receiver)))) : 0;
+  return province + denari;
 }
 
 // Forma dei termini: elenco di id di provincia, senza ripetizioni.
 function malformed(termini) {
   return !termini || !Array.isArray(termini.province) ||
     (termini.annessione !== undefined && typeof termini.annessione !== 'string') ||
+    (termini.denari !== undefined && !(Number.isInteger(termini.denari) && termini.denari >= 0)) ||
     termini.province.some(id => typeof id !== 'string') ||
     new Set(termini.province).size !== termini.province.length;
 }
@@ -161,7 +172,15 @@ export function makePeace(game, warId, receiver, termini) {
   for (const p of Object.values(game.proposte)) if (p.guerra === warId) delete game.proposte[p.id];
   checkSurvival(game);
   sendStrandedHome(game);
-  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province], padroni });
+  const pagatore = termini.denari ? payerOf(war, receiver) : null;
+  let denari = 0;
+  if (pagatore) { // paga alla firma, al più quello che ha nel tesoro
+    const P = game.nazioni[pagatore];
+    denari = Math.min(termini.denari, Math.max(0, P.tesoro));
+    P.tesoro -= denari;
+    game.nazioni[receiver].tesoro += denari;
+  }
+  log(game, { tipo: 'pace', guerra: warId, ricevente: receiver, parti, province: [...termini.province], padroni, ...(denari ? { denari, pagatore } : {}) });
   return { ok: true };
 }
 
@@ -217,10 +236,14 @@ export function proposePeace(game, from, warId, termini) {
   if (termini.ricevente !== from && termini.ricevente !== to) return { ok: false, motivo: 'ricevente non valido' };
   const err = validTerms(game, war, termini.ricevente, termini);
   if (err) return { ok: false, motivo: err };
+  if (termini.denari) {
+    const P = game.nazioni[payerOf(war, termini.ricevente)], max = Math.max(0, Math.floor(P.tesoro));
+    if (termini.denari > max) return { ok: false, motivo: `al più ${max} denari: è quanto ha ${P.nome} nel tesoro` };
+  }
   const id = newId(game, 'p');
   game.proposte[id] = {
     id, tipo: 'pace', guerra: warId, da: from, a: to,
-    termini: { ricevente: termini.ricevente, province: [...termini.province], ...(termini.annessione ? { annessione: termini.annessione } : {}) }, giorno: game.day
+    termini: { ricevente: termini.ricevente, province: [...termini.province], ...(termini.annessione ? { annessione: termini.annessione } : {}), ...(termini.denari ? { denari: termini.denari } : {}) }, giorno: game.day
   };
   log(game, { tipo: 'proposta', proposta: id, da: from, a: to });
   return { ok: true, proposta: id };
@@ -235,7 +258,7 @@ export function answerProposal(game, nationId, propId, accetta) {
     log(game, { tipo: 'rifiutata', proposta: propId, da: p.da, a: p.a });
     return { ok: true, accettata: false };
   }
-  const r = makePeace(game, p.guerra, p.termini.ricevente, { province: p.termini.province, annessione: p.termini.annessione });
+  const r = makePeace(game, p.guerra, p.termini.ricevente, { province: p.termini.province, annessione: p.termini.annessione, denari: p.termini.denari });
   return r.ok ? { ok: true, accettata: true } : r;
 }
 

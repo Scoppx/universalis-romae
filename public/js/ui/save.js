@@ -119,6 +119,7 @@ function validateGame(s, data) {
       if (!isObj(p.termini) || !attiva(p.termini.ricevente)) return `proposta ${k}`;
       if (!Array.isArray(p.termini.province) || !p.termini.province.every(provincia)) return `proposta ${k}`;
       if (p.termini.annessione !== undefined && !attiva(p.termini.annessione)) return `proposta ${k}`;
+      if (p.termini.denari !== undefined && !(isInt(p.termini.denari) && p.termini.denari >= 0)) return `proposta ${k}`;
     }
     if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;
   }

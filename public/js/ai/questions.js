@@ -123,7 +123,9 @@ export function buildPeaceQuestion(game, propId, carattere) {
   };
   state.proposta = {
     da: nome(game, p.da),
-    tipo: !p.termini.province.length ? 'pace bianca' : cediamo ? 'ci chiede province' : 'ci offre province',
+    tipo: !p.termini.province.length && !p.termini.denari ? 'pace bianca'
+      : `${cediamo ? 'ci chiede' : 'ci offre'} ${[p.termini.province.length ? 'province' : '', p.termini.denari ? 'denari' : ''].filter(Boolean).join(' e ')}`,
+    ...(p.termini.denari ? { denari: p.termini.denari, nostro_tesoro: Math.round(game.nazioni[id].tesoro) } : {}),
     province: p.termini.province.map(pid => ({ nome: game.province[pid].nome, tasse: game.province[pid].tasse })),
     costo_in_punteggio: Math.round(peaceCost(game, war, p.termini.ricevente, p.termini))
   };

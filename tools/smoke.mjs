@@ -118,6 +118,14 @@ try {
     window.universalis.avanza(0);
   });
   await page.click('#scheda [data-azione="annetti"][data-popolo="veio"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.proposte).some(p => p.termini?.annessione === 'veio')), 'annessione proposta (prima)');
+  await page.evaluate(() => { const g = window.universalis.ui.session.game; g.proposte = {}; g.nazioni.veio.tesoro = 30; window.universalis.avanza(0); });
+  await page.fill('#scheda input[type="number"][id^="denari-"]', '20');
+  check(!(await page.isDisabled('#scheda [data-azione="chiedi"]')), 'con dei denari il bottone si accende');
+  await page.click('#scheda [data-azione="chiedi"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.proposte).some(p => p.termini?.denari === 20)), 'proposta di pace con 20 denari');
+  await page.evaluate(() => { window.universalis.ui.session.game.proposte = {}; window.universalis.avanza(0); });
+  await page.click('#scheda [data-azione="annetti"][data-popolo="veio"]');
   check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.proposte).some(p => p.termini?.annessione === 'veio')), 'annessione di Veio proposta');
   await page.evaluate(() => {
     const g = window.universalis.ui.session.game;

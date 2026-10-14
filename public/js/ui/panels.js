@@ -102,9 +102,10 @@ function caselle(nome, list) {
 }
 
 // Bottone di una richiesta di province: parte spento; main.js lo riaccende quando le caselle spuntate rispettano i limiti.
-function bottonePace(azione, w, testo, limiti) {
+function bottonePace(azione, w, testo, limiti, denariMax = null) {
+  const titolo = denariMax === null ? 'Spunta almeno una provincia.' : 'Spunta almeno una provincia o chiedi dei denari.';
   return `<button data-azione="${azione}" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}" data-limiti="${esc(JSON.stringify(limiti))}"` +
-    ` disabled title="Spunta almeno una provincia.">${esc(testo)}</button>`;
+    (denariMax === null ? '' : ` data-denari-max="${esc(denariMax)}"`) + ` disabled title="${titolo}">${esc(testo)}</button>`;
 }
 
 export function guerreHtml(list) {
@@ -122,7 +123,9 @@ export function guerreHtml(list) {
         ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
         : w.propostaInAttesa
         ? '<span class="muto">Proposta in attesa di risposta.</span>'
-        : bottonePace('chiedi', w, 'Chiedi le province', perId) + bottonePace('cedi', w, 'Cedi e fai la pace', mie) +
+        : `<label>Denari <input id="denari-${esc(w.id)}" type="number" min="0" max="${esc(w.denariMax)}" step="1" value="0"></label>` +
+          `<span class="muto">al più ${esc(w.denariMax)}; 10 denari costano ${esc(w.puntiPer10Denari)} punti</span>` +
+          bottonePace('chiedi', w, 'Invia proposta', perId, w.denariMax) + bottonePace('cedi', w, 'Cedi e fai la pace', mie) +
           `<button data-azione="pace-bianca" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Pace bianca</button>`) +
       '</div>' + (annetti ? `<div class="comandi">${annetti}</div>` : '') + '</div>';
   }).join('');

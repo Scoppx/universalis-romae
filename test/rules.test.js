@@ -309,3 +309,14 @@ test('chi vince ma non può prendere nulla (capitale salva) propone la pace bian
   g.day = 8 * 365;
   assert.ok(peaceProposals(g, 'volsci').some(c => c.termini.province.length === 0), JSON.stringify(peaceProposals(g, 'volsci')));
 });
+
+test('una richiesta di soli denari non è una pace bianca: la stanchezza non basta ad accettarla', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.ia.stanchezzaAnni = 8;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.nazioni.volsci.tesoro = 100;
+  g.day = 9 * 365;
+  proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: [], denari: 100 });
+  assert.equal(answerProposals(g, 'volsci').find(c => c.tipo === 'rispondi').accetta, false);
+});
