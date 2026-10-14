@@ -25,7 +25,7 @@
   "infamia": {
     "soglia": 20,
     "caloAnno": 1,
-    "perProvincia": 4,
+    "perProvincia": 5,
     "culturaDiversa": 2
   },
   "movimento": {
