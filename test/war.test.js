@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { armiesOf } from '../public/js/sim/state.js';
 import { orderMove, advanceMovement } from '../public/js/sim/armies.js';
 import {
-  declareWar, warscore, scoreFor, peaceCost, makePeace, proposePeace, answerProposal, expireProposals, atWar, validTerms
+  declareWar, warscore, scoreFor, peaceCost, makePeace, proposePeace, answerProposal, expireProposals, atWar, validTerms, annexable
 } from '../public/js/sim/war.js';
 
 function warGame() {
@@ -106,7 +106,7 @@ test('una pace non prende più della quota delle province di un popolo', () => {
   g.province.d.controller = 'roma';
   g.province.e.controller = 'roma';
   const w = g.guerre[guerra];
-  assert.equal(validTerms(g, w, 'roma', { province: ['d', 'e'] }), 'troppe province per una pace'); // 2 su 2
+  assert.match(validTerms(g, w, 'roma', { province: ['d', 'e'] }), /^troppe province di latini per una pace \(al più 1\)/); // 2 su 2
   assert.equal(validTerms(g, w, 'roma', { province: ['d'] }), null);
   g.balance.guerra.quotaPace = 1;
   assert.equal(validTerms(g, w, 'roma', { province: ['d', 'e'] }), null);
@@ -151,4 +151,41 @@ test('capitale salva per i popoli facili: né in pace né con un ultimatum', () 
   assert.equal(validTerms(g, g.guerre[guerra], 'volsci', { province: ['b'] }), null);
   g.nazioni.roma.difficolta = 'normale';
   assert.equal(validTerms(g, g.guerre[guerra], 'volsci', { province: ['a'] }), null);
+});
+
+test('annessione: tutte le province del popolo occupate dal tuo schieramento, senza limite di quota', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.guerra.quotaPace = 0.5;
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  const w = g.guerre[guerra];
+  w.attaccanti.push('latini');
+  g.province.c.controller = 'roma';
+  assert.equal(annexable(g, w, 'roma', 'volsci'), 'non tutte le province di volsci sono occupate');
+  g.province.f.controller = 'latini';
+  assert.equal(annexable(g, w, 'roma', 'volsci'), null);
+  assert.equal(validTerms(g, w, 'roma', { province: ['c', 'f'] }), 'troppe province di volsci per una pace (al più 1): togline qualcuna, oppure annetti tutto il popolo');
+  const r = proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c', 'f'], annessione: 'volsci' });
+  assert.equal(r.ok, true, r.motivo);
+  assert.equal(g.proposte[r.proposta].termini.annessione, 'volsci');
+  assert.deepEqual(answerProposal(g, 'volsci', r.proposta, true), { ok: true, accettata: true });
+  assert.equal(g.nazioni.volsci.vivo, false);
+  assert.equal(g.province.c.owner, 'roma');
+  assert.equal(g.province.f.owner, 'latini');
+});
+
+test('annessione: non con una capitale salva, non con una lista diversa dalle province del popolo', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.difficolta.facile = { capitaleSalva: true };
+  g.nazioni.roma.difficolta = 'facile';
+  const { guerra } = declareWar(g, 'volsci', 'roma');
+  const w = g.guerre[guerra];
+  g.province.a.controller = 'volsci';
+  g.province.b.controller = 'volsci';
+  assert.equal(annexable(g, w, 'volsci', 'roma'), 'la capitale non si può cedere');
+  g.nazioni.roma.difficolta = 'normale';
+  assert.equal(annexable(g, w, 'volsci', 'roma'), null);
+  assert.equal(validTerms(g, w, 'volsci', { province: ['a'], annessione: 'roma' }), 'un\'annessione prende tutte le province del popolo');
+  assert.equal(validTerms(g, w, 'volsci', { province: ['a', 'b'], annessione: 'latini' }), 'un\'annessione prende tutte le province del popolo');
 });

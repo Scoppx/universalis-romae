@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml } from '../public/js/ui/panels.js';
+import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml, guerreHtml } from '../public/js/ui/panels.js';
 
 const evil = '<img src=x onerror=alert(1)>';
 
@@ -37,4 +37,33 @@ test('menu e finestre di guerra: tutto protetto', () => {
   assert.equal(c.includes('<img'), false);
   assert.match(c, /data-azione="conferma-guerra"/);
   assert.equal(guerraRiepilogoHtml({ miei: [evil], nemici: [evil], chiamati: [evil] }).includes('<img'), false);
+});
+
+test('scheda Guerre: limiti, annessione e bottoni spenti con il motivo, tutto protetto', () => {
+  const w = {
+    id: 'g1', nemico: { id: 'volsci', nome: evil }, ruolo: 'attaccante', capofila: true, punteggio: 50, propostaInAttesa: false,
+    daChiedere: [{ id: 'c', nome: evil, costo: 50, a: 'roma', verso: null, owner: 'volsci' }], daCedere: [],
+    limiti: [{ id: 'volsci', nome: evil, max: 1 }], limiteMio: 1,
+    annessioni: [{ id: 'volsci', nome: evil, province: ['c', 'f'], infamia: 14, motivo: evil }]
+  };
+  const h = guerreHtml([w]);
+  assert.equal(h.includes('<img'), false);
+  assert.match(h, /data-azione="chiedi"[^>]*disabled title="Spunta almeno una provincia\."/);
+  assert.match(h, /data-azione="annetti"[^>]*disabled title=/);
+  assert.match(h, /data-owner="volsci"/);
+  const ok = guerreHtml([{ ...w, annessioni: [{ ...w.annessioni[0], nome: 'Volsci', motivo: null }] }]);
+  assert.match(ok, /<button[^>]*data-azione="annetti" data-id="g1" data-popolo="volsci">Annetti Volsci \(\+14 infamia\)<\/button>/);
+});
+
+// ogni elemento spento dice perché: un tag con disabled deve avere anche title
+function spentiSenzaMotivo(html) {
+  return (html.match(/<(button|option|input|select)\b[^>]*>/g) ?? []).filter(t => /\bdisabled\b/.test(t) && !/\btitle="[^"]+"/.test(t));
+}
+
+test('nessun bottone spento senza spiegazione', () => {
+  const gov = governoHtml({ nome: 'Roma', governo: 'monarchia', effettiGoverno: '', stabilita: '0', tratti: '', costoStabilita: '20.0', puoAlzare: false,
+    motivoAlzare: 'servono 20.0 denari, ne hai 3.6', slider: [{ quale: 'guerra', nome: 'Dottrina', sinistra: 'difesa', destra: 'attacco', valore: '0', meno: 'x', piu: null }] });
+  assert.deepEqual(spentiSenzaMotivo(gov), []);
+  const es = esercitiHtml([], { puoUnire: false, puoDividere: false, motivoUnire: 'seleziona almeno due eserciti', motivoDividere: 'seleziona un esercito solo' });
+  assert.deepEqual(spentiSenzaMotivo(es), []);
 });
