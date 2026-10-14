@@ -1,7 +1,7 @@
 // Domande per Jev: il codice calcola i fatti e le opzioni legali, Jev sceglie, il codice interpreta.
 import { legalWarTargets, enemiesOfNation, power } from './rules.js';
 import { distancesFrom } from '../sim/armies.js';
-import { armiesOf, sliderOf, provincesOf } from '../sim/state.js';
+import { armiesOf, sliderOf, provincesOf, sumOf } from '../sim/state.js';
 import { checkSlider, sliderInterval } from '../sim/government.js';
 import { malcontent } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
@@ -75,13 +75,18 @@ export function buildReview(game, id, carattere) {
     const legal = legalWarTargets(game, id);
     if (!legal.length) return null;
     state.vicini_attaccabili = legal.map(c => ({
-      nome: nome(game, c.id), rapporto_forze: round2(c.rapporto), pretesto: hasPretext(game, id, c.id)
+      nome: nome(game, c.id), rapporto_forze: round2(c.rapporto), pretesto: hasPretext(game, id, c.id),
+      province: provincesOf(game, c.id).length, tasse: sumOf(provincesOf(game, c.id), 'tasse')
     }));
-    const criteria = { 'nessuna guerra': 'Restare in pace per ora: nessun vicino vale il rischio di una guerra adesso.' };
+    // la pace non è descritta come la scelta saggia: con quel testo Jev non attaccava quasi mai
+    const criteria = { 'nessuna guerra': 'Restare in pace per ora e rafforzarsi: nessuna conquista, ma nessun rischio.' };
     const mappa = { 'nessuna guerra': null };
     for (const c of legal) {
       const N = nome(game, c.id);
-      criteria[N] = `Dichiarare guerra a ${N}: le nostre forze sono ${round2(c.rapporto)} volte le sue` +
+      const prov = provincesOf(game, c.id), tasse = sumOf(prov, 'tasse');
+      const rischio = c.rapporto >= 2 ? 'rischio basso' : c.rapporto >= 1.3 ? 'rischio medio' : 'rischio alto';
+      criteria[N] = `Dichiarare guerra a ${N} per conquistare le sue terre (${prov.length} province, tasse ${tasse}): ` +
+        `le nostre forze sono ${round2(c.rapporto)} volte le sue, ${rischio}` +
         (hasPretext(game, id, c.id) ? ', e abbiamo un pretesto.' : '; senza pretesto perdiamo stabilità.');
       mappa[N] = c.id;
     }
