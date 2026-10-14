@@ -306,3 +306,9 @@ test('guerre: quante province si possono chiedere in una pace', () => {
   g.province.e.controller = 'roma';
   assert.equal(V.warsView(g, 'roma')[0].maxChiedibili, 1);
 });
+
+test('schede dei popoli: bonus di reclute e tasse', () => {
+  const d = loadData();
+  const [roma] = V.peopleCards(d.popoli, { difficolta: { facile: { reclute: 1, tasse: 0.5 } } }).filter(c => c.id === 'roma');
+  assert.equal(roma.bonus, 'reclute +100%, tasse +50%');
+});

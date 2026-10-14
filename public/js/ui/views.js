@@ -60,6 +60,8 @@ function formatBonus(d) {
   if (d.tesoro !== undefined && d.tesoro !== 1) parti.push(`tesoro ×${d.tesoro}`);
   if (d.uomini !== undefined && d.uomini !== 1) parti.push(pc('riserva', d.uomini));
   if (d.dado) parti.push(`${d.dado > 0 ? '+' : ''}${d.dado} al dado`);
+  if (d.reclute) parti.push(`reclute ${d.reclute > 0 ? '+' : ''}${Math.round(d.reclute * 100)}%`);
+  if (d.tasse) parti.push(`tasse ${d.tasse > 0 ? '+' : ''}${Math.round(d.tasse * 100)}%`);
   return parti.join(', ');
 }
 

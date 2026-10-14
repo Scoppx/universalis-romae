@@ -114,3 +114,15 @@ test('difficoltà: esercito, tesoro, riserva iniziali e dado', () => {
   assert.equal(battleModifier(g, g.province.c, [a]), battleModifier(base, base.province.c, [b]) + d.dado);
   assert.equal(base.nazioni.latini.difficolta, 'normale');
 });
+
+test('difficoltà: bonus di reclute e tasse per tutta la partita', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.difficolta.facile = { reclute: 1, tasse: 0.5 };
+  const tasse = monthlyIncome(g, 'roma'), uomini = monthlyManpower(g, 'roma'), max = maxManpower(g, 'roma');
+  g.nazioni.roma.difficolta = 'facile';
+  close(monthlyIncome(g, 'roma'), tasse * 1.5);
+  assert.equal(monthlyManpower(g, 'roma'), Math.round(6 * 25 * (1 + 0.3 + 1)));
+  assert.equal(maxManpower(g, 'roma'), Math.round(6 * 500 * (1 + 0.3 + 1)));
+  assert.ok(monthlyManpower(g, 'roma') > uomini && maxManpower(g, 'roma') > max);
+});
