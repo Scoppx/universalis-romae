@@ -441,6 +441,25 @@ try {
   const riservaPrima = await page.evaluate(() => window.universalis.ui.session.game.nazioni.roma.uomini);
   await page.click('#provincia [data-azione="sciogli-esercito"]');
   check(await page.evaluate(p => window.universalis.ui.session.game.nazioni.roma.uomini > p, riservaPrima), 'sciogli: gli uomini tornano nella riserva');
+  // battaglie in diretta: riquadro in alto con la ritirata
+  await page.evaluate(async () => {
+    const { createArmy } = await import('/js/sim/state.js');
+    const { atWar, startWar } = await import('/js/sim/war.js');
+    const g = window.universalis.ui.session.game;
+    g.proposte = {}; g.eventi = {};
+    for (const x of Object.values(g.eserciti)) if (x.prov === 'veio') delete g.eserciti[x.id]; // i ribelli di una prova precedente
+    if (!atWar(g, 'roma', 'veio')) { g.nazioni.roma.tregue = {}; g.nazioni.veio.tregue = {}; startWar(g, 'roma', 'veio'); }
+    createArmy(g, 'roma', 'veio', 8000, 0);
+    createArmy(g, 'veio', 'veio', 8000, 0);
+    window.universalis.avanza(1);
+    g.proposte = {}; g.eventi = {};
+    window.universalis.avanza(1);
+  });
+  check((await page.textContent('#battaglie')).includes('Battaglia a Veio'), 'riquadro della battaglia in alto');
+  check((await page.getAttribute('#battaglie [data-azione="ritirata"]', 'title') ?? '').includes('10%'), 'ritirata spiegata');
+  await page.click('#battaglie [data-azione="ritirata"]');
+  check((await page.textContent('#battaglie')).includes('ritirata'), 'esito della ritirata mostrato');
+  check(await page.evaluate(() => !Object.values(window.universalis.ui.session.game.eserciti).some(a => a.owner === 'roma' && a.prov === 'veio')), 'gli eserciti di Roma hanno lasciato Veio');
   for (const scheda of ['governo', 'diplomazia', 'eserciti', 'guerre']) {
     await page.click(`[data-scheda="${scheda}"]`);
     const muti = await page.evaluate(() => [...document.querySelectorAll('button[disabled], option[disabled], input[disabled], select[disabled]')]

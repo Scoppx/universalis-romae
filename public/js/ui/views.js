@@ -4,6 +4,7 @@ import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, pr
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
+import { nearestSafe, checkRetreat } from '../sim/combat.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview } from '../sim/diplomacy.js';
@@ -389,4 +390,30 @@ export function motivoRichiesta(owners, limiti, denari = 0, denariMax = null) {
   if (!oltre) return null;
   const l = limiti[oltre[0]];
   return `Al più ${l.max} ${l.max === 1 ? 'provincia' : 'province'} di ${l.nome} per pace: togline qualcuna, oppure annetti tutto il popolo.`;
+}
+
+const ad = n => (/^[aA]/.test(n) ? `ad ${n}` : `a ${n}`);
+
+// Battaglie in corso con i tuoi eserciti: i due schieramenti (uomini, morale medio) e cosa farebbe la ritirata.
+export function battlesView(game, g) {
+  const prov = [...new Set(Object.values(game.eserciti).filter(a => a.owner === g && a.inBattaglia).map(a => a.prov))].sort();
+  return prov.map(id => {
+    const qui = Object.values(game.eserciti).filter(a => a.prov === id && a.inBattaglia);
+    const schieramento = list => {
+      const uomini = list.reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
+      const morale = uomini ? list.reduce((s, a) => s + a.morale * (a.fanteria + a.cavalleria), 0) / uomini : 0;
+      return { uomini, morale: morale.toFixed(1) };
+    };
+    const nemici = qui.filter(a => atWar(game, g, a.owner));
+    const dove = nearestSafe(game, g, id);
+    return {
+      prov: id, nome: game.province[id].nome,
+      miei: schieramento(qui.filter(a => !atWar(game, g, a.owner))),
+      nemici: { ...schieramento(nemici), popoli: [...new Set(nemici.map(a => nome(game, a.owner)))] },
+      motivoRitirata: checkRetreat(game, g, id),
+      spiegaRitirata: dove
+        ? `I tuoi eserciti qui perdono il 10% degli uomini e scappano ${ad(game.province[dove].nome)}; la battaglia conta come persa`
+        : 'Non c\'è una provincia sicura dove scappare: i tuoi eserciti qui si scioglierebbero'
+    };
+  });
 }

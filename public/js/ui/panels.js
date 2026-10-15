@@ -217,3 +217,14 @@ export function guerraRiepilogoHtml(v) {
     (v.chiamati.length ? `<p>Alleati chiamati alle armi (risponderanno nei prossimi giorni): ${v.chiamati.map(esc).join(', ')}.</p>` : '<p class="muto">Nessun alleato da chiamare.</p>') +
     '<div class="comandi"><button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Chiudi</button></div>';
 }
+
+// Riquadri delle battaglie in corso (in alto) e degli esiti appena arrivati.
+export function battaglieHtml(list, esiti = []) {
+  const lato = (titolo, x) => `<div><b>${esc(titolo)}</b>: ${esc(x.uomini)} uomini, morale ${esc(x.morale)}` +
+    (x.caduti ? ` <span class="guerra">−${esc(x.caduti)} oggi</span>` : '') + '</div>';
+  return list.map(b => `<div class="battaglia"><div class="titolo">Battaglia a ${esc(b.nome)}${b.giorni ? ` · giorno ${esc(b.giorni)}` : ''}</div>` +
+    lato('I tuoi', b.miei) + lato(`Nemici (${b.nemici.popoli.join(', ')})`, b.nemici) +
+    `<div class="comandi"><button class="piccolo" data-azione="ritirata" data-id="${esc(b.prov)}"` +
+    `${b.motivoRitirata ? ` disabled title="${esc(b.motivoRitirata)}"` : ` title="${esc(b.spiegaRitirata)}"`}>Ritirata</button></div></div>`).join('') +
+    esiti.map(e => `<div class="battaglia ${e.vinto ? 'vinta' : 'persa'}"><div class="titolo">${esc(e.nome)}: ${esc(e.testo)}</div></div>`).join('');
+}

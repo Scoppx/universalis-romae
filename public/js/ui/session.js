@@ -24,12 +24,13 @@ export function pausaNecessaria(session) {
   return null;
 }
 
-export function runDays(session, days, { onYear } = {}) {
+export function runDays(session, days, { onYear, onLog } = {}) {
   const notizie = [];
   let giorni = 0;
   let motivo = pausaNecessaria(session);
   while (!motivo && giorni < days) {
     const log = advanceDay(session.game, session.controllers);
+    if (onLog) onLog(log);
     syncControllers(session.controllers, session.game, session.ia, session.ai, session.giocatore);
     giorni++;
     for (const e of log) {
