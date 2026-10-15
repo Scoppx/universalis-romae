@@ -14,17 +14,22 @@ function setup() {
 
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-12, `${a} != ${b}`);
 
-test('probabilità: forza, fortificazione, tratto, tetto', () => {
+test('giorni d\'assedio: più uomini meno giorni, presidio e fortificazione allungano', () => {
   const g = setup();
-  const a = createArmy(g, 'roma', 'c', 5000, 0);
-  close(siegeChance(g, a, g.province.c), 0.1);
-  g.province.c.fort = 3;
-  close(siegeChance(g, a, g.province.c), 0.025);
+  const c = g.province.c;
+  c.uomini = 2; c.fort = 0;
+  const base = siegeRate(g, 'roma', 5000, c);
+  close(base, 100 * g.balance.assedio.base * 5 * g.balance.assedio.presidioRiferimento / garrison(g, c));
+  assert.ok(siegeRate(g, 'roma', 10000, c) > base);              // più uomini
+  c.uomini = 4;
+  assert.ok(siegeRate(g, 'roma', 5000, c) < base);               // presidio più grande
+  c.uomini = 2; c.fort = 2;
+  assert.ok(siegeRate(g, 'roma', 5000, c) < base);               // fortificazione più alta
+  c.fort = 0;
   g.nazioni.roma.tratti.assedio = -0.5;
-  close(siegeChance(g, a, g.province.c), 0.0125);
-  a.fanteria = 1000000;
+  close(siegeRate(g, 'roma', 5000, c), base / 2);                // tratto
   g.nazioni.roma.tratti.assedio = 0;
-  close(siegeChance(g, a, g.province.c), 0.2);
+  close(siegeRate(g, 'roma', 1e7, c), 100 * g.balance.assedio.massimo); // tetto
 });
 
 test('in guerra la provincia cade', () => {

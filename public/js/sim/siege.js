@@ -1,5 +1,6 @@
 // Assedi a giorni contati: ogni provincia assediata accumula punti ogni giorno e a 100 cade.
-// I punti al giorno sono 100 × la vecchia probabilità giornaliera, sugli uomini di tutti gli assedianti.
+// I punti al giorno crescono con gli uomini degli assedianti e calano con il presidio (che conta già la fortificazione):
+// una provincia con il presidio di riferimento (625, una provincia media senza mura) cade come con il vecchio assedio a caso.
 import { log, RIBELLI } from './state.js';
 import { nextRandom } from './rng.js';
 import { atWar } from './war.js';
@@ -11,7 +12,7 @@ export function garrison(game, prov) {
 
 export function siegeRate(game, owner, men, prov) {
   const s = game.balance.assedio, t = game.nazioni[owner].tratti;
-  return 100 * Math.min(s.massimo, s.base * men / 1000 / (prov.fort + 1)) * (1 + (t.assedio || 0));
+  return 100 * Math.min(s.massimo, s.base * men / 1000 * s.presidioRiferimento / Math.max(1, garrison(game, prov))) * (1 + (t.assedio || 0));
 }
 
 // Probabilità giornaliera equivalente di un esercito da solo (per chi la vuole leggere così).
