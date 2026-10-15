@@ -2,6 +2,7 @@
 import { rollD10 } from './rng.js';
 import { armyStrength, clamp, log, sliderOf, RIBELLI, difficultyOf } from './state.js';
 import { atWar, warBetween, sideOf } from './war.js';
+import { orderMove } from './armies.js';
 import { friendly } from './diplomacy.js';
 
 export function resolveBattles(game) {
@@ -93,36 +94,71 @@ function recordBattle(game, winner, loser) {
 }
 
 // Ritirata nella provincia propria più vicina, controllata e senza nemici; altrimenti si scioglie.
-export function retreat(game, army) {
-  if (army.fanteria + army.cavalleria < game.balance.combattimento.minimoUomini) {
-    delete game.eserciti[army.id];
-    return;
-  }
+// La provincia propria più vicina, controllata e senza nemici: la cerca a cerchi dai vicini. null se non c'è.
+export function nearestSafe(game, owner, from) {
   const safe = id => {
     const p = game.province[id];
-    return p.owner === army.owner && p.controller === army.owner &&
-      !Object.values(game.eserciti).some(e => e.prov === id && atWar(game, army.owner, e.owner));
+    return p.owner === owner && p.controller === owner &&
+      !Object.values(game.eserciti).some(e => e.prov === id && atWar(game, owner, e.owner));
   };
-  const seen = new Set([army.prov]);
-  let frontier = [army.prov];
+  const seen = new Set([from]);
+  let frontier = [from];
   while (frontier.length) {
     const next = [];
     for (const id of frontier) {
       for (const v of game.province[id].vicini) {
         if (seen.has(v)) continue;
         seen.add(v);
-        if (safe(v)) {
-          army.prov = v;
-          army.percorso = [];
-          army.morale = 0;
-          return;
-        }
+        if (safe(v)) return v;
         next.push(v);
       }
     }
     frontier = next;
   }
-  delete game.eserciti[army.id];
+  return null;
+}
+
+// Ritirata nella provincia propria più vicina, controllata e senza nemici; altrimenti si scioglie.
+export function retreat(game, army) {
+  const dove = army.fanteria + army.cavalleria < game.balance.combattimento.minimoUomini ? null : nearestSafe(game, army.owner, army.prov);
+  if (!dove) { delete game.eserciti[army.id]; return; }
+  army.prov = dove;
+  army.percorso = [];
+  army.morale = 0;
+}
+
+const inBattagliaQui = (game, owner, provId) => Object.values(game.eserciti).filter(a => a.owner === owner && a.prov === provId && a.inBattaglia);
+
+export function checkRetreat(game, owner, provId) {
+  return inBattagliaQui(game, owner, provId).length ? null : 'nessun tuo esercito in battaglia qui';
+}
+
+// Ritirata ordinata dal giocatore: i suoi eserciti in battaglia lì perdono il 10% e scappano; la battaglia conta persa.
+export function orderedRetreat(game, owner, provId) {
+  const err = checkRetreat(game, owner, provId);
+  if (err) return { ok: false, motivo: err };
+  const nemico = Object.values(game.eserciti).find(e => e.prov === provId && atWar(game, owner, e.owner));
+  const q = game.balance.combattimento.ritirataPerdita;
+  for (const a of inBattagliaQui(game, owner, provId)) {
+    a.fanteria -= Math.round(a.fanteria * q);
+    a.cavalleria -= Math.round(a.cavalleria * q);
+    a.inBattaglia = false;
+    retreat(game, a);
+  }
+  if (nemico) recordBattle(game, nemico.owner, owner);
+  log(game, { tipo: 'ritirata', prov: provId, nazione: owner });
+  return { ok: true };
+}
+
+// Ripiego da un assedio: gli eserciti fermi lì marciano verso la provincia sicura più vicina.
+export function fallBack(game, owner, provId) {
+  const mine = Object.values(game.eserciti).filter(a => a.owner === owner && a.prov === provId && !a.percorso.length);
+  if (!mine.length) return { ok: false, motivo: 'nessun tuo esercito fermo qui' };
+  if (mine.some(a => a.inBattaglia)) return { ok: false, motivo: 'sono in battaglia: usa la ritirata' };
+  const dove = nearestSafe(game, owner, provId);
+  if (!dove) return { ok: false, motivo: 'nessuna provincia sicura dove ripiegare' };
+  for (const a of mine) orderMove(game, a.id, dove);
+  return { ok: true, verso: dove };
 }
 
 export function recoverMorale(game) {

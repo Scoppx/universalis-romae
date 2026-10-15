@@ -55,7 +55,8 @@
       "montagna": 2,
       "palude": 1
     },
-    "stabilitaDado": 2
+    "stabilitaDado": 2,
+    "ritirataPerdita": 0.1
   },
   "assedio": {
     "base": 0.02,
