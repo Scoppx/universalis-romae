@@ -20,10 +20,17 @@ const TRATTI = {
   assedio: v => `assedio ${v > 0 ? '+' : ''}${pct(v)}%`
 };
 const segno = n => (n > 0 ? `+${n}` : `${n}`);
+const POI = ' Poi la prossima riforma si potrà fare solo tra alcuni anni.';
 const LEVE = [
-  { quale: 'societa', nome: 'Società', sinistra: 'patrizi', destra: 'plebe' },
-  { quale: 'guerra', nome: 'Dottrina', sinistra: 'difesa', destra: 'attacco' },
-  { quale: 'governo', nome: 'Province', sinistra: 'accentramento', destra: 'autonomia' }
+  { quale: 'societa', nome: 'Società', sinistra: 'patrizi', destra: 'plebe',
+    effettoMeno: 'Un passo verso i patrizi: +2% di tasse per ogni punto da quella parte.' + POI,
+    effettoPiu: 'Un passo verso la plebe: +3% di reclute per ogni punto da quella parte.' + POI },
+  { quale: 'guerra', nome: 'Dottrina', sinistra: 'difesa', destra: 'attacco',
+    effettoMeno: 'Un passo verso la difesa: da −4 in giù, +1 al dado quando combatti in casa.' + POI,
+    effettoPiu: 'Un passo verso l\'attacco: da +4 in su, +1 al dado quando combatti in terra nemica.' + POI },
+  { quale: 'governo', nome: 'Province', sinistra: 'accentramento', destra: 'autonomia',
+    effettoMeno: 'Un passo verso l\'accentramento: le province straniere si assimilano prima, ma il malcontento cresce.' + POI,
+    effettoPiu: 'Un passo verso l\'autonomia: meno malcontento, ma assimilazione più lenta.' + POI }
 ];
 const GOVERNO = {
   tasse: v => `tasse ${v > 0 ? '+' : ''}${pct(v)}%`,

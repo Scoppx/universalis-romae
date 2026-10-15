@@ -52,7 +52,7 @@ test('scheda Guerre: limiti, annessione e bottoni spenti con il motivo, tutto pr
   assert.match(h, /data-azione="annetti"[^>]*disabled title=/);
   assert.match(h, /data-owner="volsci"/);
   const ok = guerreHtml([{ ...w, annessioni: [{ ...w.annessioni[0], nome: 'Volsci', motivo: null }] }]);
-  assert.match(ok, /<button[^>]*data-azione="annetti" data-id="g1" data-popolo="volsci">Annetti Volsci \(\+14 infamia\)<\/button>/);
+  assert.match(ok, /<button[^>]*data-azione="annetti" data-id="g1" data-popolo="volsci" title="Proponi l'annessione[^"]*">Annetti Volsci \(\+14 infamia\)<\/button>/);
 });
 
 // ogni elemento spento dice perché: un tag con disabled deve avere anche title
@@ -81,4 +81,34 @@ test('scelta di chi riceve una provincia occupata da un alleato, e nuovi bottoni
   const es = esercitiHtml([{ id: 'e1', provincia: 'Roma', fanteria: 1, cavalleria: 0, morale: '3.0', destinazione: null, inBattaglia: false }], { puoUnire: false, puoDividere: false, puoRiunire: false, motivoUnire: 'x', motivoDividere: 'y', motivoRiunire: evil });
   assert.match(es, /data-azione="riunisci"[^>]*disabled title=/);
   assert.equal(es.includes('<img'), false);
+});
+
+// ogni bottone, attivo o spento, dice cosa fa o perché non si può
+function bottoniSenzaSpiegazione(html) {
+  return (html.match(/<button\b[^>]*>/g) ?? []).filter(t => !/\btitle="[^"]+"/.test(t));
+}
+
+test('ogni bottone ha una spiegazione, anche quando si può cliccare', async () => {
+  const { makeGame } = await import('./fixtures.js');
+  const V = await import('../public/js/ui/views.js');
+  const H = await import('../public/js/ui/panels.js');
+  const { declareWar, proposePeace } = await import('../public/js/sim/war.js');
+  const { createArmy } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  g.nazioni.roma.tesoro = 500; g.nazioni.roma.uomini = 3000;
+  g.province.b.cultura = 'volsca';
+  createArmy(g, 'roma', 'a', 500, 0);
+  const ids = Object.values(g.eserciti).filter(a => a.owner === 'roma').map(a => a.id);
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.province.c.controller = 'roma'; g.province.f.controller = 'roma';
+  proposePeace(g, 'volsci', guerra, { ricevente: 'volsci', province: [] });
+  const html = [
+    H.provinceHtml(V.provinceInfo(g, 'a', 'roma')), H.provinceHtml(V.provinceInfo(g, 'b', 'roma')), H.provinceHtml(V.provinceInfo(g, 'd', 'roma')),
+    H.governoHtml(V.governmentView(g, 'roma')), H.diplomaziaHtml(V.diplomacyView(g, 'roma')),
+    H.esercitiHtml(V.armiesView(g, 'roma', ids), V.selectionActions(g, 'roma', ids)), H.guerreHtml(V.warsView(g, 'roma')),
+    H.proposalHtml(V.pendingProposals(g, 'roma')[0]), H.rankingHtml('Fine', V.rankingView(g, 'roma')),
+    H.guerraConfermaHtml(V.warConfirmView(g, 'roma', 'latini')), H.guerraRiepilogoHtml(V.warSummaryView(g, 'roma', guerra)),
+    H.eventoHtml({ id: 'v1', titolo: 'T', testo: 'X', opzioni: [{ id: 'a', testo: 'A', effetti: 'stabilità +1' }] })
+  ].join('');
+  assert.deepEqual(bottoniSenzaSpiegazione(html), []);
 });

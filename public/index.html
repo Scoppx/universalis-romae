@@ -21,14 +21,14 @@
     </span>
     <span id="b-jev" hidden></span>
     <span id="b-modi">
-      <button data-modo="politica" class="attivo">Politica</button>
-      <button data-modo="cultura">Cultura</button>
-      <button data-modo="relazioni">Relazioni</button>
-      <button data-modo="malcontento">Malcontento</button>
+      <button data-modo="politica" class="attivo" title="Mappa dei popoli: chi possiede ogni provincia">Politica</button>
+      <button data-modo="cultura" title="Mappa delle culture delle province">Cultura</button>
+      <button data-modo="relazioni" title="Mappa delle tue relazioni: alleati, nemici, tregue, coalizioni">Relazioni</button>
+      <button data-modo="malcontento" title="Mappa del malcontento: dal verde (calmo) al rosso (rischio di rivolta)">Malcontento</button>
     </span>
     <span>
-      <button id="b-esporta">Esporta</button>
-      <label class="bottone">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
+      <button id="b-esporta" title="Scarica un file con la partita, da ricaricare con Importa">Esporta</button>
+      <label class="bottone" title="Carica una partita da un file esportato">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
     </span>
   </header>
   <main class="senza-pannello">
@@ -36,11 +36,11 @@
     <aside id="pannello" hidden>
       <div id="provincia"><p class="muto">Clic su una provincia per vederla.</p></div>
       <div class="schede" id="schede">
-        <button data-scheda="governo" class="attivo">Governo</button>
-        <button data-scheda="diplomazia">Diplomazia</button>
-        <button data-scheda="eserciti">Eserciti</button>
-        <button data-scheda="guerre">Guerre</button>
-        <button data-scheda="consiglio" hidden>Consiglio</button>
+        <button data-scheda="governo" class="attivo" title="Governo, stabilità e riforme">Governo</button>
+        <button data-scheda="diplomazia" title="Relazioni con gli altri popoli: ambascerie, alleanze, tributi, guerre">Diplomazia</button>
+        <button data-scheda="eserciti" title="I tuoi eserciti: selezionare, unire, dividere, sciogliere">Eserciti</button>
+        <button data-scheda="guerre" title="Le tue guerre: punteggio, proposte di pace, annessioni">Guerre</button>
+        <button data-scheda="consiglio" hidden title="Le decisioni prese da Jev per gli altri popoli">Consiglio</button>
       </div>
       <div id="scheda"></div>
     </aside>
@@ -57,8 +57,8 @@
           <option value="jev">Jev</option>
         </select></label>
         <button id="inizio-via" disabled title="Scegli prima un popolo.">Inizia</button>
-        <button id="inizio-continua" hidden>Continua</button>
-        <label class="bottone">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
+        <button id="inizio-continua" hidden title="Riprendi la partita salvata automaticamente">Continua</button>
+        <label class="bottone" title="Carica una partita da un file esportato">Importa<input class="importa" type="file" accept=".json,application/json" hidden></label>
       </div>
       <div id="inizio-ia-nota" class="muto"></div>
     </section>

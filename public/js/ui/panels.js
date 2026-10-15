@@ -22,40 +22,55 @@ export function provinceHtml(v) {
     ...(v.colonia ? [['Colonia', 'sì']] : [])];
   const eserciti = v.eserciti.length
     ? v.eserciti.map(e => `<div class="riga"><span>${esc(e.nazione)}: ${esc(e.uomini)} uomini, morale ${esc(e.morale)}</span>` +
-      (e.mio ? `<button data-azione="seleziona-esercito" data-id="${esc(e.id)}">Seleziona</button>` +
+      (e.mio ? `<button data-azione="seleziona-esercito" data-id="${esc(e.id)}" title="Seleziona questo esercito: poi clic destro sulla mappa per mandarlo dove vuoi">Seleziona</button>` +
         `<button class="piccolo" data-azione="sciogli-esercito" data-id="${esc(e.id)}" title="Gli uomini tornano nella riserva e non li paghi più">Sciogli</button>` : '') + '</div>').join('')
     : '<p class="muto">Nessun esercito.</p>';
   const recluta = v.puoReclutare
     ? '<h3>Recluta</h3><div class="comandi">' +
       '<label>Fanti <input id="r-fanti" type="number" min="0" step="100" value="1000"></label>' +
       '<label>Cavalieri <input id="r-cavalieri" type="number" min="0" step="100" value="0"></label>' +
-      `<button data-azione="recluta" data-id="${esc(v.id)}">Recluta</button></div>`
+      `<button data-azione="recluta" data-id="${esc(v.id)}" title="Recluta qui i fanti e i cavalieri indicati: costano denari e uomini della riserva, e poi un mantenimento ogni mese">Recluta</button></div>`
     : '';
   const azioni = v.azioni ? '<h3>Provincia</h3><div class="comandi">' +
     bottone('colonia', v.id, `Fonda colonia (${v.azioni.colonia.costo} denari, ${v.azioni.colonia.uomini} uomini)`, v.azioni.colonia.motivo) +
     bottone('fortifica', v.id, v.azioni.fortifica.costo === null ? 'Fortificazione al massimo' : `Fortifica (${v.azioni.fortifica.costo} denari)`, v.azioni.fortifica.motivo) +
     '</div>' : '';
   return `<h2>${esc(v.nome)}</h2><table>${righe.map(([k, x]) => `<tr><td>${k}</td><td>${esc(x)}</td></tr>`).join('')}</table>` +
-    `<h3>Eserciti</h3>${eserciti}${v.unibili ? `<div class="comandi"><button data-azione="unisci-qui" data-id="${esc(v.id)}">Unisci tutti qui</button></div>` : ''}${recluta}${azioni}${popoloHtml(v.popolo)}`;
+    `<h3>Eserciti</h3>${eserciti}${v.unibili ? `<div class="comandi"><button data-azione="unisci-qui" data-id="${esc(v.id)}" title="Unisce in un solo esercito tutti i tuoi eserciti fermi in questa provincia">Unisci tutti qui</button></div>` : ''}${recluta}${azioni}${popoloHtml(v.popolo)}`;
 }
 
 export function governoHtml(v) {
   const leva = l => `<div class="leva"><span class="nome">${esc(l.nome)}</span>` +
-    `<button class="piccolo" data-azione="slider" data-quale="${esc(l.quale)}" data-verso="-1"${l.meno ? ` disabled title="${esc(l.meno)}"` : ''}>◀ ${esc(l.sinistra)}</button>` +
+    `<button class="piccolo" data-azione="slider" data-quale="${esc(l.quale)}" data-verso="-1"${l.meno ? ` disabled title="${esc(l.meno)}"` : ` title="${esc(l.effettoMeno)}"`}>◀ ${esc(l.sinistra)}</button>` +
     `<b>${esc(l.valore)}</b>` +
-    `<button class="piccolo" data-azione="slider" data-quale="${esc(l.quale)}" data-verso="1"${l.piu ? ` disabled title="${esc(l.piu)}"` : ''}>${esc(l.destra)} ▶</button></div>`;
+    `<button class="piccolo" data-azione="slider" data-quale="${esc(l.quale)}" data-verso="1"${l.piu ? ` disabled title="${esc(l.piu)}"` : ` title="${esc(l.effettoPiu)}"`}>${esc(l.destra)} ▶</button></div>`;
   return `<h3>${esc(v.nome)}</h3><table>` +
     `<tr><td>Governo</td><td>${esc(v.governo)}${v.effettiGoverno ? ` <span class="muto">(${esc(v.effettiGoverno)})</span>` : ''}</td></tr>` +
     `<tr><td>Stabilità</td><td>${esc(v.stabilita)}</td></tr>` +
     `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr></table>` +
-    `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? '' : ` disabled title="${esc(v.motivoAlzare ?? 'non si può ora')}"`}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
+    `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? ' title="Spendi i denari indicati: stabilità +1 (più entrate, meno malcontento; da +2 aiuta in battaglia)"' : ` disabled title="${esc(v.motivoAlzare ?? 'non si può ora')}"`}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
     `<h3>Riforme</h3>${v.slider.map(leva).join('')}`;
 }
 
 const STATI = { guerra: 'in guerra', tregua: 'tregua', alleato: 'alleato', federato: 'tuo federato', protettore: 'tuo protettore', pace: 'in pace' };
 
-function bottone(azione, id, testo, motivo) {
-  return `<button class="piccolo" data-azione="${azione}" data-id="${esc(id)}"${motivo ? ` disabled title="${esc(motivo)}"` : ''}>${esc(testo)}</button>`;
+// Cosa succede cliccando: la spiegazione dei bottoni attivi (quelli spenti mostrano il motivo).
+const SPIEGA = {
+  ambasceria: 'Invii doni: costa qualche denaro e migliora la relazione con questo popolo (una volta l\'anno).',
+  alleanza: 'Proponi un\'alleanza: se accetta, vi chiamerete a vicenda nelle guerre.',
+  rompi: 'Rompi l\'alleanza: non vi aiuterete più e la relazione peggiora.',
+  esci: 'Esci dal foedus: perdi 2 di stabilità e il protettore ottiene un pretesto di guerra contro di te.',
+  foedus: 'Proponi un foedus: se accetta diventa tuo federato, ti cede uomini ogni mese e combatte con te.',
+  tributo: 'Chiedi un tributo (il 20% delle sue entrate per 10 anni): se rifiuta, hai un pretesto di guerra.',
+  ultimatum: 'Chiedi la provincia scelta nel menu: se rifiuta, hai un pretesto di guerra.',
+  dichiara: 'Apre la conferma con gli schieramenti: la guerra parte solo se confermi.',
+  'prepara-guerra': 'Apre la conferma con gli schieramenti: la guerra parte solo se confermi.',
+  colonia: 'Fonda una colonia: l\'assimilazione della provincia va al doppio e il malcontento scende di 1.',
+  fortifica: 'Alza la fortificazione di un livello: assediare questa provincia diventa più lento.'
+};
+
+function bottone(azione, id, testo, motivo, spiegazione = SPIEGA[azione]) {
+  return `<button class="piccolo" data-azione="${azione}" data-id="${esc(id)}"${motivo ? ` disabled title="${esc(motivo)}"` : ` title="${esc(spiegazione ?? testo)}"`}>${esc(testo)}</button>`;
 }
 
 export function diplomaziaHtml(list) {
@@ -88,8 +103,8 @@ export function diplomaziaHtml(list) {
 export function esercitiHtml(list, azioni) {
   if (!list.length) return '<p class="muto">Nessun esercito. Recluta da una tua provincia.</p>';
   return '<div class="comandi">' +
-    `<button data-azione="unisci"${azioni.puoUnire ? '' : ` disabled title="${esc(azioni.motivoUnire ?? 'non si può ora')}"`}>Unisci</button>` +
-    `<button data-azione="dividi"${azioni.puoDividere ? '' : ` disabled title="${esc(azioni.motivoDividere ?? 'non si può ora')}"`}>Dividi</button>` +
+    `<button data-azione="unisci"${azioni.puoUnire ? ' title="Unisce gli eserciti selezionati in uno solo"' : ` disabled title="${esc(azioni.motivoUnire ?? 'non si può ora')}"`}>Unisci</button>` +
+    `<button data-azione="dividi"${azioni.puoDividere ? ' title="Divide l&#39;esercito selezionato in due metà uguali"' : ` disabled title="${esc(azioni.motivoDividere ?? 'non si può ora')}"`}>Dividi</button>` +
     `<button data-azione="riunisci"${azioni.puoRiunire ? ` title="Tutti marciano verso il più grande e si uniscono all'arrivo"` : ` disabled title="${esc(azioni.motivoRiunire ?? 'non si può ora')}"`}>Riunisci</button>` +
     // etichetta fissa: se cambiasse lunghezza la riga andrebbe a capo e i bottoni sotto si sposterebbero durante il clic
     `<button data-azione="sciogli"${azioni.puoSciogliere ? ` title="Risparmi ${esc(azioni.risparmio)} denari al mese: gli uomini tornano nella riserva"` : ` disabled title="${esc(azioni.motivoSciogliere ?? 'non si può ora')}"`}>Sciogli</button></div>` +
@@ -97,7 +112,7 @@ export function esercitiHtml(list, azioni) {
       `${esc(a.fanteria)} fanti, ${esc(a.cavalleria)} cavalieri, morale ${esc(a.morale)}` +
       (a.destinazione ? ` → ${esc(a.destinazione)}` : '') +
       (a.inBattaglia ? ' <span class="guerra">in battaglia</span>' : '') +
-      `</span><button data-azione="seleziona-esercito" data-id="${esc(a.id)}">Seleziona</button></div>`).join('') +
+      `</span><button data-azione="seleziona-esercito" data-id="${esc(a.id)}" title="Seleziona questo esercito e centra la mappa su di lui">Seleziona</button></div>`).join('') +
     '<p class="muto">Clic sul soldatino per selezionarlo, Maiuscolo+clic o Maiuscolo+trascina per sceglierne più d\'uno, clic destro sulla destinazione.</p>';
 }
 
@@ -122,7 +137,7 @@ export function guerreHtml(list) {
   return list.map(w => {
     const limiti = w.limiti.map(l => `${l.max} ${l.max === 1 ? 'provincia' : 'province'} di ${esc(l.nome)}`).join(', ');
     const annetti = w.annessioni.map(a => `<button class="piccolo" data-azione="annetti" data-id="${esc(w.id)}" data-popolo="${esc(a.id)}"` +
-      `${a.motivo ? ` disabled title="${esc(a.motivo)}"` : ''}>Annetti ${esc(a.nome)} (+${esc(a.infamia)} infamia)</button>`).join('');
+      `${a.motivo ? ` disabled title="${esc(a.motivo)}"` : ` title="Proponi l'annessione: tutte le province di ${esc(a.nome)} passano a chi le occupa (o a chi scegli); la tua infamia sale di ${esc(a.infamia)}"`}>Annetti ${esc(a.nome)} (+${esc(a.infamia)} infamia)</button>`).join('');
     const perId = Object.fromEntries(w.limiti.map(l => [l.id, { max: l.max, nome: l.nome }]));
     const mie = Object.fromEntries(w.daCedere.map(p => [p.owner, { max: w.limiteMio, nome: 'tue' }]));
     return `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
@@ -135,22 +150,22 @@ export function guerreHtml(list) {
         : `<label>Denari <input id="denari-${esc(w.id)}" type="number" min="0" max="${esc(w.denariMax)}" step="1" value="0"></label>` +
           `<span class="muto">al più ${esc(w.denariMax)}; 10 denari costano ${esc(w.puntiPer10Denari)} punti</span>` +
           bottonePace('chiedi', w, 'Invia proposta', perId, w.denariMax) + bottonePace('cedi', w, 'Cedi e fai la pace', mie) +
-          `<button data-azione="pace-bianca" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}">Pace bianca</button>`) +
+          `<button data-azione="pace-bianca" data-id="${esc(w.id)}" data-nemico="${esc(w.nemico.id)}" title="Proponi la pace senza cessioni: le occupazioni finiscono e tutto torna com&#39;era">Pace bianca</button>`) +
       '</div>' + (annetti ? `<div class="comandi">${annetti}</div>` : '') + '</div>';
   }).join('');
 }
 
 export function proposalHtml(p) {
   return `<h3>${esc(p.titolo)}</h3><p>${esc(p.testo)}</p><div class="comandi">` +
-    `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="1">Accetta</button>` +
-    `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="0">Rifiuta</button></div>`;
+    `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="1" title="Accetti: succede quello che è scritto sopra">Accetta</button>` +
+    `<button data-azione="rispondi" data-id="${esc(p.id)}" data-accetta="0" title="Rifiuti: non succede nulla, ma chi ha proposto può prenderla male (con tributo e ultimatum ottiene un pretesto di guerra)">Rifiuta</button></div>`;
 }
 
 export function rankingHtml(titolo, list) {
   return `<h2>${esc(titolo)}</h2><table>` +
     list.map(r => `<tr${r.tu ? ' style="font-weight:bold"' : ''}><td>${esc(r.pos)}</td>` +
       `<td>${esc(r.nome)}${r.vivo ? '' : ' <span class="muto">(scomparso)</span>'}</td><td>${esc(r.punteggio)}</td></tr>`).join('') +
-    '</table><div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
+    '</table><div class="comandi"><button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Chiudi</button></div>';
 }
 
 const FONTI = { jev: 'Jev', prudenza: 'Jev incerto: prudenza', regola: 'regola (Jev non disponibile)', superata: 'superata dagli eventi' };
@@ -168,7 +183,7 @@ export function consiglioHtml(list, nazioni, filtro) {
 
 export function eventoHtml(v) {
   return `<h2>${esc(v.titolo)}</h2><p>${esc(v.testo)}</p>` + v.opzioni.map(o =>
-    `<div class="opzione"><button data-azione="scegli" data-id="${esc(v.id)}" data-opzione="${esc(o.id)}">${esc(o.testo)}</button>` +
+    `<div class="opzione"><button data-azione="scegli" data-id="${esc(v.id)}" data-opzione="${esc(o.id)}" title="${esc(o.effetti)}">${esc(o.testo)}</button>` +
     `<div class="muto">${esc(o.effetti)}</div></div>`).join('');
 }
 
@@ -177,13 +192,13 @@ function popoloHtml(p) {
   if (!p) return '';
   return `<h3>${esc(p.nome)}</h3><div class="comandi">` +
     bottone('prepara-guerra', p.id, 'Dichiara guerra…', p.motivo) +
-    `<button class="piccolo" data-azione="apri-diplomazia" data-id="${esc(p.id)}">Diplomazia</button></div>`;
+    `<button class="piccolo" data-azione="apri-diplomazia" data-id="${esc(p.id)}" title="Apre la scheda Diplomazia: alleanze, ambascerie, tributi, ultimatum">Diplomazia</button></div>`;
 }
 
 export function guerraConfermaHtml(v) {
   if (v.errore) {
     return `<h2>Guerra a ${esc(v.bersaglio.nome)}</h2><p>Non puoi dichiarare guerra: ${esc(v.errore)}.</p>` +
-      '<div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
+      '<div class="comandi"><button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Chiudi</button></div>';
   }
   const riga = (nome, testo, forza) => `<tr><td>${esc(nome)}</td><td class="muto">${esc(testo)}</td><td>${esc(forza)}</td></tr>`;
   return `<h2>Dichiarare guerra a ${esc(v.bersaglio.nome)}?</h2>` +
@@ -191,8 +206,8 @@ export function guerraConfermaHtml(v) {
     `<h3>Con te</h3><table><tr><th></th><th></th><th class="muto">forza</th></tr>${v.miei.map(x => riga(x.nome, x.stato, x.forza)).join('')}</table>` +
     `<p>Forze: <b>${esc(v.forzaMiei)}</b> (tu e chi entra di sicuro o probabilmente) contro <b>${esc(v.forzaNemici)}</b>.</p>` +
     `<p>${esc(v.costo)}</p>` +
-    `<div class="comandi"><button data-azione="conferma-guerra" data-id="${esc(v.bersaglio.id)}">Dichiara guerra</button>` +
-    '<button data-azione="chiudi">Annulla</button></div>';
+    `<div class="comandi"><button data-azione="conferma-guerra" data-id="${esc(v.bersaglio.id)}" title="Dichiari guerra: i suoi alleati entrano subito, i tuoi vengono chiamati alle armi">Dichiara guerra</button>` +
+    '<button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Annulla</button></div>';
 }
 
 export function guerraRiepilogoHtml(v) {
@@ -200,5 +215,5 @@ export function guerraRiepilogoHtml(v) {
     `<p>Dalla tua parte: <b>${v.miei.map(esc).join(', ')}</b>.</p>` +
     `<p>Contro di te: <b>${v.nemici.map(esc).join(', ')}</b>.</p>` +
     (v.chiamati.length ? `<p>Alleati chiamati alle armi (risponderanno nei prossimi giorni): ${v.chiamati.map(esc).join(', ')}.</p>` : '<p class="muto">Nessun alleato da chiamare.</p>') +
-    '<div class="comandi"><button data-azione="chiudi">Chiudi</button></div>';
+    '<div class="comandi"><button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Chiudi</button></div>';
 }
