@@ -1,6 +1,6 @@
 // IA a regole. Legge lo stato e restituisce comandi; non modifica mai lo stato.
 // Fa il lavoro di fino (eserciti, reclute) per tutti, e le scelte strategiche quando Jev non c'è.
-import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf } from '../sim/state.js';
+import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf, neighborsOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, checkColony, colonyCost } from '../sim/culture.js';
 import { eventDef } from '../sim/events.js';
@@ -38,7 +38,8 @@ export function sliderDecision(game, id) {
   const n = game.nazioni[id], soglia = game.balance.cultura.sogliaRivolta;
   const mosse = [];
   if (provincesOf(game, id).some(p => malcontent(game, p.id) > soglia)) mosse.push(['governo', 1]);
-  const minaccia = game.ordine.some(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && power(game, o) > power(game, id));
+  const confinanti = neighborsOf(game, id);
+  const minaccia = game.ordine.some(o => o !== id && game.nazioni[o].vivo && confinanti.has(o) && power(game, o) > power(game, id));
   mosse.push(['guerra', minaccia ? -1 : 1]);
   mosse.push(['societa', n.uomini < maxManpower(game, id) / 2 ? 1 : -1]);
   const m = mosse.find(([q, v]) => !checkSlider(game, id, q, v));
@@ -60,9 +61,9 @@ export function enemiesOfNation(game, id) {
 }
 
 export function warCandidates(game, id) {
-  const mine = power(game, id);
+  const mine = power(game, id), confinanti = neighborsOf(game, id);
   return game.ordine
-    .filter(o => o !== id && game.nazioni[o].vivo && !inTruce(game, id, o) && !atWar(game, id, o) && !friendly(game, id, o) && bordersNation(game, id, o))
+    .filter(o => o !== id && game.nazioni[o].vivo && !inTruce(game, id, o) && !atWar(game, id, o) && !friendly(game, id, o) && confinanti.has(o))
     .map(o => ({ id: o, rapporto: mine / Math.max(1, power(game, o)) }))
     .sort((a, b) => b.rapporto - a.rapporto || a.id.localeCompare(b.id));
 }
@@ -126,7 +127,8 @@ export function diplomacyInitiatives(game, id) {
   // un federato che è diventato più forte del suo protettore se ne va
   if (n.protettore) return mine > power(game, n.protettore) && !checkLeaveFoedus(game, id) ? [{ tipo: 'esci_foedus', nazione: id }] : [];
   const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
-  const vicini = game.ordine.filter(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && !atWar(game, id, o));
+  const confinanti = neighborsOf(game, id);
+  const vicini = game.ordine.filter(o => o !== id && game.nazioni[o].vivo && confinanti.has(o) && !atWar(game, id, o));
   const foedus = vicini.filter(o => !checkProposal(game, id, 'foedus', o)).sort(byId)[0];
   if (foedus) return [{ tipo: 'proponi', nazione: id, genere: 'foedus', verso: foedus }];
   if (vicini.some(o => power(game, o) > mine * 1.2 && !friendly(game, id, o))) {

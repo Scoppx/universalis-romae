@@ -76,6 +76,14 @@ export function armyStrength(game, army) {
   return army.fanteria + army.cavalleria * game.balance.combattimento.cavalleria[t];
 }
 
+// I popoli che confinano con `id` (compreso chi possiede una provincia accanto); una sola passata sulle province.
+export function neighborsOf(game, id) {
+  const out = new Set();
+  for (const p of provincesOf(game, id)) for (const v of p.vicini) out.add(game.province[v].owner);
+  out.delete(id);
+  return out;
+}
+
 export function bordersNation(game, a, b) {
   return provincesOf(game, a).some(p => p.vicini.some(v => game.province[v].owner === b));
 }

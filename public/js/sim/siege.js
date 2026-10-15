@@ -22,21 +22,21 @@ export function siegeChance(game, army, prov) {
 const uomini = a => a.fanteria + a.cavalleria;
 
 // Eserciti fermi, non in battaglia, in guerra con chi controlla la provincia.
-export function besiegers(game, prov) {
-  return Object.values(game.eserciti).filter(a => a.prov === prov.id && !a.inBattaglia && !a.percorso.length &&
-    a.owner !== prov.controller && atWar(game, a.owner, prov.controller));
+export function besiegers(game, prov, qui = Object.values(game.eserciti).filter(a => a.prov === prov.id)) {
+  return qui.filter(a => !a.inBattaglia && !a.percorso.length && a.owner !== prov.controller && atWar(game, a.owner, prov.controller));
 }
 
 // L'assedio di una provincia: chi lo guida (il popolo con più uomini), quanti uomini lo sostengono
 // (lui e i suoi amici), i punti al giorno. null se nessuno assedia o se ci sono nemici degli assedianti.
-export function siegeInfo(game, prov) {
-  const ass = besiegers(game, prov);
+// qui: gli eserciti nella provincia, se già raccolti (advanceSieges li raggruppa una volta al giorno).
+export function siegeInfo(game, prov, qui = Object.values(game.eserciti).filter(a => a.prov === prov.id)) {
+  const ass = besiegers(game, prov, qui);
   if (!ass.length) return null;
   const per = {};
   for (const a of ass) per[a.owner] = (per[a.owner] ?? 0) + uomini(a);
   const ordine = id => (id === RIBELLI ? Infinity : game.ordine.indexOf(id));
   const capo = Object.keys(per).sort((a, b) => per[b] - per[a] || ordine(a) - ordine(b))[0];
-  if (Object.values(game.eserciti).some(e => e.prov === prov.id && atWar(game, capo, e.owner))) return null;
+  if (qui.some(e => atWar(game, capo, e.owner))) return null;
   const amici = ass.filter(a => a.owner === capo || (a.owner !== RIBELLI && capo !== RIBELLI && friendly(game, a.owner, capo)));
   const men = amici.reduce((s, a) => s + uomini(a), 0);
   const rate = siegeRate(game, capo, men, prov);
@@ -63,8 +63,12 @@ export function fallProvince(game, prov, capo) {
 }
 
 export function advanceSieges(game) {
+  const per = {};
+  for (const a of Object.values(game.eserciti)) (per[a.prov] ??= []).push(a);
   for (const id of Object.keys(game.province).sort()) {
-    const p = game.province[id], info = siegeInfo(game, p);
+    const p = game.province[id];
+    if (!per[id]) { p.assedio = null; continue; }
+    const info = siegeInfo(game, p, per[id]);
     if (!info) { p.assedio = null; continue; }
     p.assedio = { nazione: info.capo, punti: info.punti + info.rate };
     if (p.assedio.punti >= 100 - 1e-9) fallProvince(game, p, info.capo);
