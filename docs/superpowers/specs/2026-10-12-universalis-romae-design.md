@@ -290,6 +290,7 @@ Jev, regole, oppure misto (metà dei popoli con Jev, metà con le regole).
 4b. Governo, slider, cultura, rivolte, colonie, fortificazioni (sezione 12).
 5. Eventi e popoli dormienti (sezione 13).
 6. Taratura della difficoltà (sezione 14).
+7. Battaglie e assedi visibili (sezione 15).
 
 I valori numerici iniziali (perdite, soglie, costi) stanno in `public/data/balance.json`
 e si correggono con il bench, non nel codice.
@@ -445,3 +446,26 @@ fortificazioni: sezione 3).
   sopravvivenza e non ricevono bonus; Jev sceglie la guerra tra tutti i vicini attaccabili (libertà piena) anche se
   così resta più pacifico delle regole. I popoli dormienti risvegliati hanno la difficoltà dei dati; quelli nati da
   un'indipendenza sono "normale".
+
+## 15. Tappa 7: battaglie e assedi visibili (aggiunta del 2026-10-15)
+
+- **L'IA unisce i suoi eserciti**: ogni settimana, prima degli ordini, ogni popolo dell'IA unisce i suoi eserciti
+  fermi nella stessa provincia. **Mappa**: al più 3 soldatini per popolo in una provincia, più un'etichetta "+N".
+- **Battaglie in diretta**: un riquadro in alto per ogni battaglia con i tuoi eserciti (provincia, giorni, uomini e
+  morale dei due schieramenti, caduti dell'ultimo giorno), aggiornato a ogni giorno; alla fine mostra l'esito per
+  qualche secondo. **Ritirata**: i tuoi eserciti in quella battaglia scappano nella provincia sicura più vicina,
+  perdono il 10% degli uomini, il morale va a zero e la battaglia conta come persa.
+- **Presidio**: ogni provincia ha un presidio = uomini della provincia × 250 × (1 + fortificazione).
+- **Assedio a giorni contati**: invece di una probabilità al giorno, ogni provincia assediata accumula punti; ogni
+  giorno guadagna 100 × la vecchia probabilità giornaliera (stessa media di prima), calcolata sugli uomini di tutti
+  gli assedianti; a 100 punti cade. I punti si azzerano se gli assedianti se ne vanno. Si vede "cade tra N giorni".
+- **Simbolo d'assedio** sulla mappa dove assedi; cliccandolo (o dalla scheda della provincia) si apre la finestra
+  dell'assedio: i tuoi uomini, il presidio, la fortificazione, i giorni rimasti e tre bottoni:
+  - **Attacca**: assalto immediato con probabilità di vittoria = uomini / (uomini + presidio × (2 + fortificazione)),
+    scritta sul bottone. Vittoria: la provincia cade, perdi uomini pari a metà del presidio. Sconfitta: perdi il 20%
+    degli uomini, il morale va a zero, l'assedio continua.
+  - **Assedia**: chiude la finestra, l'assedio prosegue.
+  - **Ritirati**: gli eserciti marciano verso la provincia sicura più vicina.
+- **IA**: assedia come ora e tenta l'assalto solo con probabilità di vittoria almeno 75%.
+- **Taratura**: alla fine si rifanno le due misure da 20 semi; se gli obiettivi della sezione 14 si spostano si
+  ritoccano i numeri.
