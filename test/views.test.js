@@ -477,3 +477,22 @@ test('battaglie del giocatore: schieramenti, morale, ritirata spiegata', async (
   assert.equal(b.motivoRitirata, null);
   assert.equal(b.spiegaRitirata, 'I tuoi eserciti qui perdono il 10% degli uomini e scappano ad A; la battaglia conta come persa');
 });
+
+test('finestra dell\'assedio: uomini, presidio, giorni, probabilità, motivi', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  declareWar(g, 'roma', 'volsci');
+  g.province.c.uomini = 2; g.province.c.fort = 1;
+  assert.equal(V.siegeView(g, 'roma', 'c'), null);
+  createArmy(g, 'roma', 'c', 6000, 0);
+  const v = V.siegeView(g, 'roma', 'c');
+  assert.equal(v.nome, 'C');
+  assert.equal(v.uomini, 6000);
+  assert.equal(v.presidio, 1000);
+  assert.equal(v.fort, 1);
+  assert.ok(v.giorni > 0);
+  assert.equal(v.probabilita, 67);
+  assert.equal(v.motivoAttacco, null);
+  assert.equal(v.destinazione, 'B');
+  assert.equal(V.siegeView(g, 'roma', 'b'), null); // provincia propria
+});

@@ -5,6 +5,7 @@ import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { nearestSafe, checkRetreat } from '../sim/combat.js';
+import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
 import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview } from '../sim/diplomacy.js';
@@ -121,6 +122,7 @@ export function provinceInfo(game, id, g) {
       uomini: a.fanteria + a.cavalleria, morale: a.morale.toFixed(1)
     })),
     puoReclutare: Boolean(g) && p.owner === g && p.controller === g,
+    assedio: g ? siegeView(game, g, id) : null, // se i tuoi eserciti la assediano
     // due o più tuoi eserciti fermi qui: si possono unire con un clic
     unibili: (ids => (ids.length >= 2 ? ids : null))(Object.values(game.eserciti)
       .filter(a => a.prov === id && a.owner === g && !a.percorso.length && !a.inBattaglia).map(a => a.id)),
@@ -416,4 +418,22 @@ export function battlesView(game, g) {
         : 'Non c\'è una provincia sicura dove scappare: i tuoi eserciti qui si scioglierebbero'
     };
   });
+}
+
+// L'assedio dei tuoi eserciti in una provincia nemica: forze, presidio, giorni alla caduta, assalto e ripiego.
+export function siegeView(game, g, provId) {
+  const p = game.province[provId];
+  const mine = Object.values(game.eserciti).filter(a => a.prov === provId && a.owner === g && !a.percorso.length);
+  if (!mine.length || p.controller === g || !atWar(game, g, p.controller)) return null;
+  const info = siegeInfo(game, p), dove = nearestSafe(game, g, provId);
+  return {
+    prov: provId, nome: p.nome, fort: p.fort, presidio: garrison(game, p),
+    uomini: mine.reduce((s, a) => s + a.fanteria + a.cavalleria, 0),
+    giorni: info ? info.giorni : null,
+    motivoAssedio: info ? null : mine.some(a => a.inBattaglia) ? 'si combatte: l\'assedio riprende dopo la battaglia' : 'ci sono nemici nella provincia: l\'assedio è fermo',
+    probabilita: Math.round(assaultChance(game, g, p) * 100),
+    motivoAttacco: checkAssault(game, g, provId),
+    destinazione: dove ? game.province[dove].nome : null,
+    motivoRipiego: mine.some(a => a.inBattaglia) ? 'sono in battaglia: usa la ritirata nel riquadro in alto' : dove ? null : 'nessuna provincia sicura dove ripiegare'
+  };
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml, guerreHtml, battaglieHtml } from '../public/js/ui/panels.js';
+import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml, guerreHtml, battaglieHtml, assedioHtml } from '../public/js/ui/panels.js';
 
 const evil = '<img src=x onerror=alert(1)>';
 
@@ -118,4 +118,13 @@ test('riquadri delle battaglie: protetti, con la ritirata spiegata', () => {
     [{ prov: 'x', nome: evil, testo: evil, vinto: true }]);
   assert.equal(h.includes('<img'), false);
   assert.match(h, /data-azione="ritirata"[^>]*title=/);
+});
+
+test('finestra dell\'assedio: tre bottoni spiegati, tutto protetto', () => {
+  const v = { prov: 'c', nome: evil, uomini: evil, presidio: evil, fort: evil, giorni: 12, probabilita: 67, motivoAttacco: null, motivoRipiego: null, destinazione: evil, motivoAssedio: null };
+  const h = assedioHtml(v);
+  assert.equal(h.includes('<img'), false);
+  assert.match(h, /data-azione="assalto"[^>]*title="[^"]+">Attacca \(67%\)/);
+  assert.match(h, /data-azione="chiudi"[^>]*title="[^"]+">Assedia \(cade tra 12 giorni\)/);
+  assert.match(h, /data-azione="ripiega"[^>]*title="[^"]+">Ritirati/);
 });

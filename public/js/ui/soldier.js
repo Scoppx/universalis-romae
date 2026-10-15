@@ -117,3 +117,22 @@ export function drawMore(ctx, x, y, n, s = 1) {
   ctx.fillText(testo, x, y);
   ctx.restore();
 }
+
+// Simbolo d'assedio: una piccola fortezza con i giorni rimasti.
+export function drawFortress(ctx, x, y, giorni, s = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(43, 33, 24, 0.9)';
+  ctx.strokeStyle = '#f6eedb';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(-9, 6); ctx.lineTo(-9, -6); ctx.lineTo(-6, -6); ctx.lineTo(-6, -3); ctx.lineTo(-2, -3); ctx.lineTo(-2, -6);
+  ctx.lineTo(2, -6); ctx.lineTo(2, -3); ctx.lineTo(6, -3); ctx.lineTo(6, -6); ctx.lineTo(9, -6); ctx.lineTo(9, 6); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.font = 'bold 9px Georgia';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#f6eedb';
+  ctx.fillText(giorni === null ? '—' : `${giorni}g`, 0, 1);
+  ctx.restore();
+}

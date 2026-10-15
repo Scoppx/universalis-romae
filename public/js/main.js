@@ -77,7 +77,7 @@ const ui = {
 };
 window.universalis = {
   ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n),
-  markers: () => renderer.markers(), rilievoPronto: () => renderer.rilievoPronto()
+  markers: () => renderer.markers(), assedi: () => renderer.assedi(), rilievoPronto: () => renderer.rilievoPronto()
 };
 
 const game = () => (ui.session ? ui.session.game : ui.anteprima);
@@ -210,6 +210,14 @@ function aggiornaBattaglie(game, g) {
   const ora = performance.now();
   ui.esiti = ui.esiti.filter(e => e.fino > ora);
   setHtml($('battaglie'), H.battaglieHtml(list, ui.esiti));
+}
+
+function apriAssedio(prov) {
+  const v = V.siegeView(ui.session.game, ui.session.giocatore, prov);
+  if (!v) return;
+  setPaused(ui.clock, true); // si decide a gioco fermo
+  finestra(H.assedioHtml(v));
+  aggiorna();
 }
 
 function mostraPausa(motivo) {
@@ -438,6 +446,18 @@ document.addEventListener('click', e => {
       if (r.ok) ui.selezione.eserciti = ui.selezione.eserciti.filter(x => x !== id);
       break;
     }
+    case 'assalto': {
+      $('finestra').hidden = true;
+      const r = comando({ tipo: 'assalto', provincia: id });
+      if (r.ok) avviso(r.vinto ? `Assalto riuscito: ${ui.session.game.province[id].nome} è tua.` : 'Assalto respinto: hai perso uomini e morale, l\'assedio continua.');
+      break;
+    }
+    case 'ripiega': {
+      $('finestra').hidden = true;
+      const r = comando({ tipo: 'ripiega', provincia: id });
+      if (r.ok) avviso(`I tuoi eserciti lasciano l'assedio e marciano verso ${ui.session.game.province[r.verso].nome}.`);
+      break;
+    }
     case 'ritirata': {
       const r = comando({ tipo: 'ritirata', provincia: id });
       if (r.ok) { raccogliEsiti([{ tipo: 'ritirata', prov: id, nazione: ui.session.giocatore }]); aggiorna(); }
@@ -529,6 +549,8 @@ attachInput(canvas, {
   onPan: (dx, dy) => { pan(ui.camera, dx, dy); ui.sporco = true; },
   onZoom: (x, y, f) => { zoomAt(ui.camera, x, y, f); ui.sporco = true; },
   onClick: (x, y, { shift } = {}) => {
+    const assedio = ui.session && renderer.assedi().find(s => Math.hypot(s.x - x, s.y - y) <= 13);
+    if (assedio) { apriAssedio(assedio.prov); return; }
     const army = ui.session && armyAt(renderer.markers(), x, y, 16);
     if (army) { selezionaEsercito(army, { aggiungi: shift }); return; }
     const prov = provinceAt(index, ...toWorld(ui.camera, x, y));

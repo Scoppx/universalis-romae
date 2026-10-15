@@ -460,6 +460,30 @@ try {
   await page.click('#battaglie [data-azione="ritirata"]');
   check((await page.textContent('#battaglie')).includes('ritirata'), 'esito della ritirata mostrato');
   check(await page.evaluate(() => !Object.values(window.universalis.ui.session.game.eserciti).some(a => a.owner === 'roma' && a.prov === 'veio')), 'gli eserciti di Roma hanno lasciato Veio');
+  // assedio: simbolo sulla mappa, finestra con Attacca / Assedia / Ritirati
+  await page.evaluate(async () => {
+    const { createArmy } = await import('/js/sim/state.js');
+    const g = window.universalis.ui.session.game;
+    for (const x of Object.values(g.eserciti)) if (x.prov === 'veio') delete g.eserciti[x.id];
+    g.province.veio.controller = 'veio';
+    createArmy(g, 'roma', 'veio', 6000, 0);
+    window.universalis.ui.selezione.provincia = 'veio';
+    window.universalis.avanza(0);
+  });
+  await wait(300);
+  const simbolo = await page.evaluate(() => window.universalis.assedi().find(s => s.prov === 'veio'));
+  check(Boolean(simbolo), 'simbolo d\'assedio su Veio');
+  check((await page.textContent('#provincia')).includes('Assedio'), 'riquadro d\'assedio nella scheda della provincia');
+  const boxMappa = await page.locator('#mappa').boundingBox();
+  await page.mouse.click(boxMappa.x + simbolo.x, boxMappa.y + simbolo.y);
+  const fin = await page.textContent('#finestra');
+  check(fin.includes('Assedio di Veio') && fin.includes('Presidio') && fin.includes('Attacca') && fin.includes('Ritirati'), 'finestra dell\'assedio');
+  await page.screenshot({ path: 'smoke-assedio.png' });
+  await page.click('#finestra [data-azione="ripiega"]');
+  check(await page.evaluate(() => Object.values(window.universalis.ui.session.game.eserciti).some(a => a.owner === 'roma' && a.prov === 'veio' && a.percorso.length)), 'ritirati: l\'esercito marcia verso casa');
+  await page.evaluate(() => { for (const a of Object.values(window.universalis.ui.session.game.eserciti)) if (a.owner === 'roma' && a.prov === 'veio') a.percorso = []; window.universalis.avanza(0); });
+  await page.click('#provincia [data-azione="assalto"]');
+  check(await page.evaluate(() => window.universalis.ui.session.game.log.some(e => e.tipo === 'assalto')), 'attacca: assalto tentato');
   for (const scheda of ['governo', 'diplomazia', 'eserciti', 'guerre']) {
     await page.click(`[data-scheda="${scheda}"]`);
     const muti = await page.evaluate(() => [...document.querySelectorAll('button[disabled], option[disabled], input[disabled], select[disabled]')]
