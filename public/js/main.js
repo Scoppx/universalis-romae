@@ -103,7 +103,7 @@ function renderInizio() {
   const c = cards.find(x => x.id === ui.scelto);
   $('inizio-scheda').innerHTML = c ? H.cardDetailHtml(c) : '<p class="muto">Nessun popolo scelto.</p>';
   $('inizio-via').disabled = !c;
-  if (c) $('inizio-via').removeAttribute('title'); else $('inizio-via').title = 'Scegli prima un popolo.';
+  $('inizio-via').title = c ? 'Inizia la partita con il popolo scelto' : 'Scegli prima un popolo.';
   ui.sporco = true;
 }
 
@@ -264,7 +264,9 @@ function aggiornaBottoniPace() {
     const denari = conDenari ? Math.max(0, Math.floor(Number(document.getElementById(`denari-${b.dataset.id}`)?.value) || 0)) : 0;
     const motivo = V.motivoRichiesta(owners, JSON.parse(b.dataset.limiti), denari, conDenari ? Number(b.dataset.denariMax) : null);
     b.disabled = Boolean(motivo);
-    if (motivo) b.title = motivo; else b.removeAttribute('title');
+    b.title = motivo ?? (b.dataset.azione === 'chiedi'
+      ? 'Invia al nemico la proposta: le province spuntate e i denari indicati; se accetta, la guerra finisce'
+      : 'Offri al nemico le tue province spuntate in cambio della pace');
   }
 }
 $('scheda').addEventListener('change', aggiornaBottoniPace);

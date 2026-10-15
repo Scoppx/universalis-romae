@@ -446,6 +446,10 @@ try {
     const muti = await page.evaluate(() => [...document.querySelectorAll('button[disabled], option[disabled], input[disabled], select[disabled]')]
       .filter(e => !e.title).map(e => e.outerHTML.slice(0, 80)));
     check(muti.length === 0, `scheda ${scheda}: ogni elemento spento ha una spiegazione${muti.length ? ': ' + muti.join(' | ') : ''}`);
+    // anche i bottoni attivi visibili dicono cosa fanno
+    const senza = await page.evaluate(() => [...document.querySelectorAll('button')]
+      .filter(b => b.offsetParent !== null && !b.title).map(b => b.outerHTML.slice(0, 80)));
+    check(senza.length === 0, `scheda ${scheda}: ogni bottone ha una spiegazione${senza.length ? ': ' + senza.join(' | ') : ''}`);
   }
   // @@ controlli successivi @@
   await page.screenshot({ path: 'smoke-gioco.png' });
