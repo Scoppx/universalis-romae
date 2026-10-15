@@ -9,7 +9,7 @@ import { advanceDay } from '../public/js/sim/loop.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import {
   isSliderDay, sliderDecision, colonyDecision, eventAnswers,
-  peaceProposals, rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
+  mergeIdle, peaceProposals, rulesController, warCandidates, strategy, answerProposals, armyOrders, recruitment, legalWarTargets, warDecision, routine, diplomacyInitiatives, ultimatumDecision
 } from '../public/js/ai/rules.js';
 
 const allRules = g => Object.fromEntries(g.ordine.map(id => [id, rulesController]));
@@ -319,4 +319,19 @@ test('una richiesta di soli denari non è una pace bianca: la stanchezza non bas
   g.day = 9 * 365;
   proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: [], denari: 100 });
   assert.equal(answerProposals(g, 'volsci').find(c => c.tipo === 'rispondi').accetta, false);
+});
+
+test('l\'IA unisce i suoi eserciti fermi nella stessa provincia, nel giorno degli ordini', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  const a1 = createArmy(g, 'roma', 'a', 1000, 0), a2 = createArmy(g, 'roma', 'a', 500, 0), a3 = createArmy(g, 'roma', 'a', 300, 0);
+  const marcia = createArmy(g, 'roma', 'a', 200, 0);
+  marcia.percorso = ['b'];
+  assert.deepEqual(mergeIdle(g, 'roma'), [{ tipo: 'unisci', nazione: 'roma', eserciti: [a1.id, a2.id, a3.id] }]);
+  let giorno = 0;
+  while ((giorno + [...'roma'].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 0)) % 7 !== 0) giorno++;
+  g.day = giorno;
+  const cmds = routine(g, 'roma');
+  assert.ok(cmds.some(c => c.tipo === 'unisci'));
+  assert.ok(!cmds.some(c => c.tipo === 'muovi' && [a2.id, a3.id].includes(c.esercito)));
 });

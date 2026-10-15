@@ -103,3 +103,17 @@ export function drawArrow(ctx, [x1, y1], [x2, y2], testo) {
   }
   ctx.restore();
 }
+
+// "+N": eserciti dello stesso popolo nella provincia che non sono disegnati.
+export function drawMore(ctx, x, y, n, s = 1) {
+  const testo = `+${n}`;
+  ctx.save();
+  ctx.font = `bold ${Math.round(10 * s)}px Georgia`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(testo).width + 8;
+  ctx.fillStyle = 'rgba(43, 33, 24, 0.85)';
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - 7 * s, w, 14 * s, 7 * s); ctx.fill();
+  ctx.fillStyle = '#f6eedb';
+  ctx.fillText(testo, x, y);
+  ctx.restore();
+}

@@ -67,12 +67,24 @@ export function warCandidates(game, id) {
 }
 
 // Lavoro di fino, uguale per regole e Jev: eserciti ogni 7 giorni (sfalsati) e reclute il primo del mese.
+// L'IA unisce i suoi eserciti fermi nella stessa provincia (in marcia o in battaglia restano fuori).
+export function mergeIdle(game, id) {
+  const per = {};
+  for (const a of armiesOf(game, id)) if (!a.percorso.length && !a.inBattaglia) (per[a.prov] ??= []).push(a.id);
+  return Object.keys(per).sort().filter(p => per[p].length >= 2).map(p => ({ tipo: 'unisci', nazione: id, eserciti: per[p] }));
+}
+
 export function routine(game, id) {
   const cmds = [];
   // in pace un obiettivo di guerra non vale più
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
   if (!inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });
-  if ((game.day + hashId(id)) % 7 === 0) cmds.push(...armyOrders(game, id));
+  if ((game.day + hashId(id)) % 7 === 0) {
+    const unioni = mergeIdle(game, id);
+    // gli eserciti che si uniscono a un altro non ricevono ordini propri
+    const assorbiti = new Set(unioni.flatMap(u => u.eserciti.slice(1)));
+    cmds.push(...unioni, ...armyOrders(game, id).filter(c => !assorbiti.has(c.esercito)));
+  }
   if (isFirstOfMonth(game.day)) cmds.push(...recruitment(game, id));
   return cmds;
 }

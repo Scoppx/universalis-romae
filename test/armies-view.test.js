@@ -5,7 +5,7 @@ import { armiesOf } from '../public/js/sim/state.js';
 import { declareWar } from '../public/js/sim/war.js';
 import { orderMove, advanceMovement } from '../public/js/sim/armies.js';
 import { createClock, setPaused, tick, frazione } from '../public/js/ui/clock.js';
-import { armyWorldPos, pathSteps, stackOffset, armiesInRect, soldierScale } from '../public/js/ui/armies-view.js';
+import { armyWorldPos, pathSteps, stackOffset, armiesInRect, soldierScale, visibleStack } from '../public/js/ui/armies-view.js';
 
 const centri = { a: [0, 0], b: [100, 0], c: [200, 0], d: [0, 100], e: [100, 100], f: [200, 100], g: [300, 100] };
 
@@ -73,4 +73,12 @@ test('frazione continua: la pausa la congela, il cambio di velocità la conserva
   setSpeed(c, 1);
   assert.equal(frazione(c), 0.5);
   assert.equal(tick(c, 1600), 1); // a velocità 1 (1000 ms) servono altri 500 ms per finire il giorno
+});
+
+test('mappa: al più 3 soldatini per popolo in una provincia, gli altri contati', () => {
+  const list = [5, 1, 9, 3, 7].map((n, i) => ({ id: `e${i}`, owner: 'roma', fanteria: n * 100, cavalleria: 0 }))
+    .concat([{ id: 'x', owner: 'volsci', fanteria: 100, cavalleria: 0 }]);
+  const { visibili, altri } = visibleStack(list, ['e1']);
+  assert.deepEqual(visibili.map(a => a.id).sort(), ['e1', 'e2', 'e4', 'x']); // i due più grandi + il selezionato, e i volsci
+  assert.deepEqual(altri, { roma: 2 });
 });

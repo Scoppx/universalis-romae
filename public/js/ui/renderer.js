@@ -4,8 +4,8 @@ import { provinceFill, fillSignature } from './colors.js';
 import { coalition } from '../sim/diplomacy.js';
 import { atWar } from '../sim/war.js';
 import { toScreen } from './camera.js';
-import { drawSoldier, drawLabel, drawArrow } from './soldier.js';
-import { armyWorldPos, pathSteps, stackOffset, soldierScale } from './armies-view.js';
+import { drawSoldier, drawLabel, drawArrow, drawMore } from './soldier.js';
+import { visibleStack, armyWorldPos, pathSteps, stackOffset, soldierScale } from './armies-view.js';
 
 const MARE = '#cddcd8', TERRA = '#efe3c8', INCHIOSTRO = '#3b2a1a', ACQUA = '#3d6e9e';
 
@@ -127,7 +127,8 @@ export function createRenderer(canvas, map, { onReady } = {}) {
     const scala = soldierScale(camera);
     const perProv = {};
     for (const a of Object.values(game.eserciti)) (perProv[a.prov] ??= []).push(a);
-    for (const list of Object.values(perProv)) {
+    for (const tutti of Object.values(perProv)) {
+      const { visibili: list, altri } = visibleStack(tutti, selezione.eserciti);
       const pos = list.map((a, i) => {
         const p = armyWorldPos(game, a, centri, fraz);
         const [sx, sy] = scr([p.x, p.y]);
@@ -148,6 +149,8 @@ export function createRenderer(canvas, map, { onReady } = {}) {
         });
         drawLabel(ctx, x, y, a.fanteria + a.cavalleria, a.morale, game.balance.combattimento.moraleMax, scala);
         markers.push({ id: a.id, x, y: y - 14 * scala, owner: a.owner });
+        // dopo l'ultimo soldatino di un popolo, quanti suoi eserciti non sono disegnati
+        if (altri[a.owner] && !list.slice(i + 1).some(b => b.owner === a.owner)) drawMore(ctx, x + 14 * scala, y - 22 * scala, altri[a.owner], scala);
       });
     }
     if (rettangolo) {
