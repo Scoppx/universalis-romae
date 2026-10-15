@@ -15,6 +15,7 @@ export function initCulture(game) {
     p.assimilazioneDi ??= p.owner;
     p.colonia ??= null;
     p.ribelliDal ??= null;
+    p.assedio ??= null; // { nazione, punti } mentre qualcuno la assedia
   }
 }
 

@@ -59,7 +59,8 @@
   },
   "assedio": {
     "base": 0.02,
-    "massimo": 0.2
+    "massimo": 0.2,
+    "presidioPerUomo": 250
   },
   "guerra": {
     "senzaPretesto": 2,
