@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { createArmy } from '../public/js/sim/state.js';
 import { declareWar } from '../public/js/sim/war.js';
-import { siegeChance, advanceSieges, garrison, siegeRate, daysLeft } from '../public/js/sim/siege.js';
+import { siegeChance, advanceSieges, garrison, siegeRate, daysLeft, assaultChance, checkAssault } from '../public/js/sim/siege.js';
+import { applyCommand } from '../public/js/sim/commands.js';
 
 function setup() {
   const g = makeGame();
@@ -91,4 +92,49 @@ test('due eserciti sommano gli uomini; se se ne vanno i punti si azzerano', () =
   assert.equal(daysLeft(g, g.province.c), null);
   a.prov = 'c';
   assert.equal(daysLeft(g, g.province.c), Math.ceil(100 / siegeRate(g, 'roma', 2500, g.province.c)));
+});
+
+test('assalto: probabilità da uomini, presidio e fortificazione', () => {
+  const g = setup();
+  declareWar(g, 'roma', 'volsci');
+  g.province.c.uomini = 2; g.province.c.fort = 1; // presidio 1000
+  createArmy(g, 'roma', 'c', 6000, 0);
+  close(assaultChance(g, 'roma', g.province.c), 6000 / (6000 + 1000 * 3));
+  assert.equal(checkAssault(g, 'latini', 'c'), 'nessun tuo esercito fermo qui');
+  createArmy(g, 'volsci', 'c', 100, 0);
+  assert.equal(checkAssault(g, 'roma', 'c'), 'ci sono nemici nella provincia');
+});
+
+test('assalto: vittoria prende la provincia con perdite, sconfitta costa uomini e morale', () => {
+  const prova = rng => {
+    const g = setup();
+    g.rng = rng;
+    declareWar(g, 'roma', 'volsci');
+    g.province.c.uomini = 2; g.province.c.fort = 1;
+    const a = createArmy(g, 'roma', 'c', 3000, 0);
+    const r = applyCommand(g, { tipo: 'assalto', nazione: 'roma', provincia: 'c' });
+    return { g, a, r };
+  };
+  let vinto = null, perso = null;
+  for (let rng = 1; rng < 200 && (!vinto || !perso); rng++) {
+    const x = prova(rng);
+    if (x.r.vinto) vinto ??= x; else perso ??= x;
+  }
+  assert.equal(vinto.g.province.c.controller, 'roma');
+  assert.equal(vinto.a.fanteria, 3000 - 500); // metà del presidio
+  assert.ok(vinto.g.log.some(e => e.tipo === 'assalto' && e.vinto));
+  assert.equal(perso.g.province.c.controller, 'volsci');
+  assert.equal(perso.a.fanteria, 2400); // −20%
+  assert.equal(perso.a.morale, 0);
+});
+
+test('l\'IA dà l\'assalto solo con almeno il 75% di probabilità', async () => {
+  const { armyOrders } = await import('../public/js/ai/rules.js');
+  const g = setup();
+  declareWar(g, 'roma', 'volsci');
+  g.province.c.uomini = 2; g.province.c.fort = 1;
+  const a = createArmy(g, 'roma', 'c', 6000, 0); // 6000 / 9000 = 67%
+  assert.ok(!armyOrders(g, 'roma').some(c => c.tipo === 'assalto'));
+  a.fanteria = 9000; // 9000 / 12000 = 75%
+  assert.deepEqual(armyOrders(g, 'roma').filter(c => c.tipo === 'assalto'), [{ tipo: 'assalto', nazione: 'roma', provincia: 'c' }]);
 });

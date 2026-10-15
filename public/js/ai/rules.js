@@ -4,6 +4,7 @@ import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf } fro
 import { checkSlider } from '../sim/government.js';
 import { malcontent, checkColony, colonyCost } from '../sim/culture.js';
 import { eventDef } from '../sim/events.js';
+import { assaultChance, checkAssault } from '../sim/siege.js';
 
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, validTerms } from '../sim/war.js';
@@ -233,7 +234,7 @@ export function armyOrders(game, id) {
   // province proprie tenute o invase dai ribelli: si reprimono anche in pace
   const ribelliIn = new Set(Object.values(game.eserciti).filter(e => e.owner === RIBELLI).map(e => e.prov));
   const rivolte = Object.values(game.province).filter(p => p.owner === id && (p.controller === RIBELLI || ribelliIn.has(p.id)));
-  const pronti = [];
+  const pronti = [], assalti = new Set();
   for (const a of armies) {
     if (a.inBattaglia || a.percorso.length) continue;
     if (!enemies.length && !rivolte.length) {
@@ -241,7 +242,14 @@ export function armyOrders(game, id) {
       continue;
     }
     const here = game.province[a.prov];
-    if (here.controller !== id && (enemies.includes(here.controller) || (here.controller === RIBELLI && here.owner === id))) continue; // sta assediando
+    if (here.controller !== id && (enemies.includes(here.controller) || (here.controller === RIBELLI && here.owner === id))) {
+      // sta assediando: all'assalto solo con buone probabilità, una volta per provincia
+      if (!assalti.has(here.id) && !checkAssault(game, id, here.id) && assaultChance(game, id, here) >= game.balance.ia.assaltoSoglia) {
+        assalti.add(here.id);
+        cmds.push({ tipo: 'assalto', nazione: id, provincia: here.id });
+      }
+      continue;
+    }
     if (a.morale < game.balance.combattimento.moraleMax / 2) continue; // si riprende
     pronti.push({ a, dist: distancesFrom(game, id, a.prov).dist });
   }

@@ -1,6 +1,7 @@
 // Assedi a giorni contati: ogni provincia assediata accumula punti ogni giorno e a 100 cade.
 // I punti al giorno sono 100 × la vecchia probabilità giornaliera, sugli uomini di tutti gli assedianti.
 import { log, RIBELLI } from './state.js';
+import { nextRandom } from './rng.js';
 import { atWar } from './war.js';
 import { friendly } from './diplomacy.js';
 
@@ -68,4 +69,48 @@ export function advanceSieges(game) {
     p.assedio = { nazione: info.capo, punti: info.punti + info.rate };
     if (p.assedio.punti >= 100 - 1e-9) fallProvince(game, p, info.capo);
   }
+}
+
+// Gli eserciti fermi di `owner` nella provincia.
+function fermiDi(game, owner, prov) {
+  return Object.values(game.eserciti).filter(a => a.prov === prov.id && a.owner === owner && !a.percorso.length);
+}
+
+// Probabilità di vincere un assalto: uomini / (uomini + presidio × (2 + fortificazione)).
+export function assaultChance(game, owner, prov) {
+  const men = fermiDi(game, owner, prov).filter(a => !a.inBattaglia).reduce((s, a) => s + uomini(a), 0);
+  return men ? men / (men + garrison(game, prov) * (2 + prov.fort)) : 0;
+}
+
+export function checkAssault(game, owner, provId) {
+  const p = game.province[provId];
+  if (!p) return 'provincia inesistente';
+  const mine = fermiDi(game, owner, p);
+  if (!mine.length) return 'nessun tuo esercito fermo qui';
+  if (mine.some(a => a.inBattaglia)) return 'gli eserciti sono in battaglia';
+  if (p.controller === owner || !atWar(game, owner, p.controller)) return 'non sei in guerra con chi la tiene';
+  if (Object.values(game.eserciti).some(e => e.prov === p.id && atWar(game, owner, e.owner))) return 'ci sono nemici nella provincia';
+  return null;
+}
+
+// Assalto immediato: un tiro. Vittoria: la provincia cade, si perdono uomini pari a metà del presidio.
+// Sconfitta: ogni esercito perde il 20% e il morale; l'assedio continua.
+export function assault(game, owner, provId) {
+  const err = checkAssault(game, owner, provId);
+  if (err) return { ok: false, motivo: err };
+  const p = game.province[provId], s = game.balance.assedio, mine = fermiDi(game, owner, p);
+  const vinto = nextRandom(game) < assaultChance(game, owner, p);
+  const tot = mine.reduce((t, a) => t + uomini(a), 0);
+  for (const a of mine) {
+    const n = uomini(a);
+    if (!n) continue;
+    const perdita = vinto ? garrison(game, p) * s.assaltoPerditaVittoria * n / tot : n * s.assaltoPerditaSconfitta;
+    a.fanteria -= Math.min(a.fanteria, Math.round(perdita * a.fanteria / n));
+    a.cavalleria -= Math.min(a.cavalleria, Math.round(perdita * a.cavalleria / n));
+    if (!vinto) a.morale = 0;
+    if (uomini(a) < game.balance.combattimento.minimoUomini) delete game.eserciti[a.id];
+  }
+  log(game, { tipo: 'assalto', prov: provId, nazione: owner, vinto });
+  if (vinto) fallProvince(game, p, owner);
+  return { ok: true, vinto };
 }
