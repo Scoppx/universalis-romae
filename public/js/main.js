@@ -2,6 +2,7 @@
 import { createGame } from './sim/setup.js';
 import { applyCommand } from './sim/commands.js';
 import { provincesOf } from './sim/state.js';
+import { atWar } from './sim/war.js';
 import { createJevAi } from './ai/jev.js';
 import { createRenderer } from './ui/renderer.js';
 import { createCamera, toWorld, toScreen, zoomAt, pan, centerOn } from './ui/camera.js';
@@ -76,7 +77,7 @@ const ui = {
 };
 window.universalis = {
   ui, data, toScreen: (x, y) => toScreen(ui.camera, x, y), avanza: n => avanza(n),
-  markers: () => renderer.markers(), rilievoPronto: () => renderer.rilievoPronto()
+  markers: () => renderer.markers(), assedi: () => renderer.assedi(), rilievoPronto: () => renderer.rilievoPronto()
 };
 
 const game = () => (ui.session ? ui.session.game : ui.anteprima);
@@ -144,6 +145,8 @@ function avvia(session) {
   ui.scelto = null;
   ui.selezione = { provincia: null, eserciti: [] };
   ui.notizie = [];
+  ui.battaglie = {}; // per provincia: inizio, uomini del giorno prima, caduti
+  ui.esiti = [];     // esiti di battaglia da mostrare per qualche secondo
   ui.jevAvvisato = false;
   ui.clock.accumulo = 0; // una partita nuova parte dall'inizio del giorno
   if (!session.ai) ui.consiglio = [];
@@ -165,12 +168,55 @@ function avvia(session) {
 
 function avanza(n) {
   if (!ui.session) return;
-  const r = runDays(ui.session, n, { onYear: s => writeStorage(storage(), AUTOSAVE_KEY, serialize(s)) });
+  const r = runDays(ui.session, n, { onYear: s => writeStorage(storage(), AUTOSAVE_KEY, serialize(s)), onLog: raccogliEsiti });
   if (r.notizie.length) ui.notizie = [...ui.notizie, ...r.notizie].slice(-8);
   if (r.motivo) {
     setPaused(ui.clock, true);
     mostraPausa(r.motivo);
   }
+  aggiorna();
+}
+
+// Esiti delle battaglie dei tuoi eserciti (e delle tue ritirate): restano in alto 4 secondi.
+function raccogliEsiti(log) {
+  const g = ui.session.giocatore, game = ui.session.game;
+  for (const e of log) {
+    const mia = e.tipo === 'battaglia' && (ui.battaglie[e.prov] || e.vincitore === g || e.sconfitto === g);
+    if (!mia && !(e.tipo === 'ritirata' && e.nazione === g)) continue;
+    const vinto = e.tipo === 'battaglia' && !atWar(game, g, e.vincitore);
+    ui.esiti.push({ prov: e.prov, nome: game.province[e.prov].nome, vinto,
+      testo: e.tipo === 'ritirata' ? 'ritirata' : vinto ? 'vittoria' : 'sconfitta', fino: performance.now() + 4000 });
+    delete ui.battaglie[e.prov];
+    setTimeout(aggiorna, 4100);
+  }
+}
+
+// I riquadri delle battaglie: giorni dall'inizio e caduti dall'ultimo aggiornamento.
+function aggiornaBattaglie(game, g) {
+  const list = V.battlesView(game, g);
+  const viste = new Set(list.map(b => b.prov));
+  for (const p of Object.keys(ui.battaglie)) if (!viste.has(p)) delete ui.battaglie[p];
+  for (const b of list) {
+    const r = ui.battaglie[b.prov] ??= { inizio: game.day, giorno: game.day, ieri: { miei: b.miei.uomini, nemici: b.nemici.uomini }, caduti: { miei: 0, nemici: 0 } };
+    if (r.giorno !== game.day) {
+      r.caduti = { miei: Math.max(0, r.ieri.miei - b.miei.uomini), nemici: Math.max(0, r.ieri.nemici - b.nemici.uomini) };
+      r.ieri = { miei: b.miei.uomini, nemici: b.nemici.uomini };
+      r.giorno = game.day;
+    }
+    b.giorni = game.day - r.inizio + 1;
+    b.miei.caduti = r.caduti.miei;
+    b.nemici.caduti = r.caduti.nemici;
+  }
+  const ora = performance.now();
+  ui.esiti = ui.esiti.filter(e => e.fino > ora);
+  setHtml($('battaglie'), H.battaglieHtml(list, ui.esiti));
+}
+
+function apriAssedio(prov) {
+  const v = V.siegeView(ui.session.game, ui.session.giocatore, prov);
+  if (!v) return;
+  setPaused(ui.clock, true); // si decide a gioco fermo
+  finestra(H.assedioHtml(v));
   aggiorna();
 }
 
@@ -254,6 +300,7 @@ function aggiorna() {
   };
   setHtml($('scheda'), schede[ui.scheda]());
   aggiornaBottoniPace();
+  aggiornaBattaglie(g, giocatore);
 }
 
 // I bottoni delle richieste di province si spengono, con il motivo, se le caselle spuntate non vanno bene.
@@ -399,6 +446,23 @@ document.addEventListener('click', e => {
       if (r.ok) ui.selezione.eserciti = ui.selezione.eserciti.filter(x => x !== id);
       break;
     }
+    case 'assalto': {
+      $('finestra').hidden = true;
+      const r = comando({ tipo: 'assalto', provincia: id });
+      if (r.ok) avviso(r.vinto ? `Assalto riuscito: ${ui.session.game.province[id].nome} è tua.` : 'Assalto respinto: hai perso uomini e morale, l\'assedio continua.');
+      break;
+    }
+    case 'ripiega': {
+      $('finestra').hidden = true;
+      const r = comando({ tipo: 'ripiega', provincia: id });
+      if (r.ok) avviso(`I tuoi eserciti lasciano l'assedio e marciano verso ${ui.session.game.province[r.verso].nome}.`);
+      break;
+    }
+    case 'ritirata': {
+      const r = comando({ tipo: 'ritirata', provincia: id });
+      if (r.ok) { raccogliEsiti([{ tipo: 'ritirata', prov: id, nazione: ui.session.giocatore }]); aggiorna(); }
+      break;
+    }
     case 'riunisci': {
       const r = comando({ tipo: 'riunisci', eserciti: ui.selezione.eserciti });
       if (r.ok) avviso('Gli eserciti marciano per riunirsi.');
@@ -446,6 +510,8 @@ document.addEventListener('click', e => {
 });
 
 $('pannello').addEventListener('pointerdown', () => { ui.premuto = true; });
+// anche i riquadri delle battaglie si ridisegnano ogni giorno: con il mouse premuto restano fermi
+$('battaglie').addEventListener('pointerdown', () => { ui.premuto = true; });
 window.addEventListener('pointerup', () => {
   if (!ui.premuto) return;
   ui.premuto = false;
@@ -485,6 +551,8 @@ attachInput(canvas, {
   onPan: (dx, dy) => { pan(ui.camera, dx, dy); ui.sporco = true; },
   onZoom: (x, y, f) => { zoomAt(ui.camera, x, y, f); ui.sporco = true; },
   onClick: (x, y, { shift } = {}) => {
+    const assedio = ui.session && renderer.assedi().find(s => Math.hypot(s.x - x, s.y - y) <= 13);
+    if (assedio) { apriAssedio(assedio.prov); return; }
     const army = ui.session && armyAt(renderer.markers(), x, y, 16);
     if (army) { selezionaEsercito(army, { aggiungi: shift }); return; }
     const prov = provinceAt(index, ...toWorld(ui.camera, x, y));

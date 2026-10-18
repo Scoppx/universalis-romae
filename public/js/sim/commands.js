@@ -6,6 +6,8 @@ import { embassy, propose, breakAlliance, leaveFoedus } from './diplomacy.js';
 import { moveSlider } from './government.js';
 import { foundColony, fortify } from './culture.js';
 import { chooseOption } from './events.js';
+import { assault } from './siege.js';
+import { orderedRetreat, fallBack } from './combat.js';
 
 export function applyCommand(game, cmd) {
   switch (cmd.tipo) {
@@ -44,6 +46,12 @@ export function applyCommand(game, cmd) {
       return embassy(game, cmd.nazione, cmd.verso);
     case 'unisci':
       return mergeArmies(game, cmd.nazione, cmd.eserciti);
+    case 'ritirata':
+      return orderedRetreat(game, cmd.nazione, cmd.provincia);
+    case 'ripiega':
+      return fallBack(game, cmd.nazione, cmd.provincia);
+    case 'assalto':
+      return assault(game, cmd.nazione, cmd.provincia);
     case 'sciogli':
       return disbandArmies(game, cmd.nazione, cmd.eserciti);
     case 'riunisci':

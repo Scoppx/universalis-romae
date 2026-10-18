@@ -55,11 +55,16 @@
       "montagna": 2,
       "palude": 1
     },
-    "stabilitaDado": 2
+    "stabilitaDado": 2,
+    "ritirataPerdita": 0.1
   },
   "assedio": {
     "base": 0.02,
-    "massimo": 0.2
+    "massimo": 0.2,
+    "presidioPerUomo": 250,
+    "assaltoPerditaVittoria": 0.5,
+    "assaltoPerditaSconfitta": 0.2,
+    "presidioRiferimento": 625
   },
   "guerra": {
     "senzaPretesto": 2,
@@ -83,7 +88,8 @@
     "esercitoObiettivo": 0.8,
     "riservaColonia": 10,
     "anniDiRespiro": 5,
-    "stanchezzaAnni": 8
+    "stanchezzaAnni": 8,
+    "assaltoSoglia": 0.75
   },
   "diplomazia": {
     "relazioneStessaCultura": 30,

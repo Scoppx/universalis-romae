@@ -459,3 +459,40 @@ test('tregua: la data di fine nella diplomazia e nel motivo della guerra', () =>
   assert.equal(V.provinceInfo(g, 'c', 'roma').popolo.motivo, 'tregua in corso fino al 26 maggio 752 a.C.');
   assert.equal(V.diplomacyView(g, 'roma').find(x => x.id === 'latini').tregua, null);
 });
+
+test('battaglie del giocatore: schieramenti, morale, ritirata spiegata', async () => {
+  const { resolveBattles } = await import('../public/js/sim/combat.js');
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  declareWar(g, 'roma', 'volsci');
+  createArmy(g, 'roma', 'b', 4000, 0);
+  createArmy(g, 'volsci', 'b', 3000, 0);
+  assert.deepEqual(V.battlesView(g, 'roma'), []);
+  resolveBattles(g);
+  const [b] = V.battlesView(g, 'roma');
+  assert.equal(b.prov, 'b');
+  assert.equal(b.nome, 'B');
+  assert.ok(b.miei.uomini < 4000 && b.nemici.uomini < 3000);
+  assert.deepEqual(b.nemici.popoli, ['volsci']);
+  assert.equal(b.motivoRitirata, null);
+  assert.equal(b.spiegaRitirata, 'I tuoi eserciti qui perdono il 10% degli uomini e scappano ad A; la battaglia conta come persa');
+});
+
+test('finestra dell\'assedio: uomini, presidio, giorni, probabilità, motivi', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  declareWar(g, 'roma', 'volsci');
+  g.province.c.uomini = 2; g.province.c.fort = 1;
+  assert.equal(V.siegeView(g, 'roma', 'c'), null);
+  createArmy(g, 'roma', 'c', 6000, 0);
+  const v = V.siegeView(g, 'roma', 'c');
+  assert.equal(v.nome, 'C');
+  assert.equal(v.uomini, 6000);
+  assert.equal(v.presidio, 1000);
+  assert.equal(v.fort, 1);
+  assert.ok(v.giorni > 0);
+  assert.equal(v.probabilita, 67);
+  assert.equal(v.motivoAttacco, null);
+  assert.equal(v.destinazione, 'B');
+  assert.equal(V.siegeView(g, 'roma', 'b'), null); // provincia propria
+});

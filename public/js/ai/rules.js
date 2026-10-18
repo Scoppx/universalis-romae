@@ -1,9 +1,10 @@
 // IA a regole. Legge lo stato e restituisce comandi; non modifica mai lo stato.
 // Fa il lavoro di fino (eserciti, reclute) per tutti, e le scelte strategiche quando Jev non c'è.
-import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf } from '../sim/state.js';
+import { armiesOf, maxManpower, bordersNation, power, RIBELLI, provincesOf, neighborsOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, checkColony, colonyCost } from '../sim/culture.js';
 import { eventDef } from '../sim/events.js';
+import { assaultChance, checkAssault } from '../sim/siege.js';
 
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, validTerms } from '../sim/war.js';
@@ -37,7 +38,8 @@ export function sliderDecision(game, id) {
   const n = game.nazioni[id], soglia = game.balance.cultura.sogliaRivolta;
   const mosse = [];
   if (provincesOf(game, id).some(p => malcontent(game, p.id) > soglia)) mosse.push(['governo', 1]);
-  const minaccia = game.ordine.some(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && power(game, o) > power(game, id));
+  const confinanti = neighborsOf(game, id);
+  const minaccia = game.ordine.some(o => o !== id && game.nazioni[o].vivo && confinanti.has(o) && power(game, o) > power(game, id));
   mosse.push(['guerra', minaccia ? -1 : 1]);
   mosse.push(['societa', n.uomini < maxManpower(game, id) / 2 ? 1 : -1]);
   const m = mosse.find(([q, v]) => !checkSlider(game, id, q, v));
@@ -59,20 +61,32 @@ export function enemiesOfNation(game, id) {
 }
 
 export function warCandidates(game, id) {
-  const mine = power(game, id);
+  const mine = power(game, id), confinanti = neighborsOf(game, id);
   return game.ordine
-    .filter(o => o !== id && game.nazioni[o].vivo && !inTruce(game, id, o) && !atWar(game, id, o) && !friendly(game, id, o) && bordersNation(game, id, o))
+    .filter(o => o !== id && game.nazioni[o].vivo && !inTruce(game, id, o) && !atWar(game, id, o) && !friendly(game, id, o) && confinanti.has(o))
     .map(o => ({ id: o, rapporto: mine / Math.max(1, power(game, o)) }))
     .sort((a, b) => b.rapporto - a.rapporto || a.id.localeCompare(b.id));
 }
 
 // Lavoro di fino, uguale per regole e Jev: eserciti ogni 7 giorni (sfalsati) e reclute il primo del mese.
+// L'IA unisce i suoi eserciti fermi nella stessa provincia (in marcia o in battaglia restano fuori).
+export function mergeIdle(game, id) {
+  const per = {};
+  for (const a of armiesOf(game, id)) if (!a.percorso.length && !a.inBattaglia) (per[a.prov] ??= []).push(a.id);
+  return Object.keys(per).sort().filter(p => per[p].length >= 2).map(p => ({ tipo: 'unisci', nazione: id, eserciti: per[p] }));
+}
+
 export function routine(game, id) {
   const cmds = [];
   // in pace un obiettivo di guerra non vale più
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
   if (!inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });
-  if ((game.day + hashId(id)) % 7 === 0) cmds.push(...armyOrders(game, id));
+  if ((game.day + hashId(id)) % 7 === 0) {
+    const unioni = mergeIdle(game, id);
+    // gli eserciti che si uniscono a un altro non ricevono ordini propri
+    const assorbiti = new Set(unioni.flatMap(u => u.eserciti.slice(1)));
+    cmds.push(...unioni, ...armyOrders(game, id).filter(c => !assorbiti.has(c.esercito)));
+  }
   if (isFirstOfMonth(game.day)) cmds.push(...recruitment(game, id));
   return cmds;
 }
@@ -113,7 +127,8 @@ export function diplomacyInitiatives(game, id) {
   // un federato che è diventato più forte del suo protettore se ne va
   if (n.protettore) return mine > power(game, n.protettore) && !checkLeaveFoedus(game, id) ? [{ tipo: 'esci_foedus', nazione: id }] : [];
   const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
-  const vicini = game.ordine.filter(o => o !== id && game.nazioni[o].vivo && bordersNation(game, id, o) && !atWar(game, id, o));
+  const confinanti = neighborsOf(game, id);
+  const vicini = game.ordine.filter(o => o !== id && game.nazioni[o].vivo && confinanti.has(o) && !atWar(game, id, o));
   const foedus = vicini.filter(o => !checkProposal(game, id, 'foedus', o)).sort(byId)[0];
   if (foedus) return [{ tipo: 'proponi', nazione: id, genere: 'foedus', verso: foedus }];
   if (vicini.some(o => power(game, o) > mine * 1.2 && !friendly(game, id, o))) {
@@ -221,7 +236,7 @@ export function armyOrders(game, id) {
   // province proprie tenute o invase dai ribelli: si reprimono anche in pace
   const ribelliIn = new Set(Object.values(game.eserciti).filter(e => e.owner === RIBELLI).map(e => e.prov));
   const rivolte = Object.values(game.province).filter(p => p.owner === id && (p.controller === RIBELLI || ribelliIn.has(p.id)));
-  const pronti = [];
+  const pronti = [], assalti = new Set();
   for (const a of armies) {
     if (a.inBattaglia || a.percorso.length) continue;
     if (!enemies.length && !rivolte.length) {
@@ -229,7 +244,14 @@ export function armyOrders(game, id) {
       continue;
     }
     const here = game.province[a.prov];
-    if (here.controller !== id && (enemies.includes(here.controller) || (here.controller === RIBELLI && here.owner === id))) continue; // sta assediando
+    if (here.controller !== id && (enemies.includes(here.controller) || (here.controller === RIBELLI && here.owner === id))) {
+      // sta assediando: all'assalto solo con buone probabilità, una volta per provincia
+      if (!assalti.has(here.id) && !checkAssault(game, id, here.id) && assaultChance(game, id, here) >= game.balance.ia.assaltoSoglia) {
+        assalti.add(here.id);
+        cmds.push({ tipo: 'assalto', nazione: id, provincia: here.id });
+      }
+      continue;
+    }
     if (a.morale < game.balance.combattimento.moraleMax / 2) continue; // si riprende
     pronti.push({ a, dist: distancesFrom(game, id, a.prov).dist });
   }

@@ -64,3 +64,9 @@ button.piccolo { font-size: 12px; padding: 1px 6px; }
 .leva b { width: 24px; text-align: center; }
 .opzione { margin: 8px 0; }
 .opzione button { width: 100%; text-align: left; }
+#battaglie { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 3; flex-wrap: wrap; justify-content: center; max-width: 90%; }
+.battaglia { background: rgba(43, 33, 24, .9); color: #f3e6c8; padding: 6px 10px; border-radius: 4px; font-size: 13px; min-width: 220px; }
+.battaglia .titolo { font-weight: bold; margin-bottom: 2px; }
+.battaglia.vinta { background: rgba(63, 111, 58, .92); }
+.battaglia.persa { background: rgba(140, 40, 30, .92); }
+.battaglia .guerra { color: #f0a090; }

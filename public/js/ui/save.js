@@ -98,6 +98,7 @@ function validateGame(s, data) {
     if (p.assimilazioneDi !== undefined && !attiva(p.assimilazioneDi)) return `provincia ${k}`;
     if (p.colonia !== undefined && p.colonia !== null && !attiva(p.colonia)) return `provincia ${k}`;
     if (p.ribelliDal !== undefined && p.ribelliDal !== null && !(isInt(p.ribelliDal) && p.ribelliDal >= 0)) return `provincia ${k}`;
+    if (p.assedio !== undefined && p.assedio !== null && !(isObj(p.assedio) && nazione(p.assedio.nazione) && isNum(p.assedio.punti) && p.assedio.punti >= 0 && p.assedio.punti <= 100)) return `provincia ${k}`;
   }
   if (!isObj(g.eserciti) || !isObj(g.guerre) || !isObj(g.proposte)) return 'dati mancanti';
   for (const [k, a] of Object.entries(g.eserciti)) {

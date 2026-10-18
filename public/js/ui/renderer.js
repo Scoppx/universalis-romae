@@ -4,8 +4,9 @@ import { provinceFill, fillSignature } from './colors.js';
 import { coalition } from '../sim/diplomacy.js';
 import { atWar } from '../sim/war.js';
 import { toScreen } from './camera.js';
-import { drawSoldier, drawLabel, drawArrow } from './soldier.js';
-import { armyWorldPos, pathSteps, stackOffset, soldierScale } from './armies-view.js';
+import { drawSoldier, drawLabel, drawArrow, drawMore, drawFortress } from './soldier.js';
+import { daysLeft } from '../sim/siege.js';
+import { visibleStack, armyWorldPos, pathSteps, stackOffset, soldierScale } from './armies-view.js';
 
 const MARE = '#cddcd8', TERRA = '#efe3c8', INCHIOSTRO = '#3b2a1a', ACQUA = '#3d6e9e';
 
@@ -38,7 +39,7 @@ export function createRenderer(canvas, map, { onReady } = {}) {
   const laghi = (map.laghi ?? []).map(l => toPath([l]));
   const confini = (map.confini ?? []).map(c => ({ a: c.a, b: c.b, path: linePath(c.punti) }));
   const stripes = {};
-  let size = { w: 0, h: 0 }, chiaveBase = null, markers = [], pronto = false;
+  let size = { w: 0, h: 0 }, chiaveBase = null, markers = [], assedi = [], pronto = false;
 
   const rilievo = new Image();
   rilievo.onload = () => { pronto = true; chiaveBase = null; onReady?.(); };
@@ -127,7 +128,8 @@ export function createRenderer(canvas, map, { onReady } = {}) {
     const scala = soldierScale(camera);
     const perProv = {};
     for (const a of Object.values(game.eserciti)) (perProv[a.prov] ??= []).push(a);
-    for (const list of Object.values(perProv)) {
+    for (const tutti of Object.values(perProv)) {
+      const { visibili: list, altri } = visibleStack(tutti, selezione.eserciti);
       const pos = list.map((a, i) => {
         const p = armyWorldPos(game, a, centri, fraz);
         const [sx, sy] = scr([p.x, p.y]);
@@ -148,7 +150,23 @@ export function createRenderer(canvas, map, { onReady } = {}) {
         });
         drawLabel(ctx, x, y, a.fanteria + a.cavalleria, a.morale, game.balance.combattimento.moraleMax, scala);
         markers.push({ id: a.id, x, y: y - 14 * scala, owner: a.owner });
+        // dopo l'ultimo soldatino di un popolo, quanti suoi eserciti non sono disegnati
+        if (altri[a.owner] && !list.slice(i + 1).some(b => b.owner === a.owner)) drawMore(ctx, x + 14 * scala, y - 22 * scala, altri[a.owner], scala);
       });
+    }
+    // simboli d'assedio dove i tuoi eserciti fermi stanno in una provincia nemica: si cliccano per la finestra
+    assedi = [];
+    if (giocatore) {
+      const fatte = new Set();
+      for (const a of Object.values(game.eserciti)) {
+        const p = game.province[a.prov];
+        if (a.owner !== giocatore || a.percorso.length || fatte.has(p.id) || p.controller === giocatore || !atWar(game, giocatore, p.controller)) continue;
+        fatte.add(p.id);
+        const [sx, sy] = scr(centri[p.id]);
+        const y = sy - 38 * scala;
+        drawFortress(ctx, sx, y, daysLeft(game, p), scala);
+        assedi.push({ prov: p.id, x: sx, y });
+      }
     }
     if (rettangolo) {
       ctx.strokeStyle = '#fff6d0'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
@@ -157,5 +175,5 @@ export function createRenderer(canvas, map, { onReady } = {}) {
     }
   }
 
-  return { resize, draw, markers: () => markers, rilievoPronto: () => pronto };
+  return { resize, draw, markers: () => markers, assedi: () => assedi, rilievoPronto: () => pronto };
 }

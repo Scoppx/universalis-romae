@@ -35,3 +35,18 @@ export function armiesInRect(markers, { x0, y0, x1, y1 }, owner) {
 export function soldierScale(camera) {
   return Math.max(0.8, Math.min(1.4, 0.7 + (camera.scale / camera.min) * 0.07));
 }
+
+// Quali eserciti disegnare in una provincia: per ogni popolo al più 3 (i selezionati e poi i più grandi);
+// altri[popolo] conta quelli nascosti, da mostrare come "+N".
+export function visibleStack(list, scelti = [], max = 3) {
+  const per = {};
+  for (const a of list) (per[a.owner] ??= []).push(a);
+  const visibili = [], altri = {};
+  for (const [owner, gruppo] of Object.entries(per)) {
+    const ordinati = [...gruppo].sort((a, b) => Number(scelti.includes(b.id)) - Number(scelti.includes(a.id)) ||
+      (b.fanteria + b.cavalleria) - (a.fanteria + a.cavalleria) || (a.id < b.id ? -1 : 1));
+    visibili.push(...ordinati.slice(0, max));
+    if (ordinati.length > max) altri[owner] = ordinati.length - max;
+  }
+  return { visibili: list.filter(a => visibili.includes(a)), altri };
+}

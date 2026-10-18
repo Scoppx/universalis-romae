@@ -277,3 +277,12 @@ test('proposta di annessione: salvata e controllata', () => {
   x.game.proposte.p1.termini.annessione = 'atlantide';
   assert.equal(deserialize(JSON.stringify(x), data).ok, false);
 });
+
+test('assedio in corso: salvato, e controllato', () => {
+  const s = createSession(data, 'roma', 1);
+  const x = JSON.parse(serialize(s));
+  x.game.province.veio.assedio = { nazione: 'roma', punti: 42 };
+  assert.equal(deserialize(JSON.stringify(x), data).ok, true);
+  x.game.province.veio.assedio = { nazione: 'roma', punti: 400 };
+  assert.equal(deserialize(JSON.stringify(x), data).ok, false);
+});

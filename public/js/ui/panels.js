@@ -36,7 +36,7 @@ export function provinceHtml(v) {
     bottone('fortifica', v.id, v.azioni.fortifica.costo === null ? 'Fortificazione al massimo' : `Fortifica (${v.azioni.fortifica.costo} denari)`, v.azioni.fortifica.motivo) +
     '</div>' : '';
   return `<h2>${esc(v.nome)}</h2><table>${righe.map(([k, x]) => `<tr><td>${k}</td><td>${esc(x)}</td></tr>`).join('')}</table>` +
-    `<h3>Eserciti</h3>${eserciti}${v.unibili ? `<div class="comandi"><button data-azione="unisci-qui" data-id="${esc(v.id)}" title="Unisce in un solo esercito tutti i tuoi eserciti fermi in questa provincia">Unisci tutti qui</button></div>` : ''}${recluta}${azioni}${popoloHtml(v.popolo)}`;
+    `<h3>Eserciti</h3>${eserciti}${v.assedio ? assedioHtml(v.assedio, { finestra: false }) : ''}${v.unibili ? `<div class="comandi"><button data-azione="unisci-qui" data-id="${esc(v.id)}" title="Unisce in un solo esercito tutti i tuoi eserciti fermi in questa provincia">Unisci tutti qui</button></div>` : ''}${recluta}${azioni}${popoloHtml(v.popolo)}`;
 }
 
 export function governoHtml(v) {
@@ -216,4 +216,30 @@ export function guerraRiepilogoHtml(v) {
     `<p>Contro di te: <b>${v.nemici.map(esc).join(', ')}</b>.</p>` +
     (v.chiamati.length ? `<p>Alleati chiamati alle armi (risponderanno nei prossimi giorni): ${v.chiamati.map(esc).join(', ')}.</p>` : '<p class="muto">Nessun alleato da chiamare.</p>') +
     '<div class="comandi"><button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Chiudi</button></div>';
+}
+
+// Riquadri delle battaglie in corso (in alto) e degli esiti appena arrivati.
+export function battaglieHtml(list, esiti = []) {
+  const lato = (titolo, x) => `<div><b>${esc(titolo)}</b>: ${esc(x.uomini)} uomini, morale ${esc(x.morale)}` +
+    (x.caduti ? ` <span class="guerra">−${esc(x.caduti)} oggi</span>` : '') + '</div>';
+  return list.map(b => `<div class="battaglia"><div class="titolo">Battaglia a ${esc(b.nome)}${b.giorni ? ` · giorno ${esc(b.giorni)}` : ''}</div>` +
+    lato('I tuoi', b.miei) + lato(`Nemici (${b.nemici.popoli.join(', ')})`, b.nemici) +
+    `<div class="comandi"><button class="piccolo" data-azione="ritirata" data-id="${esc(b.prov)}"` +
+    `${b.motivoRitirata ? ` disabled title="${esc(b.motivoRitirata)}"` : ` title="${esc(b.spiegaRitirata)}"`}>Ritirata</button></div></div>`).join('') +
+    esiti.map(e => `<div class="battaglia ${e.vinto ? 'vinta' : 'persa'}"><div class="titolo">${esc(e.nome)}: ${esc(e.testo)}</div></div>`).join('');
+}
+
+// L'assedio: nella finestra (con il bottone Assedia che la chiude) o nella scheda della provincia.
+export function assedioHtml(v, { finestra = true } = {}) {
+  const giorni = v.giorni === null ? v.motivoAssedio : `cade tra ${v.giorni} giorni`;
+  const attacca = `<button data-azione="assalto" data-id="${esc(v.prov)}"` + (v.motivoAttacco ? ` disabled title="${esc(v.motivoAttacco)}"`
+    : ` title="Assalto subito: con il ${esc(v.probabilita)}% la provincia cade e perdi uomini pari a metà del presidio; altrimenti perdi il 20% degli uomini e il morale, e l'assedio continua"`) +
+    `>Attacca (${esc(v.probabilita)}%)</button>`;
+  const assedia = finestra ? `<button data-azione="chiudi" title="Continui l'assedio: ${esc(giorni)}, se nessuno ti disturba">Assedia${v.giorni === null ? '' : ` (cade tra ${esc(v.giorni)} giorni)`}</button>` : '';
+  const ritirati = `<button data-azione="ripiega" data-id="${esc(v.prov)}"` + (v.motivoRipiego ? ` disabled title="${esc(v.motivoRipiego)}"`
+    : ` title="Lasci l'assedio: i tuoi eserciti marciano verso ${esc(v.destinazione)}"`) + '>Ritirati</button>';
+  return `${finestra ? `<h2>Assedio di ${esc(v.nome)}</h2>` : `<h3>Assedio</h3>`}<table>` +
+    `<tr><td>I tuoi uomini</td><td>${esc(v.uomini)}</td></tr><tr><td>Presidio</td><td>${esc(v.presidio)}</td></tr>` +
+    `<tr><td>Fortificazione</td><td>livello ${esc(v.fort)}</td></tr><tr><td>Caduta</td><td>${esc(giorni)}</td></tr></table>` +
+    `<div class="comandi">${attacca}${assedia}${ritirati}</div>`;
 }
