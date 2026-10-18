@@ -15,6 +15,7 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - `npm run build-map` — rigenera `public/data/map.json` da `data/centri.json`
 - `npm run build-relief` — rigenera `public/img/rilievo.jpg` dai dati di elevazione (scarica i tasselli in `data/dem/`)
 - `node bench.js [anni] [semi]` — partite headless con l'IA a regole, tabella in `bench-regole.txt`
+- `node bench.js 489 10 conquistatore` — Roma guidata da un giocatore automatico aggressivo: in quanti anni arriva al 75% delle tasse d'Italia
 
 ## Come si gioca
 
@@ -30,6 +31,7 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Rivolte**: oltre 3 di malcontento ogni mese può nascere un esercito ribelle, in guerra con tutti, che assedia la provincia. Se la tiene un anno la provincia diventa indipendente: va al vicino della stessa cultura o nasce un popolo nuovo.
 - **Eventi**: carestie, oracoli, ambascerie, cambi di governo (cacciata del re, tirannide, dittatore) ed eventi storici (ratto delle Sabine, XII tavole, sacco gallico). Quando ne arriva uno il gioco si ferma e una finestra mostra le opzioni con i loro effetti. Gli altri popoli scelgono con le regole o con Jev.
 - **Popoli dormienti**: le colonie greche (Siracusa, Taranto, Neapolis…) sbarcano vicino alla data storica: chi possiede la provincia sceglie se accoglierle (cede la provincia, ne ha un vicino amico e denaro) o respingerle (nascono armate e in guerra). Lucani, Bruzi e Galli arrivano senza chiedere, con un'invasione.
+- **Notizie**: quando succede qualcosa che ti riguarda (una guerra tua o di un alleato, una pace, una provincia presa o persa, una rivolta, una coalizione, la risposta a una tua proposta) il tempo si ferma e una finestra te lo dice; **Continua** la chiude e riparti quando vuoi.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
 
 ## Battaglie e assedi
@@ -37,6 +39,16 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Battaglie in diretta**: quando un tuo esercito combatte, in alto compare un riquadro con i giorni di battaglia, uomini e morale dei due schieramenti e i caduti dell'ultimo giorno. **Ritirata**: i tuoi eserciti lì perdono il 10% degli uomini e scappano nella provincia sicura più vicina; la battaglia conta come persa. Alla fine il riquadro mostra l'esito.
 - **Assedi**: ogni provincia ha un presidio (abitanti × 250 × (1 + fortificazione)). Un assedio accumula punti ogni giorno e la provincia cade a 100: più uomini assedianti vanno più veloci, un presidio grande e mura alte rallentano. Sulla mappa un simbolo di fortezza mostra i giorni che mancano; cliccandolo (o dalla scheda della provincia) si apre l'assedio: **Attacca** (assalto immediato, con la probabilità di vittoria scritta sul bottone), **Assedia** (si continua), **Ritirati** (si marcia verso la provincia sicura più vicina). L'IA assalta solo dal 75%.
 - **Eserciti**: l'IA unisce i suoi eserciti fermi nella stessa provincia; sulla mappa compaiono al più 3 soldatini per popolo in una provincia, più un "+N".
+
+## La sfida
+
+Conquistare l'Italia deve costare gran parte della partita:
+- **Ultimatum**: un popolo cede una provincia solo se sei almeno 4 volte più forte di lui e dei suoi alleati, federati e protettore (`diplomazia.ultimatumRapporto`); chi cede ti odia (−50, i suoi vicini −10), l'infamia è 1,5 volte quella di una conquista e allo stesso popolo non chiedi altro per 10 anni (`ultimatum`).
+- **Annessione**: infamia doppia (`annessione.infamia`).
+- **Coalizioni**: oltre 20 d'infamia, i popoli ostili di tutta Italia (con poca infamia loro) si alleano contro di te se insieme hanno almeno 0,7 volte la tua forza; la coalizione è annunciata (notizia e avviso nella Diplomazia) e dopo un anno, se la tua infamia è ancora alta, ti dichiara guerra tutta insieme (`coalizione`).
+- **Sovraestensione**: oltre 15 province, ogni provincia in più aggiunge 0,05 di malcontento a quelle di cultura diversa, al più +1 (`sovraestensione`).
+- **Foedus**: dopo 10 anni e con relazione 100 puoi **integrare** un federato pagando 10 × le sue tasse, oppure **liberarlo** (`foedus`).
+- **Livello di sfida** (schermata iniziale): normale; difficile (l'IA ha +20% di tasse e reclute); storico (+40%, e le coalizioni contro di te scattano già da infamia 15).
 
 ## Difficoltà e taratura
 

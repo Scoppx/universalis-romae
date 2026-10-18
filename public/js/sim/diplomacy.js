@@ -310,10 +310,10 @@ export function sogliaCoalizione(game, x) {
 }
 
 // Chi può entrare in una coalizione contro x: popoli ostili di tutta Italia (anche non confinanti), liberi,
-// non in guerra o in tregua con lui, e senza troppa infamia a loro volta.
+// non in guerra o in tregua con lui, e senza troppa infamia a loro volta. Mai il giocatore: in guerra ci va solo se lo decide lui.
 export function coalitionCandidates(game, x) {
   const soglia = game.balance.infamia.soglia;
-  return game.ordine.filter(o => o !== x && game.nazioni[o].vivo && !game.nazioni[o].protettore &&
+  return game.ordine.filter(o => o !== x && o !== game.giocatore && game.nazioni[o].vivo && !game.nazioni[o].protettore &&
     relation(game, o, x) < 0 && !friendly(game, o, x) && !atWar(game, o, x) && !inTruce(game, o, x) && game.nazioni[o].infamia < soglia);
 }
 

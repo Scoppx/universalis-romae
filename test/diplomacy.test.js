@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa, monthlyCoalitions, checkIntegrate, integrationCost } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa, monthlyCoalitions, coalitionCandidates, checkIntegrate, integrationCost } from '../public/js/sim/diplomacy.js';
 import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
@@ -451,4 +451,14 @@ test('coalizione: attacca anche se un po\' più debole del bersaglio (soglia in 
   assert.ok(Math.abs((power(g, 'latini') + power(g, 'volsci')) / power(g, 'roma') - 0.8) < 0.02);
   monthlyCoalitions(g);
   assert.ok(g.coalizioni.roma);
+});
+
+test('coalizione: il giocatore non viene messo dentro senza volerlo', () => {
+  const g = makeGame();
+  g.nazioni.volsci.infamia = 30;
+  ostili(g, 'volsci', 'roma', 'latini');
+  g.giocatore = 'roma';
+  assert.ok(!coalitionCandidates(g, 'volsci').includes('roma'));
+  g.giocatore = null;
+  assert.ok(coalitionCandidates(g, 'volsci').includes('roma'));
 });
