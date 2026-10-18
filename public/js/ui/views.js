@@ -4,7 +4,7 @@ import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, pr
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
-import { nearestSafe, checkRetreat } from '../sim/combat.js';
+import { nearestSafe, nearestSafeReachable, checkRetreat } from '../sim/combat.js';
 import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
@@ -425,7 +425,7 @@ export function siegeView(game, g, provId) {
   const p = game.province[provId];
   const mine = Object.values(game.eserciti).filter(a => a.prov === provId && a.owner === g && !a.percorso.length);
   if (!mine.length || p.controller === g || !atWar(game, g, p.controller)) return null;
-  const info = siegeInfo(game, p), dove = nearestSafe(game, g, provId);
+  const info = siegeInfo(game, p), dove = nearestSafeReachable(game, g, provId);
   return {
     prov: provId, nome: p.nome, fort: p.fort, presidio: garrison(game, p),
     uomini: mine.reduce((s, a) => s + a.fanteria + a.cavalleria, 0),
@@ -434,6 +434,6 @@ export function siegeView(game, g, provId) {
     probabilita: Math.round(assaultChance(game, g, p) * 100),
     motivoAttacco: checkAssault(game, g, provId),
     destinazione: dove ? game.province[dove].nome : null,
-    motivoRipiego: mine.some(a => a.inBattaglia) ? 'sono in battaglia: usa la ritirata nel riquadro in alto' : dove ? null : 'nessuna provincia sicura dove ripiegare'
+    motivoRipiego: mine.some(a => a.inBattaglia) ? 'sono in battaglia: usa la ritirata nel riquadro in alto' : dove ? null : 'nessuna provincia sicura raggiungibile'
   };
 }

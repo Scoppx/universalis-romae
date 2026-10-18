@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { createArmy } from '../public/js/sim/state.js';
 import { declareWar } from '../public/js/sim/war.js';
-import { siegeChance, advanceSieges, garrison, siegeRate, daysLeft, assaultChance, checkAssault } from '../public/js/sim/siege.js';
+import { siegeChance, advanceSieges, garrison, siegeRate, daysLeft, assaultChance, checkAssault, siegeInfo } from '../public/js/sim/siege.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 
 function setup() {
@@ -142,4 +142,19 @@ test('l\'IA dà l\'assalto solo con almeno il 75% di probabilità', async () => 
   assert.ok(!armyOrders(g, 'roma').some(c => c.tipo === 'assalto'));
   a.fanteria = 9000; // 9000 / 12000 = 75%
   assert.deepEqual(armyOrders(g, 'roma').filter(c => c.tipo === 'assalto'), [{ tipo: 'assalto', nazione: 'roma', provincia: 'c' }]);
+});
+
+test('assedio con più popoli dello stesso schieramento: uomini sommati, punti conservati quando cambia chi guida', () => {
+  const g = setup();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini'); // nello schieramento, ma non alleati di roma
+  createArmy(g, 'roma', 'c', 5000, 0);
+  advanceSieges(g);
+  const punti = g.province.c.assedio.punti;
+  assert.ok(punti > 0);
+  createArmy(g, 'latini', 'c', 6000, 0);
+  const info = siegeInfo(g, g.province.c);
+  assert.equal(info.uomini, 11000);
+  assert.equal(info.capo, 'latini');
+  assert.equal(info.punti, punti);
 });

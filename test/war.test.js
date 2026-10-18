@@ -234,3 +234,15 @@ test('il capofila sceglie chi riceve ogni provincia: un alleato che la occupava 
   assert.equal(relation(g, 'roma', 'latini'), rel - g.balance.guerra.presaAlleato);
   assert.deepEqual(g.log.find(e => e.tipo === 'pace').padroni, ['roma', 'roma']);
 });
+
+test('la pace azzera gli assedi delle province che cambiano padrone o tornano a chi le possedeva', () => {
+  const g = makeGame();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.province.c.controller = 'roma';
+  g.province.c.assedio = { nazione: 'roma', punti: 40 };
+  g.province.b.controller = 'volsci';
+  g.province.b.assedio = { nazione: 'volsci', punti: 30 };
+  makePeace(g, guerra, 'roma', { province: ['c'] });
+  assert.equal(g.province.c.assedio, null);
+  assert.equal(g.province.b.assedio, null);
+});

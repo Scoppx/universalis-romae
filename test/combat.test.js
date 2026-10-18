@@ -117,5 +117,13 @@ test('ripiego dall\'assedio: marcia verso la provincia sicura più vicina', () =
   assert.deepEqual(r.percorso, ['b']);
   r.percorso = []; // di nuovo fermo, per provare il caso senza province sicure
   g.province.a.owner = 'latini'; g.province.b.owner = 'latini'; // roma senza province
-  assert.equal(applyCommand(g, { tipo: 'ripiega', nazione: 'roma', provincia: 'c' }).motivo, 'nessuna provincia sicura dove ripiegare');
+  assert.equal(applyCommand(g, { tipo: 'ripiega', nazione: 'roma', provincia: 'c' }).motivo, 'nessuna provincia sicura raggiungibile');
+});
+
+test('ripiego: solo verso una provincia sicura che si può raggiungere', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  declareWar(g, 'roma', 'siculi'); // non confinano: per tornare bisogna passare dai volsci, che non sono in guerra
+  createArmy(g, 'roma', 'g', 3000, 0);
+  assert.equal(applyCommand(g, { tipo: 'ripiega', nazione: 'roma', provincia: 'g' }).motivo, 'nessuna provincia sicura raggiungibile');
 });
