@@ -447,6 +447,7 @@ export function siegeView(game, g, provId) {
     prov: provId, nome: p.nome, fort: p.fort, presidio: garrison(game, p),
     uomini: mine.reduce((s, a) => s + a.fanteria + a.cavalleria, 0),
     giorni: info ? info.giorni : null,
+    prende: info ? nome(game, info.capo) : null, // chi prenderà la provincia: chi ha iniziato l'assedio
     motivoAssedio: info ? null : mine.some(a => a.inBattaglia) ? 'si combatte: l\'assedio riprende dopo la battaglia' : 'ci sono nemici nella provincia: l\'assedio è fermo',
     probabilita: Math.round(assaultChance(game, g, p) * 100),
     motivoAttacco: checkAssault(game, g, provId),

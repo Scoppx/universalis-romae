@@ -530,3 +530,13 @@ test('diplomazia: integra e libera per i tuoi federati, notizie', () => {
   assert.match(h, /data-azione="integra"[^>]*disabled title="foedus da troppo poco/);
   assert.match(h, /data-azione="libera"[^>]*title="[^"]+"/);
 });
+
+test('finestra dell\'assedio: dice chi prenderà la provincia', () => {
+  const g = makeGame();
+  for (const a of Object.values(g.eserciti)) delete g.eserciti[a.id];
+  const { guerra } = declareWar(g, 'latini', 'volsci');
+  g.guerre[guerra].attaccanti.push('roma');
+  createArmy(g, 'latini', 'c', 6000, 0);
+  createArmy(g, 'roma', 'c', 1000, 0);
+  assert.equal(V.siegeView(g, 'roma', 'c').prende, 'latini');
+});

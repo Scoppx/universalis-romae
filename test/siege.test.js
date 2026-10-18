@@ -155,6 +155,18 @@ test('assedio con più popoli dello stesso schieramento: uomini sommati, punti c
   createArmy(g, 'latini', 'c', 6000, 0);
   const info = siegeInfo(g, g.province.c);
   assert.equal(info.uomini, 11000);
-  assert.equal(info.capo, 'latini');
+  assert.equal(info.capo, 'roma'); // chi ha iniziato l'assedio resta alla guida
   assert.equal(info.punti, punti);
+});
+
+test('la provincia va a chi ha iniziato l\'assedio, anche se poi arriva un alleato più numeroso', () => {
+  const g = setup();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.guerre[guerra].attaccanti.push('latini');
+  createArmy(g, 'roma', 'c', 3000, 0);
+  advanceSieges(g);
+  createArmy(g, 'latini', 'c', 9000, 0);
+  assert.equal(siegeInfo(g, g.province.c).capo, 'roma');
+  for (let i = 0; i < 200 && g.province.c.controller === 'volsci'; i++) advanceSieges(g);
+  assert.equal(g.province.c.controller, 'roma');
 });

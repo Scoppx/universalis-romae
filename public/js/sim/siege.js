@@ -36,7 +36,13 @@ export function siegeInfo(game, prov, qui = Object.values(game.eserciti).filter(
   const per = {};
   for (const a of ass) per[a.owner] = (per[a.owner] ?? 0) + uomini(a);
   const ordine = id => (id === RIBELLI ? Infinity : game.ordine.indexOf(id));
-  const capo = Object.keys(per).sort((a, b) => per[b] - per[a] || ordine(a) - ordine(b))[0];
+  let capo = Object.keys(per).sort((a, b) => per[b] - per[a] || ordine(a) - ordine(b))[0];
+  // chi ha iniziato l'assedio resta alla guida (e prende la provincia) finché è lì, se è dalla stessa parte
+  const prima = prov.assedio?.nazione;
+  if (prima && prima !== capo && per[prima] && prima !== RIBELLI && capo !== RIBELLI) {
+    const w = warBetween(game, capo, prov.controller);
+    if (friendly(game, prima, capo) || (w && sideOf(w, prima) === sideOf(w, capo))) capo = prima;
+  }
   if (qui.some(e => atWar(game, capo, e.owner))) return null;
   // dalla stessa parte di chi guida: amici, o nello stesso schieramento della guerra contro chi tiene la provincia
   const guerra = capo === RIBELLI ? null : warBetween(game, capo, prov.controller);

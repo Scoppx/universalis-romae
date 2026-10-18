@@ -247,6 +247,7 @@ export function assedioHtml(v, { finestra = true } = {}) {
     : ` title="Lasci l'assedio: i tuoi eserciti marciano verso ${esc(v.destinazione)}"`) + '>Ritirati</button>';
   return `${finestra ? `<h2>Assedio di ${esc(v.nome)}</h2>` : `<h3>Assedio</h3>`}<table>` +
     `<tr><td>I tuoi uomini</td><td>${esc(v.uomini)}</td></tr><tr><td>Presidio</td><td>${esc(v.presidio)}</td></tr>` +
-    `<tr><td>Fortificazione</td><td>livello ${esc(v.fort)}</td></tr><tr><td>Caduta</td><td>${esc(giorni)}</td></tr></table>` +
+    `<tr><td>Fortificazione</td><td>livello ${esc(v.fort)}</td></tr><tr><td>Caduta</td><td>${esc(giorni)}</td></tr>` +
+    (v.prende ? `<tr><td>La prende</td><td>${esc(v.prende)}</td></tr>` : '') + '</table>' +
     `<div class="comandi">${attacca}${assedia}${ritirati}</div>`;
 }
