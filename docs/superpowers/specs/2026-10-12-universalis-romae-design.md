@@ -475,7 +475,7 @@ fortificazioni: sezione 3).
 Giocando Roma l'utente ha conquistato l'Italia in circa 150 anni, usando molto annessioni e ultimatum. Obiettivo:
 un giocatore aggressivo con Roma, a sfida "normale", non controlla il 75% delle tasse d'Italia prima di 350 anni.
 
-- **Ultimatum**: si cede solo se chi chiede è almeno 6 volte più forte (taratura; prima 3) del bersaglio **e dei suoi alleati**
+- **Ultimatum**: si cede solo se chi chiede è almeno 4 volte più forte (taratura; prima 3) del bersaglio **e dei suoi alleati**
   (federati e protettore compresi); chi cede perde 50 di relazione con chi chiede, i suoi confinanti 10; dopo un
   ultimatum accettato, niente altri ultimatum a quel popolo per 10 anni; l'infamia è 1,5 volte quella di una conquista.
 - **Annessione**: l'infamia è il doppio di quella di una pace normale.
@@ -487,8 +487,8 @@ un giocatore aggressivo con Roma, a sfida "normale", non controlla il 75% delle 
   guerra (il più forte tra chi confina è il capofila, gli altri entrano nello stesso schieramento, senza perdere stabilità perché
   l'infamia del bersaglio è un pretesto); altrimenti si scioglie, con una notizia. Nelle paci i membri pagano
   l'infamia come tutti e valgono i limiti di quota. Un popolo affronta al più una coalizione ogni 10 anni.
-- **Sovraestensione**: oltre 15 province, ogni provincia in più aggiunge 0,15 di malcontento a tutte le province
-  di cultura diversa da quella del padrone (al più +3).
+- **Sovraestensione**: oltre 15 province, ogni provincia in più aggiunge 0,05 di malcontento a tutte le province
+  di cultura diversa da quella del padrone (al più +1; taratura: con 0,15 e +3 bloccava ogni conquista).
 - **Foedus**: il protettore può **integrare** un federato dopo 10 anni di foedus con relazione almeno 100: paga
   10 × le tasse delle sue province, prende tutte le province, infamia pari a metà di una conquista; oppure
   **liberarlo** (il federato torna indipendente, relazione +25).

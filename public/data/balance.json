@@ -110,7 +110,7 @@
     "pretestoAnni": 5,
     "alleanzaMinRelazione": 25,
     "chiamataMinRelazione": 50,
-    "ultimatumRapporto": 6,
+    "ultimatumRapporto": 4,
     "uscitaFoedusStabilita": 2,
     "uscitaFoedusRelazione": -100
   },
@@ -208,8 +208,8 @@
   },
   "sovraestensione": {
     "soglia": 15,
-    "perProvincia": 0.15,
-    "massimo": 3
+    "perProvincia": 0.05,
+    "massimo": 1
   },
   "foedus": {
     "anniIntegrazione": 10,

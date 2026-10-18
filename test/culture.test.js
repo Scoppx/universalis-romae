@@ -112,6 +112,8 @@ test('il ciclo del giorno fa girare la cultura il primo del mese', () => {
 
 test('sovraestensione: oltre 15 province le terre di altra cultura sono più scontente', () => {
   const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  Object.assign(g.balance.sovraestensione, { soglia: 15, perProvincia: 0.15, massimo: 3 }); // misura la formula, non la taratura
   g.province.b.cultura = 'volsca';
   const base = malcontent(g, 'b');
   const conta = n => { g.province.zz && 0; return overextension(g, 'roma', n); };
