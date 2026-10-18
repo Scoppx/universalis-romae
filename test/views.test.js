@@ -397,7 +397,7 @@ test('guerre: annessione quando il tuo schieramento occupa tutto il popolo, limi
   g.province.f.controller = 'roma';
   w = V.warsView(g, 'roma')[0];
   assert.equal(w.annessioni[0].motivo, null);
-  assert.equal(w.annessioni[0].infamia, 2 * (g.balance.infamia.perProvincia + g.balance.infamia.culturaDiversa));
+  assert.equal(w.annessioni[0].infamia, 2 * (g.balance.infamia.perProvincia + g.balance.infamia.culturaDiversa) * g.balance.annessione.infamia);
   assert.deepEqual(w.annessioni[0].province.sort(), ['c', 'f']);
   proposePeace(g, 'roma', guerra, { ricevente: 'roma', province: ['c'] });
   assert.equal(V.warsView(g, 'roma')[0].annessioni[0].motivo, 'hai già una proposta in attesa');

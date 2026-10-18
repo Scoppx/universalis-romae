@@ -216,7 +216,7 @@ export function warsView(game, g) {
         return {
           id, nome: nome(game, id), province: prov.map(p => p.id), motivo,
           // l'infamia la paga chi occupa ogni provincia: qui quella che pagheresti tu
-          infamia: prov.filter(p => p.controller === g).reduce((s, p) => s + inf.perProvincia + (p.cultura !== mia.cultura ? inf.culturaDiversa : 0), 0)
+          infamia: prov.filter(p => p.controller === g).reduce((s, p) => s + (inf.perProvincia + (p.cultura !== mia.cultura ? inf.culturaDiversa : 0)) * game.balance.annessione.infamia, 0)
         };
       })
     };

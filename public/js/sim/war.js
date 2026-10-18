@@ -156,10 +156,11 @@ export function makePeace(game, warId, receiver, termini) {
   const err = validTerms(game, war, receiver, termini);
   if (err) return { ok: false, motivo: err };
   const inf = game.balance.infamia, padroni = [];
+  const molt = termini.annessione ? game.balance.annessione.infamia : 1; // annettere un popolo intero costa di più
   // ogni provincia va a chi la occupa (il ricevente o un suo alleato), che ne paga l'infamia
   for (const id of termini.province) {
     const p = game.province[id], nuovo = termini.assegna?.[id] ?? p.controller, R = game.nazioni[nuovo];
-    R.infamia += inf.perProvincia + (p.cultura !== R.cultura ? inf.culturaDiversa : 0);
+    R.infamia += (inf.perProvincia + (p.cultura !== R.cultura ? inf.culturaDiversa : 0)) * molt;
     // prendere una provincia occupata da un alleato: l'alleato se lo ricorda
     if (nuovo !== p.controller) changeRelation(game, nuovo, p.controller, -game.balance.guerra.presaAlleato);
     p.owner = nuovo;

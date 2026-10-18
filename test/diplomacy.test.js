@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa } from '../public/js/sim/diplomacy.js';
 import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
@@ -103,7 +103,7 @@ test('ultimatum: provincia ceduta con infamia; non vale più se la provincia cam
   rispondi(g, 'latini', p, true);
   assert.equal(g.province.e.owner, 'roma');
   assert.ok(g.nazioni.roma.infamia >= 2);
-  g.day += 366; // un ultimatum l'anno per vicino
+  g.day += 10 * 365 + 1; // dopo un ultimatum accettato, 10 anni d'attesa
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'd' }), 'è la sua ultima provincia');
   const q = proponi(g, 'roma', 'ultimatum', 'volsci', { provincia: 'c' }).proposta;
   g.province.c.owner = 'latini';
@@ -266,6 +266,8 @@ test('revisione: ultimatum al massimo uno l\'anno per vicino; chi cede ritira l\
   g.province.e.owner = 'latini'; g.province.e.controller = 'latini';
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), 'ultimatum già inviato quest\'anno');
   g.day += 366;
+  assert.match(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), /^hai già avuto una provincia da lui/); // ha ceduto: 10 anni d'attesa
+  g.day += 10 * 365;
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), null);
 });
 
@@ -301,4 +303,27 @@ test('anteprima di guerra: alleato che non può entrare, motivo di una guerra im
   const v = warPreview(g, 'roma', 'volsci');
   assert.deepEqual(v.esclusi, [{ id: 'latini', motivo: 'è amico di chi attacchi' }]);
   assert.equal(warPreview(g, 'roma', 'siculi').errore, 'nessun confine');
+});
+
+test('ultimatum: contano gli alleati del bersaglio; chi cede se la lega al dito; 10 anni di attesa; infamia più alta', async () => {
+  const { answerProposals } = await import('../public/js/ai/rules.js');
+  const { power } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
+  r.fanteria += Math.ceil(3 * power(g, 'latini') - power(g, 'roma')) + 10; r.cavalleria = r.cavalleria; // roma appena 3 volte più forte dei latini
+  assert.equal(forzaDifesa(g, 'latini'), power(g, 'latini'));
+  let pid = proponi(g, 'roma', 'ultimatum', 'latini', { provincia: 'd' }).proposta;
+  assert.equal(answerProposals(g, 'latini').find(c => c.proposta === pid).accetta, true);
+  allea(g, 'latini', 'volsci');
+  assert.equal(forzaDifesa(g, 'latini'), power(g, 'latini') + power(g, 'volsci'));
+  assert.equal(answerProposals(g, 'latini').find(c => c.proposta === pid).accetta, false);
+  const relRL = relation(g, 'roma', 'latini'), relRV = relation(g, 'roma', 'volsci');
+  assert.deepEqual(rispondi(g, 'latini', pid, true), { ok: true, accettata: true });
+  assert.equal(g.province.d.owner, 'roma');
+  assert.equal(g.nazioni.roma.infamia, g.balance.infamia.perProvincia * g.balance.ultimatum.infamia);
+  assert.equal(relation(g, 'roma', 'latini'), relRL + g.balance.ultimatum.relazioneBersaglio);
+  assert.equal(relation(g, 'roma', 'volsci'), relRV + g.balance.ultimatum.relazioneVicini);
+  g.day += 400;
+  assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), 'hai già avuto una provincia da lui: riprova tra 9 anni');
 });

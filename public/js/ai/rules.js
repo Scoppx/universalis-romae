@@ -9,7 +9,7 @@ import { assaultChance, checkAssault } from '../sim/siege.js';
 export { power };
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, validTerms } from '../sim/war.js';
 import { distancesFrom } from '../sim/armies.js';
-import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus } from '../sim/diplomacy.js';
+import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus, forzaDifesa } from '../sim/diplomacy.js';
 import { stabilityCost } from '../sim/economy.js';
 import { isFirstOfMonth } from '../sim/calendar.js';
 
@@ -218,7 +218,7 @@ export function answerProposals(game, id) {
       case 'alleanza': accetta = relation(game, id, p.da) >= d.alleanzaMinRelazione; break;
       case 'foedus': accetta = relation(game, id, p.da) >= d.foedusMinRelazione; break;
       case 'tributo': accetta = power(game, p.da) >= 2 * power(game, id); break;
-      case 'ultimatum': accetta = power(game, p.da) >= d.ultimatumRapporto * power(game, id); break;
+      case 'ultimatum': accetta = power(game, p.da) >= d.ultimatumRapporto * forzaDifesa(game, id); break; // con i suoi alleati
       case 'chiamata': accetta = relation(game, id, p.da) >= d.chiamataMinRelazione; break;
       default: accetta = false;
     }

@@ -234,3 +234,13 @@ test('il capofila sceglie chi riceve ogni provincia: un alleato che la occupava 
   assert.equal(relation(g, 'roma', 'latini'), rel - g.balance.guerra.presaAlleato);
   assert.deepEqual(g.log.find(e => e.tipo === 'pace').padroni, ['roma', 'roma']);
 });
+
+test('annessione: infamia doppia rispetto a una pace normale', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.province.c.controller = 'roma'; g.province.f.controller = 'roma';
+  const inf = g.balance.infamia, per = inf.perProvincia + inf.culturaDiversa;
+  makePeace(g, guerra, 'roma', { province: ['c', 'f'], annessione: 'volsci' });
+  assert.equal(g.nazioni.roma.infamia, 2 * per * g.balance.annessione.infamia);
+});

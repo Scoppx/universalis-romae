@@ -1,5 +1,5 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
-import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf } from './state.js';
+import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf, neighborsOf } from './state.js';
 import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome, checkWar, hasPretext } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
@@ -21,6 +21,7 @@ export function initDiplomacy(game) {
     n.pretesti ??= {};
     n.ambascerie ??= {};
     n.ultimatumInviati ??= {};
+    n.ultimatumAccettati ??= {}; // a chi ha già ceduto una provincia per ultimatum, e quando
   }
 }
 
@@ -98,6 +99,13 @@ export function friendly(game, a, b) {
   return allied(game, a, b) || A.protettore === b || B.protettore === a;
 }
 
+// Forza con cui un popolo si difende: lui, i suoi alleati, i suoi federati e il suo protettore.
+export function forzaDifesa(game, id) {
+  const n = game.nazioni[id];
+  const amici = new Set([id, ...n.alleati, ...federatiOf(game, id), ...(n.protettore ? [n.protettore] : [])]);
+  return [...amici].filter(x => game.nazioni[x]?.vivo).reduce((s, x) => s + power(game, x), 0);
+}
+
 export function checkProposal(game, from, genere, to, extra = {}) {
   const A = game.nazioni[from], B = game.nazioni[to], d = D(game);
   if (!A?.vivo || !B?.vivo || from === to) return 'popolo non valido';
@@ -121,6 +129,8 @@ export function checkProposal(game, from, genere, to, extra = {}) {
       return null;
     case 'ultimatum': {
       if (!extra.accettazione && game.day - (A.ultimatumInviati?.[to] ?? -Infinity) < 365) return 'ultimatum già inviato quest\'anno';
+      const resta = (A.ultimatumAccettati?.[to] ?? -Infinity) + game.balance.ultimatum.anniAttesa * 365 - game.day;
+      if (!extra.accettazione && resta > 0) return `hai già avuto una provincia da lui: riprova tra ${Math.ceil(resta / 365)} anni`;
       const p = game.province[extra.provincia];
       if (!p || p.owner !== to || p.controller !== to) return 'provincia non valida';
       if (!p.vicini.some(v => game.province[v].owner === from)) return 'provincia non confinante';
@@ -176,8 +186,12 @@ export function answerDiplomatic(game, p, accetta) {
   } else if (p.tipo === 'tributo') {
     B.tributo = { a: p.da, fine: game.day + d.tributoAnni * 365 };
   } else if (p.tipo === 'ultimatum') {
-    const prov = game.province[p.provincia], inf = game.balance.infamia;
-    A.infamia += inf.perProvincia + (prov.cultura !== A.cultura ? inf.culturaDiversa : 0);
+    const prov = game.province[p.provincia], inf = game.balance.infamia, u = game.balance.ultimatum;
+    // prendere senza combattere è più odioso: più infamia, rancore del bersaglio e dei suoi vicini, e anni di attesa
+    A.infamia += (inf.perProvincia + (prov.cultura !== A.cultura ? inf.culturaDiversa : 0)) * u.infamia;
+    changeRelation(game, p.da, p.a, u.relazioneBersaglio);
+    for (const v of neighborsOf(game, p.a)) if (v !== p.da && game.nazioni[v]?.vivo && game.ordine.includes(v)) changeRelation(game, v, p.da, u.relazioneVicini);
+    A.ultimatumAccettati[p.a] = game.day;
     prov.owner = p.da;
     prov.controller = p.da;
     checkSurvival(game);

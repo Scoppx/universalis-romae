@@ -191,5 +191,14 @@
   "nuoviPopoli": {
     "tregua": 1825,
     "esercito": 1.5
+  },
+  "ultimatum": {
+    "anniAttesa": 10,
+    "infamia": 1.5,
+    "relazioneBersaglio": -50,
+    "relazioneVicini": -10
+  },
+  "annessione": {
+    "infamia": 2
   }
 }
