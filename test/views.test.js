@@ -5,6 +5,7 @@ import { loadData } from '../tools/load-data.js';
 import { declareWar, proposePeace, makePeace } from '../public/js/sim/war.js';
 import { createArmy } from '../public/js/sim/state.js';
 import * as V from '../public/js/ui/views.js';
+import * as H from '../public/js/ui/panels.js';
 import { ensureRebels } from '../public/js/sim/culture.js';
 import { monthlyEvents } from '../public/js/sim/events.js';
 import { provinceFill, cultureColor, RELAZIONE, TERRENO } from '../public/js/ui/colors.js';
@@ -511,4 +512,21 @@ test('coalizione: notizie e avviso nella diplomazia del bersaglio', () => {
 test('governo: province e sovraestensione', () => {
   const g = makeGame();
   assert.deepEqual(V.governmentView(g, 'roma').sovraestensione, { province: 2, soglia: 15, malcontento: 0 });
+});
+
+test('diplomazia: integra e libera per i tuoi federati, notizie', () => {
+  const g = makeGame();
+  g.nazioni.volsci.protettore = 'roma';
+  g.nazioni.volsci.foedusDal = 0;
+  const d = V.diplomacyView(g, 'roma').find(x => x.id === 'volsci');
+  assert.equal(d.stato, 'federato');
+  assert.equal(d.azioni.integra, 'foedus da troppo poco: ancora 10 anni');
+  assert.equal(d.azioni.libera, null);
+  assert.equal(d.costoIntegrazione, 20);
+  assert.equal(V.diplomacyView(g, 'roma').find(x => x.id === 'latini').azioni.libera, 'non è tuo federato');
+  assert.equal(V.formatLogEntry({ tipo: 'integrazione', nazione: 'roma', federato: 'volsci' }, g, 'siculi'), 'roma integra volsci, suo federato.');
+  assert.equal(V.formatLogEntry({ tipo: 'liberazione', nazione: 'roma', federato: 'volsci' }, g, 'siculi'), 'roma libera volsci dal foedus.');
+  const h = H.diplomaziaHtml(V.diplomacyView(g, 'roma'));
+  assert.match(h, /data-azione="integra"[^>]*disabled title="foedus da troppo poco/);
+  assert.match(h, /data-azione="libera"[^>]*title="[^"]+"/);
 });

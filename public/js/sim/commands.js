@@ -2,7 +2,7 @@
 import { declareWar, proposePeace, answerProposal } from './war.js';
 import { orderMove, recruit, mergeArmies, splitArmy, rallyArmies, disbandArmies } from './armies.js';
 import { raiseStability } from './economy.js';
-import { embassy, propose, breakAlliance, leaveFoedus } from './diplomacy.js';
+import { embassy, propose, breakAlliance, leaveFoedus, integrate, release } from './diplomacy.js';
 import { moveSlider } from './government.js';
 import { foundColony, fortify } from './culture.js';
 import { chooseOption } from './events.js';
@@ -38,6 +38,10 @@ export function applyCommand(game, cmd) {
       return fortify(game, cmd.nazione, cmd.provincia);
     case 'scegli':
       return chooseOption(game, cmd.nazione, cmd.evento, cmd.opzione);
+    case 'integra':
+      return integrate(game, cmd.nazione, cmd.verso);
+    case 'libera':
+      return release(game, cmd.nazione, cmd.verso);
     case 'esci_foedus':
       return leaveFoedus(game, cmd.nazione);
     case 'rompi_alleanza':

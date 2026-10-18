@@ -411,6 +411,8 @@ document.addEventListener('click', e => {
     }
     case 'apri-diplomazia': document.querySelector('[data-scheda="diplomazia"]').click(); break;
     case 'ambasceria': comando({ tipo: 'ambasceria', verso: id }); break;
+    case 'integra': comando({ tipo: 'integra', verso: id }); break;
+    case 'libera': comando({ tipo: 'libera', verso: id }); break;
     case 'alleanza':
     case 'foedus':
     case 'tributo': {

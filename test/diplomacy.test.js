@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa, monthlyCoalitions } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa, monthlyCoalitions, checkIntegrate, integrationCost } from '../public/js/sim/diplomacy.js';
 import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
@@ -376,4 +376,35 @@ test('coalizione: si scioglie se l\'infamia scende; chi ha troppa infamia non ne
   ostili(h, 'roma', 'latini', 'volsci');
   monthlyCoalitions(h);
   assert.equal(h.coalizioni?.roma, undefined);
+});
+
+test('foedus: integrare il federato dopo 10 anni con buone relazioni e denari, oppure liberarlo', () => {
+  const g = makeGame();
+  g.nazioni.volsci.protettore = 'roma';
+  g.nazioni.volsci.foedusDal = 0;
+  assert.equal(checkIntegrate(g, 'latini', 'volsci'), 'non è tuo federato');
+  assert.equal(checkIntegrate(g, 'roma', 'volsci'), 'foedus da troppo poco: ancora 10 anni');
+  g.day = 10 * 365;
+  assert.match(checkIntegrate(g, 'roma', 'volsci'), /^relazione troppo bassa/);
+  changeRelation(g, 'roma', 'volsci', 150);
+  const costo = integrationCost(g, 'volsci');
+  assert.equal(costo, 10 * 2); // tasse dei volsci: 1 + 1
+  g.nazioni.roma.tesoro = 0;
+  assert.equal(checkIntegrate(g, 'roma', 'volsci'), `denari insufficienti: servono ${costo}`);
+  g.nazioni.roma.tesoro = 100;
+  const eserciti = Object.values(g.eserciti).filter(a => a.owner === 'volsci').map(a => a.id);
+  assert.deepEqual(applyCommand(g, { tipo: 'integra', nazione: 'roma', verso: 'volsci' }), { ok: true });
+  assert.equal(g.nazioni.volsci.vivo, false);
+  assert.equal(g.province.c.owner, 'roma');
+  assert.equal(g.province.f.owner, 'roma');
+  assert.equal(g.nazioni.roma.tesoro, 100 - costo);
+  assert.equal(g.nazioni.roma.infamia, 2 * (g.balance.infamia.perProvincia + g.balance.infamia.culturaDiversa) * g.balance.foedus.infamia);
+  assert.ok(eserciti.every(id => g.eserciti[id]?.owner === 'roma'));
+  const h = makeGame();
+  h.nazioni.volsci.protettore = 'roma';
+  const rel = relation(h, 'roma', 'volsci');
+  assert.deepEqual(applyCommand(h, { tipo: 'libera', nazione: 'roma', verso: 'volsci' }), { ok: true });
+  assert.equal(h.nazioni.volsci.protettore, null);
+  assert.equal(relation(h, 'roma', 'volsci'), rel + h.balance.foedus.relazioneLiberazione);
+  assert.equal(applyCommand(h, { tipo: 'libera', nazione: 'roma', verso: 'volsci' }).motivo, 'non è tuo federato');
 });

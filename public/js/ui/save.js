@@ -86,6 +86,7 @@ function validateGame(s, data) {
     if (n.slider !== undefined && !(isObj(n.slider) && SLIDER.every(q => isInt(n.slider[q]) && Math.abs(n.slider[q]) <= 5))) return `popolo ${k}`;
     if (n.difficolta !== undefined && !isStr(n.difficolta)) return `popolo ${k}`;
     if (n.coalizioneDal !== undefined && n.coalizioneDal !== null && !isInt(n.coalizioneDal)) return `popolo ${k}`;
+    if (n.foedusDal !== undefined && n.foedusDal !== null && !isInt(n.foedusDal)) return `popolo ${k}`;
     if (n.ultimoSlider !== undefined && n.ultimoSlider !== null && !isInt(n.ultimoSlider)) return `popolo ${k}`;
     for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati', 'ultimatumAccettati']) {
       if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => attiva(o) && isInt(v)))) return `popolo ${k}`;

@@ -210,5 +210,12 @@
     "soglia": 15,
     "perProvincia": 0.15,
     "massimo": 3
+  },
+  "foedus": {
+    "anniIntegrazione": 10,
+    "relazioneIntegrazione": 100,
+    "costoPerTassa": 10,
+    "infamia": 0.5,
+    "relazioneLiberazione": 25
   }
 }

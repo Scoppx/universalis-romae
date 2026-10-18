@@ -8,7 +8,7 @@ import { nearestSafe, nearestSafeReachable, checkRetreat } from '../sim/combat.j
 import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
-import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione } from '../sim/diplomacy.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione, checkIntegrate, checkRelease, integrationCost } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
 const DIFFICOLTA = ['facile', 'normale', 'difficile', 'molto difficile'];
@@ -177,12 +177,15 @@ export function diplomacyView(game, g) {
         id, nome: nome(game, id), relazione: relation(game, g, id), confina: bordersNation(game, g, id), stato,
         tregua: fineTregua(game, g, id),
         coalizione: ostili.includes(id),
+        costoIntegrazione: integrationCost(game, id),
         costoGuerra: hasPretext(game, g, id) ? 0 : game.balance.guerra.senzaPretesto,
         azioni: {
           ambasceria: checkEmbassy(game, g, id),
           alleanza: checkProposal(game, g, 'alleanza', id),
           rompi: allied(game, g, id) ? null : 'non siete alleati',
           esci: me.protettore === id ? checkLeaveFoedus(game, g) : 'non è il tuo protettore',
+          integra: checkIntegrate(game, g, id),
+          libera: checkRelease(game, g, id),
           foedus: checkProposal(game, g, 'foedus', id),
           tributo: checkProposal(game, g, 'tributo', id),
           guerra: motivoGuerra(game, g, id),
@@ -334,6 +337,8 @@ export function formatLogEntry(e, game, g) {
     case 'nascita': return `Nasce ${N(e.nazione)} a ${P(e.prov)}.`;
     case 'governo': return `${N(e.nazione)} diventa ${GOVERNI_ART[e.governo] ?? e.governo}.`;
     case 'evento': return e.storico && e.nazione !== g ? `${N(e.nazione)}: ${eventDef(game, e.evento)?.titolo ?? e.evento}.` : null;
+    case 'integrazione': return `${N(e.nazione)} integra ${N(e.federato)}, suo federato.`;
+    case 'liberazione': return `${N(e.nazione)} libera ${N(e.federato)} dal foedus.`;
     case 'coalizione_formata': return `Si forma una coalizione contro ${N(e.contro)}: ${e.membri.map(N).join(', ')}. Attaccherà entro un anno se la sua infamia resta alta.`;
     case 'coalizione_guerra': return `La coalizione (${e.membri.map(N).join(', ')}) dichiara guerra a ${N(e.contro)}.`;
     case 'coalizione_sciolta': return `La coalizione contro ${N(e.contro)} si scioglie.`;

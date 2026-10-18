@@ -185,6 +185,7 @@ export function answerDiplomatic(game, p, accetta) {
   } else if (p.tipo === 'foedus') {
     for (const x of [...B.alleati]) breakAlliance(game, p.a, x);
     B.protettore = p.da;
+    B.foedusDal = game.day;
   } else if (p.tipo === 'tributo') {
     B.tributo = { a: p.da, fine: game.day + d.tributoAnni * 365 };
   } else if (p.tipo === 'ultimatum') {
@@ -357,4 +358,54 @@ export function monthlyCoalitions(game) {
       log(game, { tipo: 'coalizione_formata', contro: x, membri });
     }
   }
+}
+
+// --- foedus: integrare o liberare un federato
+
+export function integrationCost(game, f) {
+  return game.balance.foedus.costoPerTassa * provincesOf(game, f).reduce((s, p) => s + p.tasse, 0);
+}
+
+export function checkIntegrate(game, P, f) {
+  const F = game.nazioni[f], c = game.balance.foedus;
+  if (!F?.vivo || F.protettore !== P) return 'non è tuo federato';
+  const resta = (F.foedusDal ?? -Infinity) + c.anniIntegrazione * 365 - game.day;
+  if (resta > 0) return `foedus da troppo poco: ancora ${Math.ceil(resta / 365)} anni`;
+  const rel = relation(game, P, f);
+  if (rel < c.relazioneIntegrazione) return `relazione troppo bassa (${rel}, serve ${c.relazioneIntegrazione})`;
+  if (Object.values(game.guerre).some(w => sideOf(w, P) || sideOf(w, f))) return 'non durante una guerra';
+  const costo = integrationCost(game, f);
+  if (game.nazioni[P].tesoro < costo) return `denari insufficienti: servono ${costo}`;
+  return null;
+}
+
+// Integrazione: il protettore paga e prende in pace tutto il federato, con metà dell'infamia di una conquista.
+export function integrate(game, P, f) {
+  const err = checkIntegrate(game, P, f);
+  if (err) return { ok: false, motivo: err };
+  const A = game.nazioni[P], inf = game.balance.infamia;
+  A.tesoro -= integrationCost(game, f);
+  for (const p of provincesOf(game, f)) {
+    A.infamia += (inf.perProvincia + (p.cultura !== A.cultura ? inf.culturaDiversa : 0)) * game.balance.foedus.infamia;
+    p.owner = P;
+    p.controller = P;
+    p.assedio = null;
+  }
+  for (const a of Object.values(game.eserciti)) if (a.owner === f) { a.owner = P; a.percorso = []; } // i suoi soldati passano al protettore
+  log(game, { tipo: 'integrazione', nazione: P, federato: f });
+  checkSurvival(game);
+  return { ok: true };
+}
+
+export function checkRelease(game, P, f) {
+  return game.nazioni[f]?.vivo && game.nazioni[f].protettore === P ? null : 'non è tuo federato';
+}
+
+export function release(game, P, f) {
+  const err = checkRelease(game, P, f);
+  if (err) return { ok: false, motivo: err };
+  game.nazioni[f].protettore = null;
+  changeRelation(game, P, f, game.balance.foedus.relazioneLiberazione);
+  log(game, { tipo: 'liberazione', nazione: P, federato: f });
+  return { ok: true };
 }

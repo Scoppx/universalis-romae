@@ -62,6 +62,8 @@ const SPIEGA = {
   alleanza: 'Proponi un\'alleanza: se accetta, vi chiamerete a vicenda nelle guerre.',
   rompi: 'Rompi l\'alleanza: non vi aiuterete più e la relazione peggiora.',
   esci: 'Esci dal foedus: perdi 2 di stabilità e il protettore ottiene un pretesto di guerra contro di te.',
+  integra: 'Integri il federato: paghi i denari indicati e tutte le sue province diventano tue, con metà dell\'infamia di una conquista; i suoi eserciti passano a te.',
+  libera: 'Liberi il federato: torna indipendente e la relazione migliora.',
   foedus: 'Proponi un foedus: se accetta diventa tuo federato, ti cede uomini ogni mese e combatte con te.',
   tributo: 'Chiedi un tributo (il 20% delle sue entrate per 10 anni): se rifiuta, hai un pretesto di guerra.',
   ultimatum: 'Chiedi la provincia scelta nel menu: se rifiuta, hai un pretesto di guerra.',
@@ -89,6 +91,7 @@ export function diplomaziaHtml(list, coalizione = null) {
       bottone('ambasceria', d.id, 'Ambasceria', d.azioni.ambasceria) +
       (d.stato === 'alleato' ? bottone('rompi', d.id, 'Rompi alleanza', d.azioni.rompi)
         : d.stato === 'protettore' ? bottone('esci', d.id, 'Esci dal foedus (−2 stab.)', d.azioni.esci)
+        : d.stato === 'federato' ? bottone('integra', d.id, `Integra (${d.costoIntegrazione} denari)`, d.azioni.integra) + bottone('libera', d.id, 'Libera', d.azioni.libera)
         : bottone('alleanza', d.id, 'Alleanza', d.azioni.alleanza)) +
       bottone('foedus', d.id, 'Foedus', d.azioni.foedus) +
       bottone('tributo', d.id, 'Tributo', d.azioni.tributo) +
