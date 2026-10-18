@@ -160,6 +160,12 @@ export function governmentView(game, g) {
   };
 }
 
+// Perché non si può mandare un ultimatum (attesa, tregua…): il motivo di una provincia di confine, se ce n'è una.
+function motivoUltimatum(game, g, id) {
+  const p = Object.values(game.province).find(q => q.owner === id && q.vicini.some(v => game.province[v].owner === g));
+  return p ? checkProposal(game, g, 'ultimatum', id, { provincia: p.id }) ?? 'nessuna provincia da chiedere' : 'nessuna provincia da chiedere';
+}
+
 export function diplomacyView(game, g) {
   const me = game.nazioni[g];
   const ostili = coalition(game, g);
@@ -189,7 +195,7 @@ export function diplomacyView(game, g) {
           foedus: checkProposal(game, g, 'foedus', id),
           tributo: checkProposal(game, g, 'tributo', id),
           guerra: motivoGuerra(game, g, id),
-          ultimatum: { motivo: province.length ? null : 'nessuna provincia da chiedere', province }
+          ultimatum: { motivo: province.length ? null : motivoUltimatum(game, g, id), province }
         }
       };
     })
@@ -345,7 +351,12 @@ export function formatLogEntry(e, game, g) {
     case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
     case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
     case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;
-    case 'rifiutata': return e.da === g ? `${N(e.a)} rifiuta la tua proposta di pace.` : null;
+    case 'rifiutata': {
+      if (e.da !== g) return null;
+      const cosa = { ultimatum: 'il tuo ultimatum', alleanza: 'la tua alleanza', foedus: 'il foedus', tributo: 'il tributo',
+        chiamata: 'la tua chiamata alle armi', ambasceria: 'la tua ambasceria' }[e.genere] ?? (e.genere ? 'la tua proposta' : 'la tua proposta di pace');
+      return `${N(e.a)} rifiuta ${cosa}.`;
+    }
     default: return null;
   }
 }

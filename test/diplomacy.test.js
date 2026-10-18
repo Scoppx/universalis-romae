@@ -462,3 +462,37 @@ test('coalizione: il giocatore non viene messo dentro senza volerlo', () => {
   g.giocatore = null;
   assert.ok(coalitionCandidates(g, 'volsci').includes('roma'));
 });
+
+test('revisione: niente coalizione se nessun membro confina con il bersaglio', () => {
+  const g = makeGame();
+  indebolisci(g);
+  g.nazioni.roma.infamia = 30;
+  ostili(g, 'roma', 'siculi');
+  for (const e of Object.values(g.eserciti)) if (e.owner === 'siculi') e.fanteria = 50000;
+  monthlyCoalitions(g);
+  assert.equal(g.coalizioni.roma, undefined);
+});
+
+test('revisione: due membri in guerra tra loro non combattono dalla stessa parte', () => {
+  const g = makeGame();
+  indebolisci(g);
+  g.nazioni.roma.infamia = 30;
+  ostili(g, 'roma', 'latini', 'volsci', 'siculi');
+  declareWar(g, 'latini', 'volsci');
+  monthlyCoalitions(g);
+  g.day += 400;
+  monthlyCoalitions(g);
+  const w = Object.values(g.guerre).find(x => x.difensori.includes('roma'));
+  assert.ok(w);
+  assert.ok(!(w.attaccanti.includes('latini') && w.attaccanti.includes('volsci')));
+});
+
+test('revisione: il giocatore non entra da solo in difesa contro un aggressore infame', () => {
+  const g = makeGame();
+  g.nazioni.volsci.infamia = 30;
+  ostili(g, 'volsci', 'latini');
+  g.giocatore = 'latini';
+  assert.ok(!coalition(g, 'volsci').includes('latini'));
+  g.giocatore = null;
+  assert.ok(coalition(g, 'volsci').includes('latini'));
+});

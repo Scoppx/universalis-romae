@@ -564,3 +564,28 @@ test('notizie che ti riguardano: fermano il tempo', () => {
   // le battaglie hanno già il loro riquadro
   assert.equal(imp([{ tipo: 'battaglia', prov: 'b', vincitore: 'roma', sconfitto: 'volsci' }]).length, 0);
 });
+
+test('revisione: il rifiuto dice che cosa è stato rifiutato', () => {
+  const g = makeGame();
+  const r = genere => V.formatLogEntry({ tipo: 'rifiutata', da: 'roma', a: 'latini', ...(genere ? { genere } : {}) }, g, 'roma');
+  assert.equal(r(), 'latini rifiuta la tua proposta di pace.');
+  assert.equal(r('ultimatum'), 'latini rifiuta il tuo ultimatum.');
+  assert.equal(r('alleanza'), 'latini rifiuta la tua alleanza.');
+  assert.equal(r('foedus'), 'latini rifiuta il foedus.');
+  assert.equal(r('tributo'), 'latini rifiuta il tributo.');
+  assert.equal(r('chiamata'), 'latini rifiuta la tua chiamata alle armi.');
+});
+
+test('revisione: l\'attesa dopo un ultimatum accettato si vede sul bottone spento', () => {
+  const g = makeGame();
+  g.nazioni.roma.ultimatumAccettati.volsci = g.day;
+  const d = V.diplomacyView(g, 'roma').find(x => x.id === 'volsci');
+  assert.match(d.azioni.ultimatum.motivo, /riprova tra 10 anni/);
+  const html = H.diplomaziaHtml(V.diplomacyView(g, 'roma'));
+  assert.match(html, /<button class="piccolo" data-azione="ultimatum" data-id="volsci" disabled title="[^"]*riprova tra 10 anni[^"]*">Ultimatum<\/button>/);
+});
+
+test('revisione: la riga della sovraestensione compare solo oltre la soglia', () => {
+  const g = makeGame();
+  assert.ok(!H.governoHtml(V.governmentView(g, 'roma')).includes('sovraestensione'));
+});

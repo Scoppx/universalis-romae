@@ -224,8 +224,8 @@ function joinCall(game, p) {
 
 export function coalition(game, x) {
   if (game.nazioni[x].infamia <= game.balance.infamia.soglia) return [];
-  return game.ordine.filter(o => o !== x && game.nazioni[o].vivo && bordersNation(game, o, x) &&
-    relation(game, o, x) < 0 && !friendly(game, o, x));
+  return game.ordine.filter(o => o !== x && o !== game.giocatore && game.nazioni[o].vivo && bordersNation(game, o, x) &&
+    relation(game, o, x) < 0 && !friendly(game, o, x)); // il giocatore entra in guerra solo se lo decide lui
 }
 
 // Chi entra da solo quando scoppia una guerra, chi viene chiamato.
@@ -318,6 +318,17 @@ export function coalitionCandidates(game, x) {
 }
 
 const forzaDi = (game, ids) => ids.reduce((s, o) => s + power(game, o), 0);
+const piuForte = game => (a, b) => power(game, b) - power(game, a) || (a < b ? -1 : 1);
+
+// I membri che possono stare dalla stessa parte: dal più forte, chi è in guerra con uno già dentro resta fuori.
+function compatibili(game, ids) {
+  const out = [];
+  for (const o of [...ids].sort(piuForte(game))) if (!out.some(m => atWar(game, o, m))) out.push(o);
+  return out;
+}
+
+// Chi guida la coalizione: il più forte tra i membri che confinano con x e possono dichiarargli guerra.
+const capofila = (game, x, membri) => membri.find(o => bordersNation(game, o, x) && !checkWar(game, o, x)) ?? null;
 
 // Ogni mese: contro chi ha troppa infamia si forma una coalizione (annunciata); dopo il preavviso, se l'infamia
 // è ancora alta e la coalizione abbastanza forte, dichiara guerra tutta insieme; altrimenti si scioglie.
@@ -331,11 +342,10 @@ export function monthlyCoalitions(game) {
     if (annunciata) {
       if (game.day - annunciata.dal < c.preavviso) continue;
       delete game.coalizioni[x];
-      const membri = coalitionCandidates(game, x).filter(o => annunciata.membri.includes(o));
+      const membri = compatibili(game, coalitionCandidates(game, x).filter(o => annunciata.membri.includes(o)));
       const forte = membri.length && forzaDi(game, membri) >= c.rapporto * forzaDifesa(game, x);
       // guida il membro più forte tra quelli che confinano con x (chi non confina si aggiunge)
-      const capo = forte && X.infamia > sogliaCoalizione(game, x)
-        ? [...membri].filter(o => bordersNation(game, o, x)).sort((a, b) => power(game, b) - power(game, a) || (a < b ? -1 : 1))[0] ?? null : null;
+      const capo = forte && X.infamia > sogliaCoalizione(game, x) ? capofila(game, x, membri) : null;
       const r = capo ? startWar(game, capo, x) : { ok: false };
       if (r.ok) {
         const w = game.guerre[r.guerra];
@@ -354,8 +364,9 @@ export function monthlyCoalitions(game) {
     }
     if (X.infamia <= sogliaCoalizione(game, x)) continue;
     if (game.day - (X.coalizioneDal ?? -Infinity) < c.anniAttesa * 365) continue;
-    const membri = coalitionCandidates(game, x);
-    if (membri.length && forzaDi(game, membri) >= c.rapporto * forzaDifesa(game, x)) {
+    const membri = compatibili(game, coalitionCandidates(game, x));
+    // senza nessuno che possa dichiarare guerra a x la coalizione non si forma (si scioglierebbe sempre)
+    if (capofila(game, x, membri) && forzaDi(game, membri) >= c.rapporto * forzaDifesa(game, x)) {
       game.coalizioni[x] = { membri, dal: game.day };
       log(game, { tipo: 'coalizione_formata', contro: x, membri });
     }
