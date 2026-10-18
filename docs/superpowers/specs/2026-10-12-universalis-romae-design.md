@@ -469,3 +469,31 @@ fortificazioni: sezione 3).
 - **IA**: assedia come ora e tenta l'assalto solo con probabilità di vittoria almeno 75%.
 - **Taratura**: alla fine si rifanno le due misure da 20 semi; se gli obiettivi della sezione 14 si spostano si
   ritoccano i numeri.
+
+## 16. Tappa 8a: la sfida (aggiunta del 2026-10-18)
+
+Giocando Roma l'utente ha conquistato l'Italia in circa 150 anni, usando molto annessioni e ultimatum. Obiettivo:
+un giocatore aggressivo con Roma, a sfida "normale", non controlla il 75% delle tasse d'Italia prima di 350 anni.
+
+- **Ultimatum**: si cede solo se chi chiede è almeno 3 volte più forte del bersaglio **e dei suoi alleati**
+  (federati e protettore compresi); chi cede perde 50 di relazione con chi chiede, i suoi confinanti 10; dopo un
+  ultimatum accettato, niente altri ultimatum a quel popolo per 10 anni; l'infamia è 1,5 volte quella di una conquista.
+- **Annessione**: l'infamia è il doppio di quella di una pace normale.
+- **Coalizioni vere, annunciate**: contro un popolo con infamia oltre la soglia, i suoi confinanti ostili (relazione
+  negativa, non amici, **con infamia propria sotto la soglia**) che insieme sono almeno 1,2 volte più forti di lui
+  (con i suoi alleati) **formano una coalizione**: notizia per tutti e avviso nella Diplomazia del bersaglio. Dopo un
+  anno, se il bersaglio ha ancora l'infamia oltre la soglia e la coalizione è ancora abbastanza forte, gli dichiara
+  guerra (il più forte è il capofila, gli altri entrano nello stesso schieramento, senza perdere stabilità perché
+  l'infamia del bersaglio è un pretesto); altrimenti si scioglie, con una notizia. Nelle paci i membri pagano
+  l'infamia come tutti e valgono i limiti di quota. Un popolo affronta al più una coalizione ogni 10 anni.
+- **Sovraestensione**: oltre 15 province, ogni provincia in più aggiunge 0,15 di malcontento a tutte le province
+  di cultura diversa da quella del padrone (al più +3).
+- **Foedus**: il protettore può **integrare** un federato dopo 10 anni di foedus con relazione almeno 100: paga
+  10 × le tasse delle sue province, prende tutte le province, infamia pari a metà di una conquista; oppure
+  **liberarlo** (il federato torna indipendente, relazione +25).
+- **Livello di sfida** del giocatore, scelto all'inizio: normale (nessun effetto), difficile (i popoli dell'IA hanno
+  +20% di tasse e reclute), storico (+40%, e la soglia d'infamia per le coalizioni contro il giocatore scende da 20
+  a 15). Non tocca il bench, che non ha un giocatore.
+- **Giocatore automatico aggressivo** per il bench (`node bench.js anni semi conquistatore`): guida Roma con le
+  regole ma attacca da un rapporto di 1,2, chiede sempre il massimo, annette appena può, manda ultimatum ogni volta
+  che può. Il bench misura in quanti anni controlla il 75% delle tasse d'Italia (o se non ci arriva).
