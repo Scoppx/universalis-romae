@@ -12,6 +12,7 @@ import { score } from './public/js/sim/score.js';
 import { createJevAi, createReplayAi } from './public/js/ai/jev.js';
 import { buildControllers, syncControllers } from './public/js/ai/modes.js';
 import { rulesController } from './public/js/ai/rules.js';
+import { conquerorController } from './public/js/ai/conquistatore.js';
 import { createAsk } from './jev-api.js';
 
 // Obiettivi della tappa 6 (bench a regole, 100 anni, 20 semi): quota di popoli vivi per difficoltà e in totale.
@@ -35,7 +36,8 @@ export function applicaRitocchi(balance, ritocchi = {}) {
   return b;
 }
 
-export async function runBench({ anni, semi, ia = 'regole', ask = null, registro = null, records = null, ritocchi = {}, primoSeme = 1 }) {
+export async function runBench({ anni, semi, ia = 'regole', ask = null, registro = null, records = null, ritocchi = {}, primoSeme = 1, sfida = 'normale' }) {
+  const conquista = ia === 'conquistatore' ? { anni: [], quote: [] } : null; // Roma guidata dal giocatore automatico
   const data = loadData();
   data.balance = applicaRitocchi(data.balance, ritocchi);
   const info = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p]));
@@ -56,10 +58,14 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
     const game = createGame({ ...data, seed });
     // ogni seme rigioca solo le sue decisioni (i registri vecchi, senza seme, valgono per il seme 1)
     const ai = records ? createReplayAi(records.filter(r => (r.seme ?? 1) === seed))
-      : ia === 'regole' ? null
+      : ia === 'regole' || conquista ? null
       : createJevAi({ ask, caratteri, onRecord });
     const modo = ai ? ia : 'regole';
     const controllers = buildControllers(game, modo, ai);
+    let primo = null;
+    const totale = Object.values(game.province).reduce((t, p) => t + p.tasse, 0);
+    const quotaRoma = () => provincesOf(game, 'roma').reduce((t, p) => t + p.tasse, 0) / totale;
+    if (conquista) { controllers.roma = conquerorController; game.giocatore = 'roma'; game.sfida = sfida; }
     const start = Object.fromEntries(game.ordine.map(id => [id, provincesOf(game, id).length]));
     const inizio = {};
     for (let d = 0; d < anni * 365; d++) {
@@ -75,13 +81,15 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
         }
       }
       if (game.day % 365 === 0) {
+        if (conquista && primo === null && quotaRoma() >= 0.75) primo = game.day / 365;
         for (const id of game.ordine) if (game.nazioni[id].vivo) g6.anniPopolo[controllers[id] === rulesController ? 'regole' : 'jev']++;
       }
       syncControllers(controllers, game, modo, ai); // popoli nati da un'indipendenza
       if (ai?.flush) await ai.flush();
     }
     g6.nuoviVivi += game.ordine.filter(id => start[id] === undefined && game.nazioni[id].vivo).length;
-    for (const id of game.ordine) tipo[id] = controllers[id] === rulesController ? 'regole' : 'jev';
+    if (conquista) { conquista.anni.push(primo); conquista.quote.push(quotaRoma()); }
+    for (const id of game.ordine) tipo[id] = controllers[id] === rulesController ? 'regole' : controllers[id] === conquerorController ? 'auto' : 'jev';
     for (const id of game.ordine) {
       const a = (acc[id] ??= { iniziale: start[id] !== undefined, nome: game.nazioni[id].nome, difficolta: info[id]?.difficolta ?? 'nuovo', vivo: 0, provinceInizio: 0, provinceFine: 0, punteggio: 0 });
       a.vivo += game.nazioni[id].vivo ? 1 : 0;
@@ -119,6 +127,13 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
     ...['normale', 'difficile', 'molto difficile'].map(d => ({ nome: d, valore: perDifficolta[d], atteso: OBIETTIVI[d], ok: dentro(perDifficolta[d], OBIETTIVI[d]) })),
     { nome: 'totale', valore: riepilogo.totale, atteso: OBIETTIVI.totale, ok: dentro(riepilogo.totale, OBIETTIVI.totale) }
   ];
+  if (conquista) {
+    const ok = conquista.anni.filter(x => x !== null).sort((a, b) => a - b);
+    const tutti = [...ok, ...conquista.anni.filter(x => x === null).map(() => Infinity)];
+    const med = tutti[Math.floor((tutti.length - 1) / 2)];
+    riepilogo.conquista = { semi, anni: conquista.anni, raggiunta: ok.length, mediana: Number.isFinite(med) ? med : null,
+      quotaFinale: conquista.quote.reduce((t, q) => t + q, 0) / conquista.quote.length };
+  }
   return { righe, totali, riepilogo };
 }
 
@@ -143,6 +158,8 @@ function table(res, anni, semi, ia, ms) {
     (o.nome === 'Roma cresce' ? '' : `  (atteso ${p(o.atteso[0])}–${p(o.atteso[1])})`));
   lines.push(`Roma: viva ${p(r.roma.vivo)}, province ${r.roma.provinceInizio.toFixed(1)} → ${r.roma.provinceFine.toFixed(1)}, punteggio ${r.roma.punteggio.toFixed(1)}`);
   lines.push(`Guerre: ${r.guerre.perAnno.toFixed(2)} l'anno, durata media ${r.guerre.durataMediaAnni.toFixed(1)} anni, per popolo-anno regole ${r.guerre.perPopoloAnno.regole?.toFixed(3) ?? '—'} · Jev ${r.guerre.perPopoloAnno.jev?.toFixed(3) ?? '—'}`);
+  if (r.conquista) lines.push(`Conquistatore (Roma, sfida ${res.sfida ?? 'normale'}): 75% d'Italia in ${r.conquista.raggiunta}/${r.conquista.semi} semi, ` +
+    `mediana ${r.conquista.mediana ?? 'mai'} anni; quota finale media ${Math.round(r.conquista.quotaFinale * 100)}%; anni per seme: ${r.conquista.anni.map(x => x ?? '—').join(', ')}`);
   lines.push(`Popoli nuovi: ${r.nuovi.nati.toFixed(1)} nati per partita, ${r.nuovi.vivi.toFixed(1)} vivi alla fine`);
   return lines.join('\n');
 }
@@ -167,7 +184,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     opts.records = readFileSync(file, 'utf8').trim().split('\n').map(l => JSON.parse(l));
     const ias = new Set(opts.records.map(r => r.ia).filter(Boolean));
     if (ias.size === 1) opts.ia = [...ias][0];
-  } else if (modo !== 'regole') {
+  } else if (modo !== 'regole' && modo !== 'conquistatore') {
     if (!process.env.TYPESAFE_API_KEY) { console.error('Serve TYPESAFE_API_KEY per le modalità jev e misto.'); process.exit(1); }
     opts.ask = createAsk({ key: process.env.TYPESAFE_API_KEY });
     if (file) {

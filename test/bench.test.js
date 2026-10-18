@@ -79,3 +79,12 @@ test('ritocchi: una chiave finale inesistente è un errore, salvo dentro diffico
   assert.throws(() => applicaRitocchi(b, { 'ia.rapportoGuera': 3 }), /ritocco/);
   assert.equal(applicaRitocchi(b, { 'difficolta.normale.dado': 1 }).difficolta.normale.dado, 1);
 });
+
+test('bench conquistatore: Roma guidata dal giocatore automatico, anni per il 75% d\'Italia', async () => {
+  const { riepilogo } = await runBench({ anni: 6, semi: 1, ia: 'conquistatore' });
+  const c = riepilogo.conquista;
+  assert.equal(c.semi, 1);
+  assert.ok(c.quotaFinale > 0 && c.quotaFinale <= 1);
+  assert.ok(c.anni.length === 1);
+  assert.ok(c.anni[0] === null || c.anni[0] <= 6);
+});
