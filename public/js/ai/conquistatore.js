@@ -1,9 +1,9 @@
 // Giocatore automatico aggressivo, per misurare la sfida: guida un popolo come un giocatore che vuole tutto.
-// Attacca appena è un po' più forte, annette appena può, manda ultimatum ogni volta che può, integra i federati.
+// Attacca appena è un po' più forte (anche con l'infamia alta, come può fare un giocatore), annette appena può, manda ultimatum ogni volta che può, integra i federati.
 import { power, provincesOf } from '../sim/state.js';
-import { sideOf, enemiesOf, annexable, scoreFor, peaceCost, validTerms } from '../sim/war.js';
+import { sideOf, enemiesOf, annexable, scoreFor, peaceCost, validTerms, hasPretext } from '../sim/war.js';
 import { checkProposal, forzaDifesa, checkIntegrate, federatiOf } from '../sim/diplomacy.js';
-import { answerProposals, eventAnswers, routine, legalWarTargets } from './rules.js';
+import { answerProposals, eventAnswers, routine, warCandidates } from './rules.js';
 
 const RAPPORTO = 1.2, OGNI = 30;
 
@@ -38,7 +38,13 @@ export function conquerorController(game, id) {
           .sort((a, b) => b.tasse - a.tasse || (a.id < b.id ? -1 : 1))[0];
         if (prov) cmds.push({ tipo: 'proponi', nazione: id, genere: 'ultimatum', verso: o, provincia: prov.id });
       }
-      const bersaglio = legalWarTargets(game, id).filter(c => c.rapporto >= RAPPORTO).sort((a, b) => b.rapporto - a.rapporto)[0];
+      // come un giocatore: niente freno d'infamia né anni di respiro (sono regole dell'IA), ma conta le difese
+      // del bersaglio (alleati, protettore) e non attacca senza pretesto con la stabilità negativa
+      const n = game.nazioni[id];
+      const bersaglio = n.protettore ? null : warCandidates(game, id)
+        .filter(c => hasPretext(game, id, c.id) || n.stabilita >= 0)
+        .map(c => ({ id: c.id, rapporto: power(game, id) / Math.max(1, forzaDifesa(game, c.id)) }))
+        .filter(c => c.rapporto >= RAPPORTO).sort((a, b) => b.rapporto - a.rapporto || (a.id < b.id ? -1 : 1))[0];
       if (bersaglio) cmds.push({ tipo: 'dichiara_guerra', nazione: id, contro: bersaglio.id });
     }
   }
