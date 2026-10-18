@@ -350,6 +350,32 @@ export function formatLogEntry(e, game, g) {
   }
 }
 
+// Le notizie che riguardano il giocatore (sue guerre e dei suoi amici, paci, province prese o perse, rivolte,
+// coalizioni, accordi suoi): il tempo si ferma e una finestra le mostra. Le battaglie hanno già il loro riquadro.
+export function importantNews(log, game, g) {
+  const n = game.nazioni[g];
+  const amici = new Set([g, ...(n?.alleati ?? []), ...(n?.protettore ? [n.protettore] : []),
+    ...game.ordine.filter(o => game.nazioni[o].protettore === g)]);
+  const tocca = e => {
+    switch (e.tipo) {
+      case 'guerra': return amici.has(e.attaccante) || amici.has(e.difensore);
+      case 'chiamata': return amici.has(e.nazione) || e.alleato === g;
+      case 'pace': return e.parti.includes(g);
+      case 'assedio': return e.nazione === g || game.province[e.prov]?.owner === g;
+      case 'rivolta': return e.nazione === g;
+      case 'indipendenza': return e.da === g || e.a === g;
+      case 'coalizione_formata': case 'coalizione_guerra': case 'coalizione_sciolta': return e.contro === g || (e.membri ?? []).includes(g);
+      case 'accordo': return e.da === g || e.a === g;
+      case 'uscita': return e.nazione === g || e.protettore === g;
+      case 'integrazione': case 'liberazione': return e.nazione === g || e.federato === g;
+      case 'eliminata': return amici.has(e.nazione) || Object.values(game.guerre).some(w => sideOf(w, g) && sideOf(w, e.nazione));
+      case 'rifiutata': return e.da === g;
+      default: return false;
+    }
+  };
+  return log.filter(tocca).map(e => formatLogEntry(e, game, g)).filter(Boolean);
+}
+
 export function rankingView(game, g) {
   return ranking(game).map((r, i) => ({ pos: i + 1, nome: nome(game, r.id), punteggio: r.punteggio, vivo: r.vivo, tu: r.id === g }));
 }

@@ -172,7 +172,9 @@ function avanza(n) {
   if (r.notizie.length) ui.notizie = [...ui.notizie, ...r.notizie].slice(-8);
   if (r.motivo) {
     setPaused(ui.clock, true);
-    mostraPausa(r.motivo);
+    // prima le notizie del giorno; una proposta o un evento arrivati insieme si aprono alla ripartenza
+    if (r.importanti.length) finestra(H.notizieHtml(r.importanti));
+    else mostraPausa(r.motivo);
   }
   aggiorna();
 }

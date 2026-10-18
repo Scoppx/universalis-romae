@@ -175,6 +175,12 @@ export function rankingHtml(titolo, list) {
     '</table><div class="comandi"><button data-azione="chiudi" title="Chiude la finestra senza fare nulla">Chiudi</button></div>';
 }
 
+// Notizie che ti riguardano: il tempo è fermo finché non chiudi.
+export function notizieHtml(list) {
+  return '<h2>Notizie</h2>' + list.map(t => `<p>${esc(t)}</p>`).join('') +
+    '<div class="comandi"><button data-azione="chiudi" title="Chiude la finestra; il gioco resta in pausa finché non lo fai ripartire">Continua</button></div>';
+}
+
 const FONTI = { jev: 'Jev', prudenza: 'Jev incerto: prudenza', regola: 'regola (Jev non disponibile)', superata: 'superata dagli eventi' };
 
 export function consiglioHtml(list, nazioni, filtro) {

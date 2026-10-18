@@ -3,7 +3,7 @@ import { createGame } from '../sim/setup.js';
 import { advanceDay, isOver } from '../sim/loop.js';
 import { isNewYear } from '../sim/calendar.js';
 import { buildControllers, syncControllers } from '../ai/modes.js';
-import { formatLogEntry } from './views.js';
+import { formatLogEntry, importantNews } from './views.js';
 import { eventDef } from '../sim/events.js';
 
 export function createSessionFrom(game, giocatore, seme, ia = 'regole', ai = null) {
@@ -27,8 +27,11 @@ export function pausaNecessaria(session) {
   return null;
 }
 
+// Avanza fino a `days` giorni. Si ferma prima se serve una decisione del giocatore (pausaNecessaria) o, a fine
+// giornata, se è successo qualcosa che lo riguarda (motivo 'notizie', con le notizie in `importanti`).
 export function runDays(session, days, { onYear, onLog } = {}) {
   const notizie = [];
+  let importanti = [];
   let giorni = 0;
   let motivo = pausaNecessaria(session);
   while (!motivo && giorni < days) {
@@ -41,7 +44,8 @@ export function runDays(session, days, { onYear, onLog } = {}) {
       if (t) notizie.push(t);
     }
     if (onYear && isNewYear(session.game.day)) onYear(session);
-    motivo = pausaNecessaria(session);
+    importanti = importantNews(log, session.game, session.giocatore);
+    motivo = pausaNecessaria(session) ?? (importanti.length ? 'notizie' : null);
   }
-  return { giorni, motivo, notizie };
+  return { giorni, motivo, notizie, importanti };
 }

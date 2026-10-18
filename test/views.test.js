@@ -540,3 +540,27 @@ test('finestra dell\'assedio: dice chi prenderà la provincia', () => {
   createArmy(g, 'roma', 'c', 1000, 0);
   assert.equal(V.siegeView(g, 'roma', 'c').prende, 'latini');
 });
+
+test('notizie che ti riguardano: fermano il tempo', () => {
+  const g = makeGame();
+  g.nazioni.roma.alleati.push('latini'); g.nazioni.latini.alleati.push('roma');
+  const imp = log => V.importantNews(log, g, 'roma');
+  // guerre tue o dei tuoi alleati; non quelle degli altri
+  assert.deepEqual(imp([{ tipo: 'guerra', attaccante: 'volsci', difensore: 'roma' }]), ['volsci dichiara guerra a roma.']);
+  assert.equal(imp([{ tipo: 'guerra', attaccante: 'latini', difensore: 'volsci' }]).length, 1);
+  assert.equal(imp([{ tipo: 'guerra', attaccante: 'volsci', difensore: 'siculi' }]).length, 0);
+  // alleati che entrano in guerra, paci che ti toccano, province prese o perse, rivolte, coalizioni
+  assert.equal(imp([{ tipo: 'chiamata', nazione: 'latini', alleato: 'roma' }]).length, 1);
+  assert.equal(imp([{ tipo: 'pace', ricevente: 'volsci', parti: ['volsci', 'roma'], province: ['b'], padroni: ['volsci'] }]).length, 1);
+  assert.equal(imp([{ tipo: 'pace', ricevente: 'volsci', parti: ['volsci', 'siculi'], province: [], padroni: [] }]).length, 0);
+  assert.equal(imp([{ tipo: 'assedio', prov: 'b', nazione: 'volsci' }]).length, 1); // una tua provincia cade
+  assert.equal(imp([{ tipo: 'assedio', prov: 'f', nazione: 'roma' }]).length, 1); // ne prendi una
+  assert.equal(imp([{ tipo: 'assedio', prov: 'g', nazione: 'volsci' }]).length, 0);
+  assert.equal(imp([{ tipo: 'rivolta', prov: 'b', nazione: 'roma' }]).length, 1);
+  assert.equal(imp([{ tipo: 'indipendenza', prov: 'b', da: 'roma', a: 'latini' }]).length, 1);
+  assert.equal(imp([{ tipo: 'coalizione_formata', contro: 'roma', membri: ['volsci'] }]).length, 1);
+  assert.equal(imp([{ tipo: 'coalizione_formata', contro: 'siculi', membri: ['volsci'] }]).length, 0);
+  assert.equal(imp([{ tipo: 'accordo', genere: 'ultimatum', da: 'roma', a: 'volsci', provincia: 'c' }]).length, 1);
+  // le battaglie hanno già il loro riquadro
+  assert.equal(imp([{ tipo: 'battaglia', prov: 'b', vincitore: 'roma', sconfitto: 'volsci' }]).length, 0);
+});

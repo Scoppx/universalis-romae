@@ -37,7 +37,7 @@ test('sessione: si ferma per una proposta al giocatore, la fine, la sconfitta', 
   const s = createSession(data, 'roma', 1);
   const { guerra } = declareWar(s.game, 'veio', 'roma');
   proposePeace(s.game, 'veio', guerra, { ricevente: 'veio', province: [] });
-  assert.deepEqual(runDays(s, 10), { giorni: 0, motivo: 'proposta', notizie: [] });
+  assert.deepEqual(runDays(s, 10), { giorni: 0, motivo: 'proposta', notizie: [], importanti: [] });
   s.game.proposte = {};
   s.game.day = END_DAY;
   assert.equal(pausaNecessaria(s), 'fine');
@@ -79,4 +79,17 @@ test('sessione: un evento del giocatore senza definizione non ferma il gioco', (
   const s = createSession(data, 'roma', 1);
   s.game.eventi.v1 = { id: 'v1', evento: 'evento_sparito', nazione: 'roma', altro: null, giorno: s.game.day };
   assert.equal(runDays(s, 2).giorni, 2);
+});
+
+test('sessione: una notizia che ti riguarda ferma il tempo a fine giornata', () => {
+  const s = createSession(data, 'roma', 1);
+  s.game.proposte = {};
+  s.controllers.veio = game => (game.day === 3 ? [{ tipo: 'dichiara_guerra', nazione: 'veio', contro: 'roma' }] : []);
+  const r = runDays(s, 30);
+  assert.equal(r.motivo, 'notizie');
+  assert.equal(s.game.day, 4);
+  assert.ok(r.importanti.some(t => t.includes('dichiara guerra')));
+  // ripartendo non si ferma di nuovo per la stessa notizia
+  s.game.proposte = {};
+  assert.notEqual(runDays(s, 1).motivo, 'notizie');
 });

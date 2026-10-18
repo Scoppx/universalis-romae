@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml, guerreHtml, battaglieHtml, assedioHtml } from '../public/js/ui/panels.js';
+import { esercitiHtml, provinceHtml, rankingHtml, governoHtml, eventoHtml, guerraConfermaHtml, guerraRiepilogoHtml, guerreHtml, battaglieHtml, assedioHtml, notizieHtml } from '../public/js/ui/panels.js';
 
 const evil = '<img src=x onerror=alert(1)>';
 
@@ -127,4 +127,11 @@ test('finestra dell\'assedio: tre bottoni spiegati, tutto protetto', () => {
   assert.match(h, /data-azione="assalto"[^>]*title="[^"]+">Attacca \(67%\)/);
   assert.match(h, /data-azione="chiudi"[^>]*title="[^"]+">Assedia \(cade tra 12 giorni\)/);
   assert.match(h, /data-azione="ripiega"[^>]*title="[^"]+">Ritirati/);
+});
+
+test('finestra delle notizie: elenco protetto e bottone Continua con spiegazione', () => {
+  const html = notizieHtml(['<b>Veio</b> dichiara guerra a Roma.', 'Roma conquista Caere.']);
+  assert.ok(html.includes('&lt;b&gt;Veio&lt;/b&gt;'));
+  assert.ok(html.includes('Roma conquista Caere.'));
+  assert.match(html, /<button data-azione="chiudi" title="[^"]+">Continua<\/button>/);
 });
