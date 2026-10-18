@@ -1,5 +1,5 @@
 // Cultura delle province: malcontento, assimilazione, colonie, fortificazioni; rivolte e indipendenze.
-import { clamp, log, sliderOf, RIBELLI, createArmy, newId, bordersNation } from './state.js';
+import { clamp, log, sliderOf, RIBELLI, createArmy, newId, bordersNation, provincesOf } from './state.js';
 import { nextRandom } from './rng.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
@@ -24,10 +24,16 @@ export function hasColony(p) {
   return p.colonia !== null && p.colonia === p.owner;
 }
 
-// 0-10: cultura diversa dal padrone, stabilità negativa, accentramento (slider di governo negativo), colonia.
+// Sovraestensione: oltre la soglia di province, ogni provincia in più aggiunge malcontento alle terre straniere.
+export function overextension(game, owner, n = provincesOf(game, owner).length) {
+  const s = game.balance.sovraestensione;
+  return Math.round(Math.min(s.massimo, Math.max(0, n - s.soglia) * s.perProvincia) * 100) / 100;
+}
+
+// 0-10: cultura diversa dal padrone (più la sovraestensione), stabilità negativa, accentramento, colonia.
 export function malcontent(game, provId) {
   const p = game.province[provId], n = game.nazioni[p.owner], c = C(game);
-  let m = p.cultura !== n.cultura ? c.malcontentoCultura : 0;
+  let m = p.cultura !== n.cultura ? c.malcontentoCultura + overextension(game, p.owner) : 0;
   m += Math.max(0, -n.stabilita);
   m -= sliderOf(game, p.owner).governo * game.balance.slider.malcontentoAccentramento;
   if (hasColony(p)) m -= c.malcontentoColonia;

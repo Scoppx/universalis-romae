@@ -2,7 +2,7 @@
 import { formatDate, dateFromDay, MONTH_NAMES } from '../sim/calendar.js';
 import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
-import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify } from '../sim/culture.js';
+import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify, overextension } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
 import { nearestSafe, nearestSafeReachable, checkRetreat } from '../sim/combat.js';
 import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
@@ -155,6 +155,7 @@ export function governmentView(game, g) {
     stabilita: segno(n.stabilita), tratti: formatTratti(n.tratti),
     costoStabilita: costo.toFixed(1), puoAlzare: n.stabilita < 3 && n.tesoro >= costo,
     motivoAlzare: n.stabilita >= 3 ? 'la stabilità è già al massimo (+3)' : n.tesoro < costo ? `servono ${costo.toFixed(1)} denari, ne hai ${n.tesoro.toFixed(1)}` : null,
+    sovraestensione: { province: provincesOf(game, g).length, soglia: game.balance.sovraestensione.soglia, malcontento: overextension(game, g) },
     slider: LEVE.map(l => ({ ...l, valore: segno(s[l.quale]), meno: checkSlider(game, g, l.quale, -1), piu: checkSlider(game, g, l.quale, 1) }))
   };
 }

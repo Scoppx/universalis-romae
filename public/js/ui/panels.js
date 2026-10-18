@@ -47,7 +47,9 @@ export function governoHtml(v) {
   return `<h3>${esc(v.nome)}</h3><table>` +
     `<tr><td>Governo</td><td>${esc(v.governo)}${v.effettiGoverno ? ` <span class="muto">(${esc(v.effettiGoverno)})</span>` : ''}</td></tr>` +
     `<tr><td>Stabilità</td><td>${esc(v.stabilita)}</td></tr>` +
-    `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr></table>` +
+    `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr>` +
+    (v.sovraestensione ? `<tr><td>Province</td><td>${esc(v.sovraestensione.province)} (oltre ${esc(v.sovraestensione.soglia)}: sovraestensione` +
+      `${v.sovraestensione.malcontento ? `, +${esc(v.sovraestensione.malcontento)} malcontento nelle terre straniere` : ''})</td></tr>` : '') + '</table>' +
     `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? ' title="Spendi i denari indicati: stabilità +1 (più entrate, meno malcontento; da +2 aiuta in battaglia)"' : ` disabled title="${esc(v.motivoAlzare ?? 'non si può ora')}"`}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
     `<h3>Riforme</h3>${v.slider.map(leva).join('')}`;
 }

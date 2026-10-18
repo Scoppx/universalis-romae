@@ -205,5 +205,10 @@
     "rapporto": 1.2,
     "anniAttesa": 10,
     "preavviso": 365
+  },
+  "sovraestensione": {
+    "soglia": 15,
+    "perProvincia": 0.15,
+    "massimo": 3
   }
 }

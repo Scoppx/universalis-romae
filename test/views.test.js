@@ -507,3 +507,8 @@ test('coalizione: notizie e avviso nella diplomazia del bersaglio', () => {
   assert.equal(V.formatLogEntry({ tipo: 'coalizione_guerra', contro: 'roma', membri: ['latini'] }, g, 'siculi'), 'La coalizione (latini) dichiara guerra a roma.');
   assert.equal(V.formatLogEntry({ tipo: 'coalizione_sciolta', contro: 'roma' }, g, 'siculi'), 'La coalizione contro roma si scioglie.');
 });
+
+test('governo: province e sovraestensione', () => {
+  const g = makeGame();
+  assert.deepEqual(V.governmentView(g, 'roma').sovraestensione, { province: 2, soglia: 15, malcontento: 0 });
+});

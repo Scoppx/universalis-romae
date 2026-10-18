@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
-import { malcontent, assimilationRate, monthlyCulture, colonyCost, checkColony, checkFortify, fortCost } from '../public/js/sim/culture.js';
+import { malcontent, assimilationRate, monthlyCulture, colonyCost, checkColony, checkFortify, fortCost, overextension } from '../public/js/sim/culture.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
@@ -108,4 +108,19 @@ test('il ciclo del giorno fa girare la cultura il primo del mese', () => {
   g.province.b.cultura = 'volsca';
   for (let i = 0; i < 40; i++) advanceDay(g);
   assert.ok(g.province.b.assimilazione > 0);
+});
+
+test('sovraestensione: oltre 15 province le terre di altra cultura sono più scontente', () => {
+  const g = makeGame();
+  g.province.b.cultura = 'volsca';
+  const base = malcontent(g, 'b');
+  const conta = n => { g.province.zz && 0; return overextension(g, 'roma', n); };
+  assert.equal(conta(14), 0);
+  assert.equal(conta(16), 0.15);
+  assert.equal(conta(40), 3);
+  // con le province vere: 2 province, nessun effetto
+  assert.equal(malcontent(g, 'b'), base);
+  for (let i = 0; i < 18; i++) g.province[`x${i}`] = { id: `x${i}`, nome: 'X', owner: 'roma', controller: 'roma', cultura: 'latina', terreno: 'pianura', tasse: 1, uomini: 1, fort: 0, vicini: [] };
+  assert.equal(malcontent(g, 'b'), Math.round((base + 0.15 * 5) * 10) / 10); // 20 province: 5 oltre la soglia
+  assert.equal(malcontent(g, 'a'), 0); // stessa cultura: nessun effetto
 });
