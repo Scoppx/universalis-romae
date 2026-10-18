@@ -292,7 +292,7 @@ function aggiorna() {
     : '<p class="muto">Clic su una provincia per vederla.</p>');
   const schede = {
     governo: () => H.governoHtml(V.governmentView(g, giocatore)),
-    diplomazia: () => H.diplomaziaHtml(V.diplomacyView(g, giocatore)),
+    diplomazia: () => H.diplomaziaHtml(V.diplomacyView(g, giocatore), V.coalitionWarning(g, giocatore)),
     eserciti: () => H.esercitiHtml(V.armiesView(g, giocatore, ui.selezione.eserciti), V.selectionActions(g, giocatore, ui.selezione.eserciti)),
     guerre: () => H.guerreHtml(V.warsView(g, giocatore)),
     consiglio: () => H.consiglioHtml(V.councilView(ui.consiglio, g, ui.filtroConsiglio),

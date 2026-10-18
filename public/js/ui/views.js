@@ -8,7 +8,7 @@ import { nearestSafe, nearestSafeReachable, checkRetreat } from '../sim/combat.j
 import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
-import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview } from '../sim/diplomacy.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 
 const DIFFICOLTA = ['facile', 'normale', 'difficile', 'molto difficile'];
@@ -49,6 +49,14 @@ function fineTregua(game, g, id) {
   if (!inTruce(game, g, id)) return null;
   const d = dateFromDay(game.nazioni[g].tregue[id]);
   return `fino al ${d.day} ${MONTH_NAMES[d.month - 1]} ${d.year} a.C.`;
+}
+
+// Coalizione annunciata contro g: chi ne fa parte, entro quando attacca, sotto quale infamia si scioglie.
+export function coalitionWarning(game, g) {
+  const c = game.coalizioni?.[g];
+  if (!c) return null;
+  const d = dateFromDay(c.dal + game.balance.coalizione.preavviso);
+  return { membri: c.membri.map(id => nome(game, id)), entro: `${d.day} ${MONTH_NAMES[d.month - 1]} ${d.year} a.C.`, soglia: sogliaCoalizione(game, g) };
 }
 
 // Motivo per cui non si può dichiarare guerra, con la fine della tregua quando è quella a impedirlo.
@@ -325,6 +333,9 @@ export function formatLogEntry(e, game, g) {
     case 'nascita': return `Nasce ${N(e.nazione)} a ${P(e.prov)}.`;
     case 'governo': return `${N(e.nazione)} diventa ${GOVERNI_ART[e.governo] ?? e.governo}.`;
     case 'evento': return e.storico && e.nazione !== g ? `${N(e.nazione)}: ${eventDef(game, e.evento)?.titolo ?? e.evento}.` : null;
+    case 'coalizione_formata': return `Si forma una coalizione contro ${N(e.contro)}: ${e.membri.map(N).join(', ')}. Attaccherà entro un anno se la sua infamia resta alta.`;
+    case 'coalizione_guerra': return `La coalizione (${e.membri.map(N).join(', ')}) dichiara guerra a ${N(e.contro)}.`;
+    case 'coalizione_sciolta': return `La coalizione contro ${N(e.contro)} si scioglie.`;
     case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
     case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
     case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;

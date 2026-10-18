@@ -286,3 +286,12 @@ test('assedio in corso: salvato, e controllato', () => {
   x.game.province.veio.assedio = { nazione: 'roma', punti: 400 };
   assert.equal(deserialize(JSON.stringify(x), data).ok, false);
 });
+
+test('coalizioni annunciate: salvate e controllate', () => {
+  const s = createSession(data, 'roma', 1);
+  const x = JSON.parse(serialize(s));
+  x.game.coalizioni = { roma: { membri: ['veio'], dal: 0 } };
+  assert.equal(deserialize(JSON.stringify(x), data).ok, true);
+  x.game.coalizioni = { roma: { membri: ['atlantide'], dal: 0 } };
+  assert.equal(deserialize(JSON.stringify(x), data).ok, false);
+});

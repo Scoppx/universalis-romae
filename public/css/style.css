@@ -70,3 +70,4 @@ button.piccolo { font-size: 12px; padding: 1px 6px; }
 .battaglia.vinta { background: rgba(63, 111, 58, .92); }
 .battaglia.persa { background: rgba(140, 40, 30, .92); }
 .battaglia .guerra { color: #f0a090; }
+.avviso-coalizione { background: #f3d6c8; border: 1px solid #b03a2e; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; }

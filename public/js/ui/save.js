@@ -85,6 +85,7 @@ function validateGame(s, data) {
     if (n.tributo !== undefined && n.tributo !== null && !(isObj(n.tributo) && attiva(n.tributo.a) && isInt(n.tributo.fine))) return `popolo ${k}`;
     if (n.slider !== undefined && !(isObj(n.slider) && SLIDER.every(q => isInt(n.slider[q]) && Math.abs(n.slider[q]) <= 5))) return `popolo ${k}`;
     if (n.difficolta !== undefined && !isStr(n.difficolta)) return `popolo ${k}`;
+    if (n.coalizioneDal !== undefined && n.coalizioneDal !== null && !isInt(n.coalizioneDal)) return `popolo ${k}`;
     if (n.ultimoSlider !== undefined && n.ultimoSlider !== null && !isInt(n.ultimoSlider)) return `popolo ${k}`;
     for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati', 'ultimatumAccettati']) {
       if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => attiva(o) && isInt(v)))) return `popolo ${k}`;
@@ -125,6 +126,12 @@ function validateGame(s, data) {
       if (p.termini.assegna !== undefined && !(isObj(p.termini.assegna) && Object.entries(p.termini.assegna).every(([q, x]) => provincia(q) && attiva(x)))) return `proposta ${k}`;
     }
     if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;
+  }
+  if (g.coalizioni !== undefined) {
+    if (!isObj(g.coalizioni)) return 'coalizioni';
+    for (const [k, c] of Object.entries(g.coalizioni)) {
+      if (!attiva(k) || !isObj(c) || !Array.isArray(c.membri) || !c.membri.every(attiva) || !isInt(c.dal)) return `coalizione ${k}`;
+    }
   }
   if (g.eventi !== undefined) {
     if (!isObj(g.eventi)) return 'eventi';

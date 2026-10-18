@@ -4,7 +4,7 @@ import { makeGame } from './fixtures.js';
 import { applyCommand } from '../public/js/sim/commands.js';
 import { advanceDay } from '../public/js/sim/loop.js';
 import { declareWar, hasPretext } from '../public/js/sim/war.js';
-import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa } from '../public/js/sim/diplomacy.js';
+import { relation, changeRelation, checkEmbassy, checkProposal, allied, monthlyDiplomacy, coalition, warPreview, forzaDifesa, monthlyCoalitions } from '../public/js/sim/diplomacy.js';
 import { createArmy } from '../public/js/sim/state.js';
 
 test('relazioni iniziali: 30 tra popoli della stessa cultura, 0 altrimenti; simmetriche', () => {
@@ -326,4 +326,54 @@ test('ultimatum: contano gli alleati del bersaglio; chi cede se la lega al dito;
   assert.equal(relation(g, 'roma', 'volsci'), relRV + g.balance.ultimatum.relazioneVicini);
   g.day += 400;
   assert.equal(checkProposal(g, 'roma', 'ultimatum', 'latini', { provincia: 'e' }), 'hai già avuto una provincia da lui: riprova tra 9 anni');
+});
+
+const ostili = (g, x, ...ids) => { for (const o of ids) changeRelation(g, o, x, -100 - relation(g, o, x)); };
+// nella mappa di prova roma è più forte di latini e volsci insieme: la si indebolisce perché la coalizione basti
+const indebolisci = g => { for (const e of Object.values(g.eserciti)) if (e.owner === 'roma') { e.fanteria = 1000; e.cavalleria = 0; } };
+
+test('coalizione: si forma contro chi ha troppa infamia, attacca dopo un anno se l\'infamia resta alta', () => {
+  const g = makeGame();
+  indebolisci(g);
+  g.nazioni.roma.infamia = 30;
+  ostili(g, 'roma', 'latini', 'volsci');
+  monthlyCoalitions(g);
+  assert.deepEqual(g.coalizioni.roma.membri.sort(), ['latini', 'volsci']);
+  assert.ok(g.log.some(e => e.tipo === 'coalizione_formata' && e.contro === 'roma'));
+  g.day += 200;
+  monthlyCoalitions(g);
+  assert.equal(Object.values(g.guerre).length, 0); // ancora preavviso
+  g.day += 200;
+  g.log = [];
+  monthlyCoalitions(g);
+  const [w] = Object.values(g.guerre);
+  assert.deepEqual(w.difensori, ['roma']);
+  assert.deepEqual([...w.attaccanti].sort(), ['latini', 'volsci']);
+  assert.equal(g.nazioni.latini.stabilita, 0); // l'infamia di roma è un pretesto
+  assert.equal(g.coalizioni.roma, undefined);
+  assert.ok(g.log.some(e => e.tipo === 'coalizione_guerra'));
+});
+
+test('coalizione: si scioglie se l\'infamia scende; chi ha troppa infamia non ne fa parte; serve abbastanza forza', () => {
+  const g = makeGame();
+  indebolisci(g);
+  g.nazioni.roma.infamia = 30;
+  ostili(g, 'roma', 'latini', 'volsci');
+  g.nazioni.volsci.infamia = 25; // conquistatore anche lui: fuori
+  monthlyCoalitions(g);
+  assert.equal(g.coalizioni.roma, undefined); // i volsci sono esclusi e i latini da soli non bastano
+  g.nazioni.volsci.infamia = 0;
+  monthlyCoalitions(g);
+  assert.ok(g.coalizioni.roma);
+  g.nazioni.roma.infamia = 10;
+  g.day += 366;
+  monthlyCoalitions(g);
+  assert.equal(Object.values(g.guerre).length, 0);
+  assert.ok(g.log.some(e => e.tipo === 'coalizione_sciolta'));
+  const h = makeGame();
+  h.nazioni.roma.infamia = 30;
+  for (const a of Object.values(h.eserciti)) if (a.owner === 'roma') a.fanteria = 100000; // troppo forte
+  ostili(h, 'roma', 'latini', 'volsci');
+  monthlyCoalitions(h);
+  assert.equal(h.coalizioni?.roma, undefined);
 });

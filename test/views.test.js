@@ -496,3 +496,14 @@ test('finestra dell\'assedio: uomini, presidio, giorni, probabilità, motivi', (
   assert.equal(v.destinazione, 'B');
   assert.equal(V.siegeView(g, 'roma', 'b'), null); // provincia propria
 });
+
+test('coalizione: notizie e avviso nella diplomazia del bersaglio', () => {
+  const g = makeGame();
+  g.coalizioni = { roma: { membri: ['latini', 'volsci'], dal: 0 } };
+  assert.deepEqual(V.coalitionWarning(g, 'roma'), { membri: ['latini', 'volsci'], entro: '21 aprile 752 a.C.', soglia: 20 });
+  assert.equal(V.coalitionWarning(g, 'latini'), null);
+  assert.equal(V.formatLogEntry({ tipo: 'coalizione_formata', contro: 'roma', membri: ['latini', 'volsci'] }, g, 'siculi'),
+    'Si forma una coalizione contro roma: latini, volsci. Attaccherà entro un anno se la sua infamia resta alta.');
+  assert.equal(V.formatLogEntry({ tipo: 'coalizione_guerra', contro: 'roma', membri: ['latini'] }, g, 'siculi'), 'La coalizione (latini) dichiara guerra a roma.');
+  assert.equal(V.formatLogEntry({ tipo: 'coalizione_sciolta', contro: 'roma' }, g, 'siculi'), 'La coalizione contro roma si scioglie.');
+});

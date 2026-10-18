@@ -73,8 +73,10 @@ function bottone(azione, id, testo, motivo, spiegazione = SPIEGA[azione]) {
   return `<button class="piccolo" data-azione="${azione}" data-id="${esc(id)}"${motivo ? ` disabled title="${esc(motivo)}"` : ` title="${esc(spiegazione ?? testo)}"`}>${esc(testo)}</button>`;
 }
 
-export function diplomaziaHtml(list) {
-  if (!list.length) return '<p class="muto">Nessun altro popolo.</p>';
+export function diplomaziaHtml(list, coalizione = null) {
+  const avviso = coalizione ? `<div class="avviso-coalizione"><b>Coalizione contro di te</b>: ${coalizione.membri.map(esc).join(', ')}. ` +
+    `Ti dichiarerà guerra il ${esc(coalizione.entro)} se la tua infamia resta sopra ${esc(coalizione.soglia)}; abbassala o migliora le relazioni con i membri.</div>` : '';
+  if (!list.length) return avviso + '<p class="muto">Nessun altro popolo.</p>';
   const riga = d => {
     const pct = Math.round((d.relazione + 200) / 4);
     return `<div class="dipl"><div class="riga"><span><b>${esc(d.nome)}</b> <span class="muto">${esc(STATI[d.stato])}` +
@@ -96,7 +98,7 @@ export function diplomaziaHtml(list) {
       '</div></div>';
   };
   const vicini = list.filter(d => d.confina), altri = list.filter(d => !d.confina);
-  return (vicini.length ? `<h3>Confinanti</h3>${vicini.map(riga).join('')}` : '') +
+  return avviso + (vicini.length ? `<h3>Confinanti</h3>${vicini.map(riga).join('')}` : '') +
     (altri.length ? `<h3>Altri popoli</h3>${altri.map(riga).join('')}` : '');
 }
 

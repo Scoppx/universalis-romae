@@ -1,6 +1,6 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
 import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf, neighborsOf } from './state.js';
-import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome, checkWar, hasPretext } from './war.js';
+import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome, checkWar, hasPretext, startWar } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
 const D = game => game.balance.diplomazia;
@@ -11,6 +11,7 @@ export function baseRelation(game, a, b) {
 
 // Valori iniziali dei campi diplomatici; non tocca quelli già presenti (salvataggi vecchi, popoli nuovi).
 export function initDiplomacy(game) {
+  game.coalizioni ??= {}; // coalizioni annunciate: { [bersaglio]: { membri, dal } }
   for (const a of game.ordine) {
     const n = game.nazioni[a];
     n.relazioni ??= {};
@@ -22,6 +23,7 @@ export function initDiplomacy(game) {
     n.ambascerie ??= {};
     n.ultimatumInviati ??= {};
     n.ultimatumAccettati ??= {}; // a chi ha già ceduto una provincia per ultimatum, e quando
+    n.coalizioneDal ??= null;    // ultima coalizione affrontata (o sciolta)
   }
 }
 
@@ -296,4 +298,63 @@ export function leaveFoedus(game, id) {
   game.nazioni[P].pretesti[id] = game.day + d.pretestoAnni * 365;
   log(game, { tipo: 'uscita', nazione: id, protettore: P });
   return { ok: true };
+}
+
+// --- coalizioni annunciate
+
+// Soglia d'infamia oltre la quale si forma una coalizione contro x (più bassa per il giocatore a sfida storico).
+export function sogliaCoalizione(game, x) {
+  const base = game.balance.infamia.soglia;
+  return x === game.giocatore ? (game.balance.sfida?.[game.sfida]?.sogliaCoalizione ?? base) : base;
+}
+
+// Chi può entrare in una coalizione contro x: confinanti ostili, liberi, non in guerra o in tregua con lui,
+// e senza troppa infamia a loro volta.
+export function coalitionCandidates(game, x) {
+  const soglia = game.balance.infamia.soglia;
+  return game.ordine.filter(o => o !== x && game.nazioni[o].vivo && !game.nazioni[o].protettore && bordersNation(game, o, x) &&
+    relation(game, o, x) < 0 && !friendly(game, o, x) && !atWar(game, o, x) && !inTruce(game, o, x) && game.nazioni[o].infamia < soglia);
+}
+
+const forzaDi = (game, ids) => ids.reduce((s, o) => s + power(game, o), 0);
+
+// Ogni mese: contro chi ha troppa infamia si forma una coalizione (annunciata); dopo il preavviso, se l'infamia
+// è ancora alta e la coalizione abbastanza forte, dichiara guerra tutta insieme; altrimenti si scioglie.
+export function monthlyCoalitions(game) {
+  game.coalizioni ??= {};
+  const c = game.balance.coalizione;
+  for (const x of game.ordine) {
+    const X = game.nazioni[x];
+    if (!X.vivo) { delete game.coalizioni[x]; continue; }
+    const annunciata = game.coalizioni[x];
+    if (annunciata) {
+      if (game.day - annunciata.dal < c.preavviso) continue;
+      delete game.coalizioni[x];
+      const membri = coalitionCandidates(game, x).filter(o => annunciata.membri.includes(o));
+      const forte = membri.length && forzaDi(game, membri) >= c.rapporto * forzaDifesa(game, x);
+      const capo = forte && X.infamia > sogliaCoalizione(game, x) ? [...membri].sort((a, b) => power(game, b) - power(game, a) || (a < b ? -1 : 1))[0] : null;
+      const r = capo ? startWar(game, capo, x) : { ok: false };
+      if (r.ok) {
+        const w = game.guerre[r.guerra];
+        for (const o of membri) {
+          if (o === capo || !puoEntrare(game, w, o, w.difensori)) continue;
+          w.attaccanti.push(o);
+          for (const dd of w.difensori) changeRelation(game, o, dd, D(game).guerraRelazione);
+        }
+        X.coalizioneDal = game.day;
+        log(game, { tipo: 'coalizione_guerra', contro: x, membri: w.attaccanti.filter(o => membri.includes(o)) });
+      } else {
+        X.coalizioneDal = game.day - (c.anniAttesa - 1) * 365; // sciolta: se ne può formare un'altra tra un anno
+        log(game, { tipo: 'coalizione_sciolta', contro: x });
+      }
+      continue;
+    }
+    if (X.infamia <= sogliaCoalizione(game, x)) continue;
+    if (game.day - (X.coalizioneDal ?? -Infinity) < c.anniAttesa * 365) continue;
+    const membri = coalitionCandidates(game, x);
+    if (membri.length && forzaDi(game, membri) >= c.rapporto * forzaDifesa(game, x)) {
+      game.coalizioni[x] = { membri, dal: game.day };
+      log(game, { tipo: 'coalizione_formata', contro: x, membri });
+    }
+  }
 }

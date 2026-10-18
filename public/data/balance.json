@@ -200,5 +200,10 @@
   },
   "annessione": {
     "infamia": 2
+  },
+  "coalizione": {
+    "rapporto": 1.2,
+    "anniAttesa": 10,
+    "preavviso": 365
   }
 }
