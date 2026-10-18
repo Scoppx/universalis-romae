@@ -357,6 +357,8 @@ test('coalizione: si forma contro chi ha troppa infamia, attacca dopo un anno se
 
 test('coalizione: si scioglie se l\'infamia scende; chi ha troppa infamia non ne fa parte; serve abbastanza forza', () => {
   const g = makeGame();
+  g.balance = structuredClone(g.balance);
+  g.balance.coalizione.rapporto = 1.2; // misura chi resta fuori, non la soglia tarata
   indebolisci(g);
   g.nazioni.roma.infamia = 30;
   ostili(g, 'roma', 'latini', 'volsci');
@@ -418,6 +420,35 @@ test('sfida storico: la coalizione contro il giocatore scatta già da infamia 15
   monthlyCoalitions(g);
   assert.equal(g.coalizioni.roma, undefined);
   g.giocatore = 'roma'; g.sfida = 'storico';
+  monthlyCoalitions(g);
+  assert.ok(g.coalizioni.roma);
+});
+
+test('coalizione: entrano anche i popoli ostili non confinanti; guida chi confina', () => {
+  const g = makeGame();
+  indebolisci(g);
+  g.nazioni.roma.infamia = 30;
+  ostili(g, 'roma', 'latini', 'volsci', 'siculi');
+  for (const e of Object.values(g.eserciti)) if (e.owner === 'siculi') e.fanteria = 50000; // il più forte, ma non confina con roma
+  monthlyCoalitions(g);
+  assert.deepEqual(g.coalizioni.roma.membri.sort(), ['latini', 'siculi', 'volsci']);
+  g.day += 400;
+  monthlyCoalitions(g);
+  const [w] = Object.values(g.guerre);
+  assert.notEqual(w.attaccanti[0], 'siculi');
+  assert.ok(w.attaccanti.includes('siculi'));
+});
+
+test('coalizione: attacca anche se un po\' più debole del bersaglio (soglia in balance)', async () => {
+  const { power } = await import('../public/js/sim/state.js');
+  const g = makeGame();
+  g.nazioni.roma.infamia = 30;
+  ostili(g, 'roma', 'latini', 'volsci');
+  const membri = power(g, 'latini') + power(g, 'volsci');
+  const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
+  r.cavalleria = 0;
+  r.fanteria += Math.round(membri / 0.8 - power(g, 'roma')); // la coalizione ha 0,8 volte la forza di roma
+  assert.ok(Math.abs((power(g, 'latini') + power(g, 'volsci')) / power(g, 'roma') - 0.8) < 0.02);
   monthlyCoalitions(g);
   assert.ok(g.coalizioni.roma);
 });

@@ -309,11 +309,11 @@ export function sogliaCoalizione(game, x) {
   return x === game.giocatore ? (game.balance.sfida?.[game.sfida]?.sogliaCoalizione ?? base) : base;
 }
 
-// Chi può entrare in una coalizione contro x: confinanti ostili, liberi, non in guerra o in tregua con lui,
-// e senza troppa infamia a loro volta.
+// Chi può entrare in una coalizione contro x: popoli ostili di tutta Italia (anche non confinanti), liberi,
+// non in guerra o in tregua con lui, e senza troppa infamia a loro volta.
 export function coalitionCandidates(game, x) {
   const soglia = game.balance.infamia.soglia;
-  return game.ordine.filter(o => o !== x && game.nazioni[o].vivo && !game.nazioni[o].protettore && bordersNation(game, o, x) &&
+  return game.ordine.filter(o => o !== x && game.nazioni[o].vivo && !game.nazioni[o].protettore &&
     relation(game, o, x) < 0 && !friendly(game, o, x) && !atWar(game, o, x) && !inTruce(game, o, x) && game.nazioni[o].infamia < soglia);
 }
 
@@ -333,7 +333,9 @@ export function monthlyCoalitions(game) {
       delete game.coalizioni[x];
       const membri = coalitionCandidates(game, x).filter(o => annunciata.membri.includes(o));
       const forte = membri.length && forzaDi(game, membri) >= c.rapporto * forzaDifesa(game, x);
-      const capo = forte && X.infamia > sogliaCoalizione(game, x) ? [...membri].sort((a, b) => power(game, b) - power(game, a) || (a < b ? -1 : 1))[0] : null;
+      // guida il membro più forte tra quelli che confinano con x (chi non confina si aggiunge)
+      const capo = forte && X.infamia > sogliaCoalizione(game, x)
+        ? [...membri].filter(o => bordersNation(game, o, x)).sort((a, b) => power(game, b) - power(game, a) || (a < b ? -1 : 1))[0] ?? null : null;
       const r = capo ? startWar(game, capo, x) : { ok: false };
       if (r.ok) {
         const w = game.guerre[r.guerra];

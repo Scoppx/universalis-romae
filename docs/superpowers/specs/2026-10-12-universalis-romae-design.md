@@ -475,15 +475,16 @@ fortificazioni: sezione 3).
 Giocando Roma l'utente ha conquistato l'Italia in circa 150 anni, usando molto annessioni e ultimatum. Obiettivo:
 un giocatore aggressivo con Roma, a sfida "normale", non controlla il 75% delle tasse d'Italia prima di 350 anni.
 
-- **Ultimatum**: si cede solo se chi chiede è almeno 3 volte più forte del bersaglio **e dei suoi alleati**
+- **Ultimatum**: si cede solo se chi chiede è almeno 6 volte più forte (taratura; prima 3) del bersaglio **e dei suoi alleati**
   (federati e protettore compresi); chi cede perde 50 di relazione con chi chiede, i suoi confinanti 10; dopo un
   ultimatum accettato, niente altri ultimatum a quel popolo per 10 anni; l'infamia è 1,5 volte quella di una conquista.
 - **Annessione**: l'infamia è il doppio di quella di una pace normale.
-- **Coalizioni vere, annunciate**: contro un popolo con infamia oltre la soglia, i suoi confinanti ostili (relazione
-  negativa, non amici, **con infamia propria sotto la soglia**) che insieme sono almeno 1,2 volte più forti di lui
-  (con i suoi alleati) **formano una coalizione**: notizia per tutti e avviso nella Diplomazia del bersaglio. Dopo un
+- **Coalizioni vere, annunciate**: contro un popolo con infamia oltre la soglia, i popoli ostili di tutta Italia,
+  anche non confinanti (relazione negativa, non amici, **con infamia propria sotto la soglia**), che insieme hanno
+  almeno 0,7 volte la sua forza (con i suoi alleati) **formano una coalizione** (decisione dell'utente in taratura:
+  con i soli confinanti e il rapporto 1,2 contro una Roma grande non scattava mai): notizia per tutti e avviso nella Diplomazia del bersaglio. Dopo un
   anno, se il bersaglio ha ancora l'infamia oltre la soglia e la coalizione è ancora abbastanza forte, gli dichiara
-  guerra (il più forte è il capofila, gli altri entrano nello stesso schieramento, senza perdere stabilità perché
+  guerra (il più forte tra chi confina è il capofila, gli altri entrano nello stesso schieramento, senza perdere stabilità perché
   l'infamia del bersaglio è un pretesto); altrimenti si scioglie, con una notizia. Nelle paci i membri pagano
   l'infamia come tutti e valgono i limiti di quota. Un popolo affronta al più una coalizione ogni 10 anni.
 - **Sovraestensione**: oltre 15 province, ogni provincia in più aggiunge 0,15 di malcontento a tutte le province
