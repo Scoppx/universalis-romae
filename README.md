@@ -32,6 +32,12 @@ Design: `docs/superpowers/specs/2026-10-12-universalis-romae-design.md`
 - **Popoli dormienti**: le colonie greche (Siracusa, Taranto, Neapolis…) sbarcano vicino alla data storica: chi possiede la provincia sceglie se accoglierle (cede la provincia, ne ha un vicino amico e denaro) o respingerle (nascono armate e in guerra). Lucani, Bruzi e Galli arrivano senza chiedere, con un'invasione.
 - Salvataggio automatico ogni anno (Continua nella schermata iniziale); **Esporta/Importa** per i file.
 
+## Battaglie e assedi
+
+- **Battaglie in diretta**: quando un tuo esercito combatte, in alto compare un riquadro con i giorni di battaglia, uomini e morale dei due schieramenti e i caduti dell'ultimo giorno. **Ritirata**: i tuoi eserciti lì perdono il 10% degli uomini e scappano nella provincia sicura più vicina; la battaglia conta come persa. Alla fine il riquadro mostra l'esito.
+- **Assedi**: ogni provincia ha un presidio (abitanti × 250 × (1 + fortificazione)). Un assedio accumula punti ogni giorno e la provincia cade a 100: più uomini assedianti vanno più veloci, un presidio grande e mura alte rallentano. Sulla mappa un simbolo di fortezza mostra i giorni che mancano; cliccandolo (o dalla scheda della provincia) si apre l'assedio: **Attacca** (assalto immediato, con la probabilità di vittoria scritta sul bottone), **Assedia** (si continua), **Ritirati** (si marcia verso la provincia sicura più vicina). L'IA assalta solo dal 75%.
+- **Eserciti**: l'IA unisce i suoi eserciti fermi nella stessa provincia; sulla mappa compaiono al più 3 soldatini per popolo in una provincia, più un "+N".
+
 ## Difficoltà e taratura
 
 Ogni popolo ha un'etichetta di difficoltà con un bonus in `balance.json` (`difficolta`): moltiplicatori dell'esercito, del tesoro e della riserva iniziali (`esercito`, `tesoro`, `uomini`), un modificatore al dado (`dado`), bonus di reclute e tasse per tutta la partita (`reclute`, `tasse`) e, per i facili, la capitale che non si cede né in pace né con un ultimatum (`capitaleSalva`). "Molto difficile" resta senza aiuti: Volsci ed Equi sono duri anche da giocare.
