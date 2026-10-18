@@ -310,6 +310,7 @@ test('ultimatum: contano gli alleati del bersaglio; chi cede se la lega al dito;
   const { power } = await import('../public/js/sim/state.js');
   const g = makeGame();
   g.balance = structuredClone(g.balance);
+  g.balance.diplomazia.ultimatumRapporto = 3; // il test misura chi conta nella difesa, non la soglia tarata
   const [r] = Object.values(g.eserciti).filter(a => a.owner === 'roma');
   r.fanteria += Math.ceil(3 * power(g, 'latini') - power(g, 'roma')) + 10; r.cavalleria = r.cavalleria; // roma appena 3 volte più forte dei latini
   assert.equal(forzaDifesa(g, 'latini'), power(g, 'latini'));
