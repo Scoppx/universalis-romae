@@ -129,3 +129,15 @@ test('difficoltà: bonus di reclute e tasse per tutta la partita', () => {
   assert.equal(maxManpower(g, 'roma'), Math.round(6 * 500 * (1 + 0.3 + 1)));
   assert.ok(monthlyManpower(g, 'roma') > uomini && maxManpower(g, 'roma') > max);
 });
+
+test('livello di sfida: bonus solo ai popoli dell\'IA, niente senza giocatore', () => {
+  const g = makeGame();
+  const base = monthlyIncome(g, 'latini'), baseRoma = monthlyIncome(g, 'roma');
+  g.sfida = 'difficile';
+  close(monthlyIncome(g, 'latini'), base); // nessun giocatore (come nel bench): nessun effetto
+  g.giocatore = 'roma';
+  close(monthlyIncome(g, 'latini'), base * (1 + g.balance.sfida.difficile.tasse));
+  close(monthlyIncome(g, 'roma'), baseRoma);
+  g.sfida = 'normale';
+  close(monthlyIncome(g, 'latini'), base);
+});

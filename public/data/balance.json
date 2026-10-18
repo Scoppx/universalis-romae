@@ -217,5 +217,17 @@
     "costoPerTassa": 10,
     "infamia": 0.5,
     "relazioneLiberazione": 25
+  },
+  "sfida": {
+    "normale": {},
+    "difficile": {
+      "tasse": 0.2,
+      "reclute": 0.2
+    },
+    "storico": {
+      "tasse": 0.4,
+      "reclute": 0.4,
+      "sogliaCoalizione": 15
+    }
   }
 }

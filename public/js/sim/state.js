@@ -48,8 +48,10 @@ export function recruitBonus(game, id) {
 // capitaleSalva: la capitale non si cede né in pace né con un ultimatum.
 export function difficultyOf(game, id) {
   const d = game.balance.difficolta?.[game.nazioni[id]?.difficolta] ?? {};
-  return { esercito: d.esercito ?? 1, tesoro: d.tesoro ?? 1, uomini: d.uomini ?? 1, dado: d.dado ?? 0, reclute: d.reclute ?? 0, tasse: d.tasse ?? 0,
-    capitaleSalva: Boolean(d.capitaleSalva) };
+  // livello di sfida del giocatore: tasse e reclute in più per i popoli dell'IA (senza giocatore, come nel bench, niente)
+  const s = game.giocatore && id !== game.giocatore ? game.balance.sfida?.[game.sfida] ?? {} : {};
+  return { esercito: d.esercito ?? 1, tesoro: d.tesoro ?? 1, uomini: d.uomini ?? 1, dado: d.dado ?? 0,
+    reclute: (d.reclute ?? 0) + (s.reclute ?? 0), tasse: (d.tasse ?? 0) + (s.tasse ?? 0), capitaleSalva: Boolean(d.capitaleSalva) };
 }
 
 export function maxManpower(game, nationId) {

@@ -10,8 +10,11 @@ export function createSessionFrom(game, giocatore, seme, ia = 'regole', ai = nul
   return { game, giocatore, seme, ia, ai, controllers: buildControllers(game, ia, ai, giocatore) };
 }
 
-export function createSession(data, giocatore, seme, ia = 'regole', ai = null) {
-  return createSessionFrom(createGame({ ...data, seed: seme }), giocatore, seme, ia, ai);
+export function createSession(data, giocatore, seme, ia = 'regole', ai = null, sfida = 'normale') {
+  const game = createGame({ ...data, seed: seme });
+  game.giocatore = giocatore; // chi gioca, per il livello di sfida
+  game.sfida = sfida;
+  return createSessionFrom(game, giocatore, seme, ia, ai);
 }
 
 // Perché il gioco deve fermarsi adesso, se deve.

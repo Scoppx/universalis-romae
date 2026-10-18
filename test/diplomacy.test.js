@@ -408,3 +408,15 @@ test('foedus: integrare il federato dopo 10 anni con buone relazioni e denari, o
   assert.equal(relation(h, 'roma', 'volsci'), rel + h.balance.foedus.relazioneLiberazione);
   assert.equal(applyCommand(h, { tipo: 'libera', nazione: 'roma', verso: 'volsci' }).motivo, 'non è tuo federato');
 });
+
+test('sfida storico: la coalizione contro il giocatore scatta già da infamia 15', () => {
+  const g = makeGame();
+  indebolisci(g);
+  g.nazioni.roma.infamia = 17;
+  ostili(g, 'roma', 'latini', 'volsci');
+  monthlyCoalitions(g);
+  assert.equal(g.coalizioni.roma, undefined);
+  g.giocatore = 'roma'; g.sfida = 'storico';
+  monthlyCoalitions(g);
+  assert.ok(g.coalizioni.roma);
+});

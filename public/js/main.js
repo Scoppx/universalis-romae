@@ -121,7 +121,7 @@ $('inizio-lista').addEventListener('click', e => {
 $('inizio-via').addEventListener('click', () => {
   const seme = Math.max(1, Math.floor(Number($('inizio-seme').value) || 1));
   const ia = $('inizio-ia').value;
-  avvia(createSession(data, ui.scelto, seme, ia, ia === 'regole' ? null : creaAi()));
+  avvia(createSession(data, ui.scelto, seme, ia, ia === 'regole' ? null : creaAi(), $('inizio-sfida').value));
 });
 
 // senza Jev (server senza chiave, o sito statico senza server) si gioca solo con le regole

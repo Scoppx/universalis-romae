@@ -31,6 +31,8 @@ export function deserialize(text, data, { creaAi } = {}) {
   initCulture(g);
   const info = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p]));
   for (const id of g.ordine) g.nazioni[id].difficolta ??= info[id]?.difficolta ?? 'normale';
+  g.giocatore ??= s.giocatore;
+  g.sfida ??= 'normale';
   g.eventi ??= {};
   // eventi tolti dal catalogo o di popoli scomparsi: si scartano subito, prima che possano fermare il gioco
   for (const e of Object.values(g.eventi)) {
@@ -128,6 +130,8 @@ function validateGame(s, data) {
     }
     if (p.tipo === 'ultimatum' && !provincia(p.provincia)) return `proposta ${k}`;
   }
+  if (g.sfida !== undefined && !(isStr(g.sfida) && own(data.balance.sfida ?? {}, g.sfida))) return 'livello di sfida';
+  if (g.giocatore !== undefined && g.giocatore !== null && g.giocatore !== s.giocatore) return 'giocatore incoerente';
   if (g.coalizioni !== undefined) {
     if (!isObj(g.coalizioni)) return 'coalizioni';
     for (const [k, c] of Object.entries(g.coalizioni)) {

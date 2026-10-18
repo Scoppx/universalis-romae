@@ -295,3 +295,17 @@ test('coalizioni annunciate: salvate e controllate', () => {
   x.game.coalizioni = { roma: { membri: ['atlantide'], dal: 0 } };
   assert.equal(deserialize(JSON.stringify(x), data).ok, false);
 });
+
+test('sfida e giocatore: salvati; salvataggi vecchi ricevono normale', () => {
+  const s = createSession(data, 'roma', 1, 'regole', null, 'difficile');
+  assert.equal(s.game.sfida, 'difficile');
+  assert.equal(s.game.giocatore, 'roma');
+  const x = JSON.parse(serialize(s));
+  assert.equal(deserialize(JSON.stringify(x), data).session.game.sfida, 'difficile');
+  delete x.game.sfida; delete x.game.giocatore;
+  const r = deserialize(JSON.stringify(x), data);
+  assert.equal(r.session.game.sfida, 'normale');
+  assert.equal(r.session.game.giocatore, 'roma');
+  x.game.sfida = 'impossibile';
+  assert.equal(deserialize(JSON.stringify(x), data).ok, false);
+});
