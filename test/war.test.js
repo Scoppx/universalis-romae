@@ -244,3 +244,15 @@ test('annessione: infamia doppia rispetto a una pace normale', () => {
   makePeace(g, guerra, 'roma', { province: ['c', 'f'], annessione: 'volsci' });
   assert.equal(g.nazioni.roma.infamia, 2 * per * g.balance.annessione.infamia);
 });
+
+test('la pace azzera gli assedi delle province che cambiano padrone o tornano a chi le possedeva', () => {
+  const g = makeGame();
+  const { guerra } = declareWar(g, 'roma', 'volsci');
+  g.province.c.controller = 'roma';
+  g.province.c.assedio = { nazione: 'roma', punti: 40 };
+  g.province.b.controller = 'volsci';
+  g.province.b.assedio = { nazione: 'volsci', punti: 30 };
+  makePeace(g, guerra, 'roma', { province: ['c'] });
+  assert.equal(g.province.c.assedio, null);
+  assert.equal(g.province.b.assedio, null);
+});

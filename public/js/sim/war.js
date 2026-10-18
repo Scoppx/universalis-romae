@@ -165,11 +165,12 @@ export function makePeace(game, warId, receiver, termini) {
     if (nuovo !== p.controller) changeRelation(game, nuovo, p.controller, -game.balance.guerra.presaAlleato);
     p.owner = nuovo;
     p.controller = nuovo;
+    p.assedio = null;
     padroni.push(nuovo);
   }
   const parti = [...war.attaccanti, ...war.difensori];
   for (const p of Object.values(game.province)) {
-    if (p.controller !== p.owner && parti.includes(p.owner) && parti.includes(p.controller)) p.controller = p.owner;
+    if (p.controller !== p.owner && parti.includes(p.owner) && parti.includes(p.controller)) { p.controller = p.owner; p.assedio = null; }
   }
   const fine = game.day + game.balance.guerra.tregua;
   for (const a of war.attaccanti) for (const d of war.difensori) {

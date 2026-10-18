@@ -449,16 +449,28 @@ try {
     g.proposte = {}; g.eventi = {};
     for (const x of Object.values(g.eserciti)) if (x.prov === 'veio') delete g.eserciti[x.id]; // i ribelli di una prova precedente
     if (!atWar(g, 'roma', 'veio')) { g.nazioni.roma.tregue = {}; g.nazioni.veio.tregue = {}; startWar(g, 'roma', 'veio'); }
-    createArmy(g, 'roma', 'veio', 8000, 0);
-    createArmy(g, 'veio', 'veio', 8000, 0);
+    createArmy(g, 'roma', 'veio', 30000, 0);
+    createArmy(g, 'veio', 'veio', 30000, 0);
     window.universalis.avanza(1);
     g.proposte = {}; g.eventi = {};
     window.universalis.avanza(1);
   });
   check((await page.textContent('#battaglie')).includes('Battaglia a Veio'), 'riquadro della battaglia in alto');
   check((await page.getAttribute('#battaglie [data-azione="ritirata"]', 'title') ?? '').includes('10%'), 'ritirata spiegata');
-  await page.click('#battaglie [data-azione="ritirata"]');
-  check((await page.textContent('#battaglie')).includes('ritirata'), 'esito della ritirata mostrato');
+  // la ritirata si clicca anche con il gioco in corsa a tutta velocità (il riquadro cambia ogni giorno)
+  // il morale cala pianissimo: la battaglia deve durare abbastanza da cliccare a velocità 5
+  await page.evaluate(() => { const g = window.universalis.ui.session.game; g.balance = structuredClone(g.balance); g.balance.combattimento.morale = 0.0001; });
+  await page.evaluate(() => { for (let i = 0; i < 4; i++) document.getElementById('b-piu').click(); });
+  await page.click('#b-pausa');
+  await wait(300);
+  const rit = await page.evaluate(() => { const r = document.querySelector('#battaglie [data-azione="ritirata"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+  await page.mouse.move(rit.x, rit.y);
+  await page.mouse.down();
+  await wait(150);
+  await page.mouse.up();
+  await wait(100);
+  await page.click('#b-pausa');
+  check((await page.textContent('#battaglie')).includes('ritirata'), 'esito della ritirata mostrato (cliccata col gioco in corsa)');
   check(await page.evaluate(() => !Object.values(window.universalis.ui.session.game.eserciti).some(a => a.owner === 'roma' && a.prov === 'veio')), 'gli eserciti di Roma hanno lasciato Veio');
   // assedio: simbolo sulla mappa, finestra con Attacca / Assedia / Ritirati
   await page.evaluate(async () => {

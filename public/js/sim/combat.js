@@ -2,7 +2,7 @@
 import { rollD10 } from './rng.js';
 import { armyStrength, clamp, log, sliderOf, RIBELLI, difficultyOf } from './state.js';
 import { atWar, warBetween, sideOf } from './war.js';
-import { orderMove } from './armies.js';
+import { orderMove, distancesFrom } from './armies.js';
 import { friendly } from './diplomacy.js';
 
 export function resolveBattles(game) {
@@ -150,13 +150,27 @@ export function orderedRetreat(game, owner, provId) {
   return { ok: true };
 }
 
-// Ripiego da un assedio: gli eserciti fermi lì marciano verso la provincia sicura più vicina.
+// La provincia sicura più vicina in giorni di marcia, tra quelle che si possono raggiungere. null se non c'è.
+export function nearestSafeReachable(game, owner, from) {
+  const { dist } = distancesFrom(game, owner, from);
+  let best = null;
+  for (const [id, d] of Object.entries(dist)) {
+    if (id === from) continue;
+    const p = game.province[id];
+    if (p.owner !== owner || p.controller !== owner) continue;
+    if (Object.values(game.eserciti).some(e => e.prov === id && atWar(game, owner, e.owner))) continue;
+    if (best === null || d < dist[best] || (d === dist[best] && id < best)) best = id;
+  }
+  return best;
+}
+
+// Ripiego da un assedio: gli eserciti fermi lì marciano verso la provincia sicura più vicina che si può raggiungere.
 export function fallBack(game, owner, provId) {
   const mine = Object.values(game.eserciti).filter(a => a.owner === owner && a.prov === provId && !a.percorso.length);
   if (!mine.length) return { ok: false, motivo: 'nessun tuo esercito fermo qui' };
   if (mine.some(a => a.inBattaglia)) return { ok: false, motivo: 'sono in battaglia: usa la ritirata' };
-  const dove = nearestSafe(game, owner, provId);
-  if (!dove) return { ok: false, motivo: 'nessuna provincia sicura dove ripiegare' };
+  const dove = nearestSafeReachable(game, owner, provId);
+  if (!dove) return { ok: false, motivo: 'nessuna provincia sicura raggiungibile' };
   for (const a of mine) orderMove(game, a.id, dove);
   return { ok: true, verso: dove };
 }

@@ -510,6 +510,8 @@ document.addEventListener('click', e => {
 });
 
 $('pannello').addEventListener('pointerdown', () => { ui.premuto = true; });
+// anche i riquadri delle battaglie si ridisegnano ogni giorno: con il mouse premuto restano fermi
+$('battaglie').addEventListener('pointerdown', () => { ui.premuto = true; });
 window.addEventListener('pointerup', () => {
   if (!ui.premuto) return;
   ui.premuto = false;

@@ -3,7 +3,7 @@
 // una provincia con il presidio di riferimento (625, una provincia media senza mura) cade come con il vecchio assedio a caso.
 import { log, RIBELLI } from './state.js';
 import { nextRandom } from './rng.js';
-import { atWar } from './war.js';
+import { atWar, warBetween, sideOf } from './war.js';
 import { friendly } from './diplomacy.js';
 
 export function garrison(game, prov) {
@@ -38,10 +38,14 @@ export function siegeInfo(game, prov, qui = Object.values(game.eserciti).filter(
   const ordine = id => (id === RIBELLI ? Infinity : game.ordine.indexOf(id));
   const capo = Object.keys(per).sort((a, b) => per[b] - per[a] || ordine(a) - ordine(b))[0];
   if (qui.some(e => atWar(game, capo, e.owner))) return null;
-  const amici = ass.filter(a => a.owner === capo || (a.owner !== RIBELLI && capo !== RIBELLI && friendly(game, a.owner, capo)));
-  const men = amici.reduce((s, a) => s + uomini(a), 0);
+  // dalla stessa parte di chi guida: amici, o nello stesso schieramento della guerra contro chi tiene la provincia
+  const guerra = capo === RIBELLI ? null : warBetween(game, capo, prov.controller);
+  const stessaParte = x => x === capo || (x !== RIBELLI && capo !== RIBELLI &&
+    (friendly(game, x, capo) || (guerra && sideOf(guerra, x) === sideOf(guerra, capo))));
+  const men = ass.filter(a => stessaParte(a.owner)).reduce((s, a) => s + uomini(a), 0);
   const rate = siegeRate(game, capo, men, prov);
-  const punti = prov.assedio?.nazione === capo ? prov.assedio.punti : 0;
+  // i punti restano se a guidare passa un altro della stessa parte; si azzerano se l'assedio cambia schieramento
+  const punti = prov.assedio && game.nazioni[prov.assedio.nazione] && stessaParte(prov.assedio.nazione) ? prov.assedio.punti : 0;
   return { capo, uomini: men, rate, punti, giorni: Math.ceil((100 - punti) / rate - 1e-9) };
 }
 
