@@ -13,8 +13,9 @@ import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus, forz
 import { stabilityCost } from '../sim/economy.js';
 import { isFirstOfMonth } from '../sim/calendar.js';
 import { ambitionOf } from '../sim/ambitions.js';
+import { hordeOrders } from './orda.js';
 
-function hashId(id) {
+export function hashId(id) {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return h;
@@ -94,6 +95,7 @@ export function routine(game, id) {
 
 export function rulesController(game, id) {
   const cmds = [...answerProposals(game, id), ...eventAnswers(game, id)];
+  if (game.nazioni[id].orda) return [...cmds, ...hordeOrders(game, id)]; // un'orda marcia e assedia, nient'altro
   // le regole non usano obiettivi: uno rimasto da Jev (o da un salvataggio) si azzera; in pace lo fa la routine
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
   if (inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });

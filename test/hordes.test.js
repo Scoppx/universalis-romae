@@ -82,3 +82,61 @@ test('evento d\'invasione: crea l\'orda con i dati veri', () => {
   activateHorde(g, 'insubri');
   assert.ok(armiesOf(g, 'insubri').every(a => a.prov === 'eporedia'));
 });
+
+import { hordeOrders } from '../public/js/ai/orda.js';
+import { buildControllers } from '../public/js/ai/modes.js';
+import { rulesController } from '../public/js/ai/rules.js';
+import { applyCommand } from '../public/js/sim/commands.js';
+import { advanceDay } from '../public/js/sim/loop.js';
+import { dayFromDate } from '../public/js/sim/calendar.js';
+import { provincesOf } from '../public/js/sim/state.js';
+
+const giornoOrdini = (g, id) => { for (let i = 0; i < 14 && !hordeOrders(g, id).length; i++) g.day++; };
+
+test('orda IA: dichiara guerra solo al padrone della prossima provincia e marcia', () => {
+  const g = conOrda();
+  g.ambizioni.regioni.orda_galli.province = ['b']; // da g a b passando per f (volsci) e c (volsci) o e (latini)
+  activateHorde(g, 'galli');
+  giornoOrdini(g, 'galli');
+  const cmds = hordeOrders(g, 'galli');
+  const guerre = cmds.filter(c => c.tipo === 'dichiara_guerra');
+  assert.deepEqual(guerre, [{ tipo: 'dichiara_guerra', nazione: 'galli', contro: 'volsci' }]);
+  for (const c of cmds) applyCommand(g, c);
+  const es = Object.values(g.eserciti).filter(a => a.owner === 'galli');
+  assert.ok(es.some(a => a.percorso.length && a.percorso[0] === 'f'), 'in marcia verso f');
+  assert.equal(g.nazioni.galli.stabilita, 0);
+});
+
+test('orda IA: con Jev resta a regole', () => {
+  const g = conOrda();
+  activateHorde(g, 'galli');
+  const finto = { controller: () => [] };
+  assert.equal(buildControllers(g, 'jev', finto).galli, rulesController);
+});
+
+test('orda IA: se marcia su un alleato del giocatore, il giocatore difende per l\'alleanza e lo sa', async () => {
+  const { importantNews } = await import('../public/js/ui/views.js');
+  const g = conOrda();
+  g.giocatore = 'roma';
+  g.nazioni.roma.alleati.push('volsci'); g.nazioni.volsci.alleati.push('roma');
+  activateHorde(g, 'galli');
+  giornoOrdini(g, 'galli');
+  g.log = [];
+  for (const c of hordeOrders(g, 'galli')) applyCommand(g, c);
+  const w = Object.values(g.guerre).find(x => x.attaccanti[0] === 'galli');
+  assert.deepEqual(w.difensori, ['volsci', 'roma']);
+  assert.ok(importantNews(g.log, g, 'roma').some(t => t.includes('dichiara guerra')));
+});
+
+test('orda IA: arriva, assedia e si stabilisce in una partita headless', () => {
+  const data = loadData();
+  const g = createGame({ ...data, seed: 1 });
+  g.day = dayFromDate({ year: 400, month: 1, day: 1 });
+  const c = buildControllers(g, 'regole', null);
+  activateHorde(g, 'insubri');
+  c.insubri = rulesController;
+  for (let i = 0; i < 10 * 365 && g.nazioni.insubri.orda; i++) advanceDay(g, c);
+  assert.equal(g.nazioni.insubri.vivo, true);
+  assert.equal(g.nazioni.insubri.orda, null);
+  assert.ok(provincesOf(g, 'insubri').length >= 2);
+});
