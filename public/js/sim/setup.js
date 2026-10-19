@@ -22,9 +22,9 @@ import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { initCulture } from './culture.js';
 
-export function createGame({ map, popoli, balance, catalogo = [], seed }) {
+export function createGame({ map, popoli, balance, ambizioni = null, catalogo = [], seed }) {
   const game = {
-    day: 0, rng: seed >>> 0, nextId: 1, balance,
+    day: 0, rng: seed >>> 0, nextId: 1, balance, ambizioni,
     province: {}, stretti: [], nazioni: {}, ordine: [],
     eserciti: {}, guerre: {}, proposte: {}, log: [],
     catalogo: [...catalogo].sort((a, b) => (a.id < b.id ? -1 : 1)), eventi: {}, eventiFatti: {}

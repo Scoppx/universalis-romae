@@ -24,9 +24,9 @@ async function loadData() {
     return r.json();
   });
   const EVENTI_FILE = ['generici', 'governo', 'storici', 'dormienti']; // come tools/load-data.js
-  const [map, popoli, balance, ...eventi] = await Promise.all(
-    ['map.json', 'popoli.json', 'balance.json', ...EVENTI_FILE.map(f => `eventi/${f}.json`)].map(get));
-  const data = { map, popoli, balance, catalogo: eventi.flatMap(f => f.eventi) };
+  const [map, popoli, balance, ambizioni, ...eventi] = await Promise.all(
+    ['map.json', 'popoli.json', 'balance.json', 'ambizioni.json', ...EVENTI_FILE.map(f => `eventi/${f}.json`)].map(get));
+  const data = { map, popoli, balance, ambizioni, catalogo: eventi.flatMap(f => f.eventi) };
   // un catalogo sbagliato ferma il gioco prima che parta
   const errori = validateEvents(data.catalogo, data);
   if (errori.length) {

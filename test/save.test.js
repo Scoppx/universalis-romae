@@ -309,3 +309,15 @@ test('sfida e giocatore: salvati; salvataggi vecchi ricevono normale', () => {
   x.game.sfida = 'impossibile';
   assert.equal(deserialize(JSON.stringify(x), data).ok, false);
 });
+
+test('le ambizioni non si salvano: al caricamento valgono quelle correnti', async () => {
+  const { loadData } = await import('../tools/load-data.js');
+  const { createSession } = await import('../public/js/ui/session.js');
+  const data = loadData();
+  const s = createSession(data, 'roma', 1);
+  const testo = serialize(s);
+  assert.ok(!JSON.parse(testo).game.ambizioni);
+  const r = deserialize(testo, data);
+  assert.equal(r.ok, true);
+  assert.equal(r.session.game.ambizioni, data.ambizioni);
+});

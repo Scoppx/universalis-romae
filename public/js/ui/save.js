@@ -9,9 +9,9 @@ import { RIBELLI } from '../sim/state.js';
 export const SAVE_VERSION = 1;
 export const AUTOSAVE_KEY = 'universalis-romae:autosave';
 
-// Il bilanciamento e il catalogo degli eventi non si salvano: al caricamento valgono quelli correnti.
+// Il bilanciamento, le ambizioni e il catalogo degli eventi non si salvano: al caricamento valgono quelli correnti.
 export function serialize(session) {
-  const { balance, catalogo, ...game } = session.game;
+  const { balance, ambizioni, catalogo, ...game } = session.game;
   return JSON.stringify({ versione: SAVE_VERSION, giocatore: session.giocatore, seme: session.seme, ia: session.ia, game });
 }
 
@@ -25,7 +25,7 @@ export function deserialize(text, data, { creaAi } = {}) {
   if (!['regole', 'jev', 'misto'].includes(ia)) return { ok: false, motivo: 'salvataggio non valido: modalità IA sconosciuta' };
   const errore = validateGame(s, data);
   if (errore) return { ok: false, motivo: `salvataggio non valido: ${errore}` };
-  const g = { ...s.game, balance: data.balance, catalogo: [...(data.catalogo ?? [])].sort((a, b) => (a.id < b.id ? -1 : 1)) };
+  const g = { ...s.game, balance: data.balance, ambizioni: data.ambizioni ?? null, catalogo: [...(data.catalogo ?? [])].sort((a, b) => (a.id < b.id ? -1 : 1)) };
   initDiplomacy(g); // i salvataggi precedenti alla diplomazia ricevono i valori iniziali
   initGovernment(g);
   initCulture(g);
