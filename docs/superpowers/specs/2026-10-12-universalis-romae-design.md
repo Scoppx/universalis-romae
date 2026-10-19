@@ -498,3 +498,116 @@ un giocatore aggressivo con Roma, a sfida "normale", non controlla il 75% delle 
 - **Giocatore automatico aggressivo** per il bench (`node bench.js anni semi conquistatore`): guida Roma con le
   regole ma attacca da un rapporto di 1,2, chiede sempre il massimo, annette appena può, manda ultimatum ogni volta
   che può. Il bench misura in quanti anni controlla il 75% delle tasse d'Italia (o se non ci arriva).
+
+## 17. Tappa 8b–8c: la storia (aggiunta del 2026-10-19)
+
+### Perché
+Ogni popolo deve avere un motivo storico per cui giocarlo, e la partita deve sentire i grandi momenti della storia
+d'Italia tra il 753 e il 264 a.C.: chi era piccolo deve lottare per non sparire, chi era grande per dominare la sua
+regione, e dall'esterno devono arrivare forze che cambiano gli equilibri (Galli, Cartagine, Pirro). La mappa non si
+allarga (servirebbe la marina): tutto ciò che sta fuori dall'Italia arriva come eserciti ed eventi.
+
+### Obiettivi
+1. **Ambizioni storiche** per ogni popolo, con bonus di punteggio quando sono raggiunte, seguite anche dall'IA.
+2. **Orde galliche**: Senoni, Boi e Insubri arrivano come eserciti senza città, molto numerosi, che conquistano e poi
+   si stabiliscono.
+3. **Cartagine** attraverso i Fenici di Sicilia: rinforzi nelle date storiche.
+4. **Pirro** chiamato da chi possiede Taranto: un esercito fortissimo con gli elefanti, che dopo circa 5 anni riparte.
+5. **Otto eventi storici** nuovi: Porsenna, Coriolano, Cuma, Veio, guerra latina, Forche Caudine, Sentino, Dionisio.
+
+### Non obiettivi
+- Niente mappa più grande, niente marina, Cartagine non è un popolo giocabile né presente sulla mappa.
+- Niente tipi di truppa nuovi: gli elefanti sono un bonus dell'esercito di Pirro.
+- Le orde non si possono scegliere come popolo all'inizio (come gli altri dormienti).
+- La partita non finisce quando si raggiunge un'ambizione.
+
+### Da evitare (sarebbe un fallimento anche se funziona)
+- Storia obbligata: gli eventi offrono scelte, e accadono solo se i protagonisti esistono e tengono le terre giuste.
+- Forze esterne deboli che non si notano: Pirro deve vincere le prime battaglie, le orde devono fare paura.
+- Forze esterne che conquistano l'Italia da sole: Pirro si consuma e riparte, Cartagine tiene la Sicilia occidentale
+  ma non prende l'isola, le orde si fermano nella loro regione.
+- Il giocatore trascinato in guerra senza un suo clic (regola della tappa 8a).
+
+### Vincoli
+Come le tappe precedenti: simulazione deterministica (`game.rng`), comandi solo da `applyCommand`, numeri in
+`balance.json`, ogni bottone con `title`, testi in italiano, salvataggi vecchi validati e migrati, catalogo eventi
+controllato da `npm run validate-events`, obiettivi della sezione 14 da riverificare (con la tolleranza accettata
+nella tappa 8a), il sito online resta statico.
+
+### Ambizioni (deciso con l'utente)
+- **Popoli piccoli** (partono con una o due province): ambizione **sopravvivere** fino a un anno oltre quello in cui
+  nella storia vera persero l'indipendenza (Veio cade nel 396 a.C.: l'ambizione è essere vivi qualche anno dopo).
+- **Popoli grandi** (Sanniti, Etruschi grandi, Umbri…): **tenere le proprie terre e conquistare una regione** (i
+  Sanniti tutto il Sud, ecc.). **Roma: l'Italia** (il 75% delle tasse, come il bench della tappa 8a).
+- Si vede nella schermata iniziale accanto al popolo e nella scheda Governo con lo stato (es. "Sud Italia: 4 province
+  su 11", "sopravvivi fino al 350 a.C.: mancano 40 anni").
+- Raggiunta: notizia (con la finestra che ferma il tempo, se è tua), **bonus di punteggio**, la partita continua.
+- L'IA la segue: un popolo grande preferisce le guerre verso la sua regione; un popolo piccolo è più prudente e cerca
+  alleati. Jev riceve l'ambizione nel contesto delle sue domande.
+
+**Scelte mie (da confermare leggendo):**
+- Soglia tra piccoli e grandi: fino a 3 province all'inizio → sopravvivere; da 4 in su → regione; eccezioni scritte nei
+  dati (Roma: Italia; Fenici: Sicilia occidentale; Siracusa: la Sicilia; le colonie greche dormienti: sopravvivere).
+- Anno di sopravvivenza: anno storico della perdita d'indipendenza + 25, al più il 264 a.C. (fine partita).
+- Regione raggiunta quando il popolo possiede almeno il 75% delle tasse della regione e tiene ancora la sua capitale.
+- Bonus una volta sola, resta anche se poi si perdono le terre: `balance.ambizioni.bonusSopravvivenza` e
+  `bonusRegione`, valori da tarare perché pesino come una buona espansione (punto di partenza: 15 e 30 punti).
+- Le regioni sono elenchi di id di provincia in `public/data/ambizioni.json` (o in `popoli.json`), validati all'avvio.
+
+### Orde galliche (deciso con l'utente)
+- Senoni, Boi e Insubri arrivano all'improvviso nelle date storiche (tra il 403 e il 375 a.C.) come **orde**:
+  eserciti **molto numerosi**, senza province, che non spariscono per non avere terre, non riscuotono tasse né
+  reclutano e vivono di saccheggio (ogni provincia presa dà denaro).
+- Sono in guerra con chi possiede le terre verso cui marciano; marciano verso la loro regione e assediano.
+- Quando hanno preso abbastanza province nella loro regione **si stabiliscono e diventano un popolo normale lì**: la
+  prima provincia presa è la capitale, gli eserciti restano.
+- Il sacco di Roma resta un evento per i Galli già stabiliti. Te ne accorgi dalla finestra delle notizie.
+
+**Scelte mie:**
+- Regioni: Insubri Lombardia (Mediolanum), Boi Emilia (Felsina), Senoni Marche (Sena Gallica).
+- Forza: 2–3 eserciti per orda, in tutto circa 20–30 mila uomini (più di quasi ogni popolo che incontrano);
+  si stabiliscono con 2–3 province prese nella regione.
+- Ingresso: una provincia alpina o di margine della pianura padana; l'orda è guidata dalle regole (non da Jev).
+- Il giocatore non entra mai in guerra con un'orda se non vi ha province sul percorso o non lo decide lui.
+
+### Cartagine (deciso con l'utente)
+- Rinforzi ai Fenici di Sicilia nelle date storiche: un esercito cartaginese sbarca in una provincia fenicia, con
+  denaro. Se i Fenici sono del giocatore è un evento con scelta (accettare l'aiuto, anche pagando); per l'IA avviene.
+- Se i Fenici sono spariti, Cartagine sbarca e li fa rinascere in una provincia della Sicilia occidentale (come un
+  risveglio dei dormienti).
+- Basta a tenere la Sicilia occidentale contro Siracusa, non a prendere l'isola.
+
+**Scelte mie:** date 480 (Imera), 409–405, 397 (dopo Mozia), 278 (contro Pirro); forza da tarare col bench.
+
+### Pirro (deciso con l'utente)
+- Intorno al 280 a.C. evento per chi possiede Taranto (chiunque sia): chiamare Pirro.
+- Accetta: sbarca un esercito di Pirro molto forte, con gli **elefanti** (bonus in battaglia, dado e morale), che
+  combatte per lui; vince quasi sempre le prime battaglie ma **non rimpiazza le perdite** ("vittoria di Pirro").
+- Dopo circa 5 anni (275, Benevento) riparte: l'esercito sparisce, comunque vada.
+- Se Taranto è del giocatore, lo comanda lui come un suo esercito, ma non può scioglierlo né tenerlo.
+
+**Scelte mie:** rifiutare non costa nulla (al più un po' di stabilità); verifica col bench: Pirro vince le sue prime
+due battaglie nella maggior parte delle partite in cui sbarca.
+
+### Eventi storici (deciso con l'utente)
+Scelte con effetti, solo se i protagonisti esistono e tengono le terre giuste:
+- **Porsenna (508)**, per Chiusi: marciare su Roma (guerra con pretesto e un esercito in più); Roma: resistere
+  (Muzio Scevola) o trattare e cedere.
+- **Coriolano (491)**, per i Volsci: un generale romano esule; bonus in guerra contro Roma per qualche anno.
+- **Cuma (474)**, per Cuma: aiuto di Siracusa contro gli Etruschi (rinforzi e alleanza, se Siracusa esiste).
+- **Veio (396)**, per Roma in guerra con Veio: Camillo e il cunicolo, l'assedio di Veio cade più in fretta.
+- **Guerra latina (340–338)**, per la Lega latina confinante con una Roma forte: ribellarsi o sottomettersi (foedus).
+- **Forche Caudine (321)**, per i Sanniti in guerra con Roma: umiliare l'esercito romano (pace con province) o
+  lasciarlo andare.
+- **Sentino (295)**, per i Sanniti: chiamare Galli, Etruschi e Umbri contro Roma (una coalizione con le regole della
+  tappa 8a; il giocatore non viene messo dentro senza volerlo).
+- **Dionisio di Siracusa (405–367)**, per Siracusa: diventare tirannide (+ esercito), poi saccheggi delle coste
+  etrusche (Pyrgi, 384) e guerre ai Fenici.
+
+### Lasciato a chi costruisce
+Formato dei dati delle ambizioni, nuovi effetti degli eventi (es. `rinforzi`, `bonus_guerra`, `assedio_rapido`) e loro
+validazione, come l'IA pesa l'ambizione nella scelta del bersaglio, il bonus esatto degli elefanti, i numeri in
+`balance.json` da tarare con il bench.
+
+### Ordine di lavoro
+Due piani e due unioni a main: **8b** ambizioni + orde galliche; **8c** Cartagine, Pirro ed eventi.
