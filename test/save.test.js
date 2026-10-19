@@ -321,3 +321,15 @@ test('le ambizioni non si salvano: al caricamento valgono quelle correnti', asyn
   assert.equal(r.ok, true);
   assert.equal(r.session.game.ambizioni, data.ambizioni);
 });
+
+test('ambizione raggiunta nei salvataggi: assente → null, malformata rifiutata', () => {
+  const data = loadData();
+  const s = createSession(data, 'roma', 1);
+  const o = JSON.parse(serialize(s));
+  delete o.game.nazioni.veio.ambizioneRaggiunta;
+  const r = deserialize(JSON.stringify(o), data);
+  assert.equal(r.ok, true);
+  assert.equal(r.session.game.nazioni.veio.ambizioneRaggiunta, null);
+  o.game.nazioni.veio.ambizioneRaggiunta = 'x';
+  assert.equal(deserialize(JSON.stringify(o), data).ok, false);
+});

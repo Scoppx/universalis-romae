@@ -21,6 +21,7 @@ import { createArmy, provincesOf, sumOf, strettoKey, maxManpower, recruitBonus, 
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { initCulture } from './culture.js';
+import { initAmbitions } from './ambitions.js';
 
 export function createGame({ map, popoli, balance, ambizioni = null, catalogo = [], seed }) {
   const game = {
@@ -63,6 +64,7 @@ export function createGame({ map, popoli, balance, ambizioni = null, catalogo = 
   }
   initDiplomacy(game);
   initGovernment(game);
+  initAmbitions(game);
   initCulture(game);
   return game;
 }

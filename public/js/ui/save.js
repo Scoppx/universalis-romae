@@ -5,6 +5,7 @@ import { initDiplomacy } from '../sim/diplomacy.js';
 import { initGovernment, SLIDER } from '../sim/government.js';
 import { initCulture, ensureRebels } from '../sim/culture.js';
 import { RIBELLI } from '../sim/state.js';
+import { initAmbitions } from '../sim/ambitions.js';
 
 export const SAVE_VERSION = 1;
 export const AUTOSAVE_KEY = 'universalis-romae:autosave';
@@ -28,6 +29,7 @@ export function deserialize(text, data, { creaAi } = {}) {
   const g = { ...s.game, balance: data.balance, ambizioni: data.ambizioni ?? null, catalogo: [...(data.catalogo ?? [])].sort((a, b) => (a.id < b.id ? -1 : 1)) };
   initDiplomacy(g); // i salvataggi precedenti alla diplomazia ricevono i valori iniziali
   initGovernment(g);
+  initAmbitions(g);
   initCulture(g);
   const info = Object.fromEntries(data.popoli.popoli.map(p => [p.id, p]));
   for (const id of g.ordine) g.nazioni[id].difficolta ??= info[id]?.difficolta ?? 'normale';
@@ -89,6 +91,7 @@ function validateGame(s, data) {
     if (n.difficolta !== undefined && !isStr(n.difficolta)) return `popolo ${k}`;
     if (n.coalizioneDal !== undefined && n.coalizioneDal !== null && !isInt(n.coalizioneDal)) return `popolo ${k}`;
     if (n.foedusDal !== undefined && n.foedusDal !== null && !isInt(n.foedusDal)) return `popolo ${k}`;
+    if (n.ambizioneRaggiunta !== undefined && n.ambizioneRaggiunta !== null && !isInt(n.ambizioneRaggiunta)) return `popolo ${k}`;
     if (n.ultimoSlider !== undefined && n.ultimoSlider !== null && !isInt(n.ultimoSlider)) return `popolo ${k}`;
     for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati', 'ultimatumAccettati']) {
       if (n[campo] !== undefined && (!isObj(n[campo]) || !Object.entries(n[campo]).every(([o, v]) => attiva(o) && isInt(v)))) return `popolo ${k}`;

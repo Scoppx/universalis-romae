@@ -75,6 +75,7 @@
     "quotaPace": 0.5,
     "presaAlleato": 10
   },
+  "ambizioni": { "bonusSopravvivenza": 15, "bonusRegione": 30, "quotaRegione": 0.75, "preferenzaRegione": 1.5, "prudenza": 1.5 },
   "punteggio": {
     "culturaPropria": 1
   },
