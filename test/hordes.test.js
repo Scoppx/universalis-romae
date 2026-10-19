@@ -140,3 +140,19 @@ test('orda IA: arriva, assedia e si stabilisce in una partita headless', () => {
   assert.equal(g.nazioni.insubri.orda, null);
   assert.ok(provincesOf(g, 'insubri').length >= 2);
 });
+
+test('orda nell\'interfaccia: notizie e pace spenta con la spiegazione', async () => {
+  const V = await import('../public/js/ui/views.js');
+  const H = await import('../public/js/ui/panels.js');
+  const g = conOrda();
+  activateHorde(g, 'galli');
+  assert.equal(V.formatLogEntry({ tipo: 'orda', nazione: 'galli', prov: 'g' }, g, 'roma'), "Scende l'orda dei Galli da G: punta su le terre dei Volsci.");
+  assert.equal(V.importantNews([{ tipo: 'orda', nazione: 'galli', prov: 'g' }], g, 'volsci').length, 1); // la regione è sua
+  assert.equal(V.importantNews([{ tipo: 'orda', nazione: 'galli', prov: 'g' }], g, 'roma').length, 0);
+  declareWar(g, 'galli', 'volsci');
+  const html = H.guerreHtml(V.warsView(g, 'volsci'));
+  assert.match(html, /<button[^>]*disabled title="un&#39;orda non tratta[^"]*">Pace bianca<\/button>/);
+  assert.ok(!html.includes('Invia proposta'));
+  assert.equal(V.formatLogEntry({ tipo: 'insediamento', nazione: 'galli', prov: 'f' }, g, 'roma'), "L'orda dei Galli si stabilisce a F.");
+  assert.equal(V.importantNews([{ tipo: 'insediamento', nazione: 'galli', prov: 'f' }], g, 'volsci').length, 1); // in guerra con lei
+});

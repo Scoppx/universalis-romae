@@ -9,6 +9,7 @@ import { createGame } from './public/js/sim/setup.js';
 import { advanceDay } from './public/js/sim/loop.js';
 import { provincesOf } from './public/js/sim/state.js';
 import { score } from './public/js/sim/score.js';
+import { ambitionOf } from './public/js/sim/ambitions.js';
 import { createJevAi, createReplayAi } from './public/js/ai/jev.js';
 import { buildControllers, syncControllers } from './public/js/ai/modes.js';
 import { rulesController } from './public/js/ai/rules.js';
@@ -52,6 +53,7 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
   };
   const acc = {};
   let tipo = {};
+  const amb = { sopravvivere: { ok: 0, tot: 0 }, regione: { ok: 0, tot: 0 }, orde: 0, insediate: 0 }; // tappa 8b
   const g6 = { guerre: 0, durate: [], dichiarate: { regole: 0, jev: 0 }, anniPopolo: { regole: 0, jev: 0 }, nati: 0, nuoviVivi: 0 };
   for (let seed = primoSeme; seed < primoSeme + semi; seed++) {
     semeCorrente = seed;
@@ -76,6 +78,8 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
           g6.dichiarate[controllers[e.attaccante] === rulesController ? 'regole' : 'jev']++;
         } else if (e.tipo === 'pace' && inizio[e.guerra] !== undefined) {
           g6.durate.push((game.day - inizio[e.guerra]) / 365);
+        } else if (e.tipo === 'orda') { amb.orde++;
+        } else if (e.tipo === 'insediamento') { amb.insediate++;
         } else if (e.tipo === 'nascita' || (e.tipo === 'indipendenza' && e.a.startsWith('liberi_'))) {
           g6.nati++; // risvegli e popoli nati da un'indipendenza
         }
@@ -88,6 +92,12 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
       if (ai?.flush) await ai.flush();
     }
     g6.nuoviVivi += game.ordine.filter(id => start[id] === undefined && game.nazioni[id].vivo).length;
+    for (const id of game.ordine) {
+      const a = ambitionOf(game, id);
+      if (!a) continue;
+      amb[a.tipo].tot++;
+      if (game.nazioni[id].ambizioneRaggiunta != null) amb[a.tipo].ok++;
+    }
     if (conquista) { conquista.anni.push(primo); conquista.quote.push(quotaRoma()); }
     for (const id of game.ordine) tipo[id] = controllers[id] === rulesController ? 'regole' : controllers[id] === conquerorController ? 'auto' : 'jev';
     for (const id of game.ordine) {
@@ -118,7 +128,9 @@ export async function runBench({ anni, semi, ia = 'regole', ask = null, registro
       durataMediaAnni: g6.durate.length ? g6.durate.reduce((s, x) => s + x, 0) / g6.durate.length : 0,
       perPopoloAnno: { regole: perPA('regole'), jev: perPA('jev') }
     },
-    nuovi: { nati: g6.nati / semi, vivi: g6.nuoviVivi / semi }
+    nuovi: { nati: g6.nati / semi, vivi: g6.nuoviVivi / semi },
+    ambizioni: Object.fromEntries(['sopravvivere', 'regione'].map(k => [k, amb[k].tot ? amb[k].ok / amb[k].tot : 0])),
+    orde: { nate: amb.orde / semi, insediate: amb.insediate / semi }
   };
   const dentro = (v, [lo, hi]) => v !== null && v >= lo && v <= hi;
   riepilogo.obiettivi = [
@@ -160,6 +172,8 @@ function table(res, anni, semi, ia, ms) {
   lines.push(`Guerre: ${r.guerre.perAnno.toFixed(2)} l'anno, durata media ${r.guerre.durataMediaAnni.toFixed(1)} anni, per popolo-anno regole ${r.guerre.perPopoloAnno.regole?.toFixed(3) ?? '—'} · Jev ${r.guerre.perPopoloAnno.jev?.toFixed(3) ?? '—'}`);
   if (r.conquista) lines.push(`Conquistatore (Roma, sfida ${res.sfida ?? 'normale'}): 75% d'Italia in ${r.conquista.raggiunta}/${r.conquista.semi} semi, ` +
     `mediana ${r.conquista.mediana ?? 'mai'} anni; quota finale media ${Math.round(r.conquista.quotaFinale * 100)}%; anni per seme: ${r.conquista.anni.map(x => x ?? '—').join(', ')}`);
+  if (r.ambizioni) lines.push(`Ambizioni raggiunte: sopravvivere ${Math.round(r.ambizioni.sopravvivere * 100)}%, regione ${Math.round(r.ambizioni.regione * 100)}% · ` +
+    `Orde: ${r.orde.nate.toFixed(1)} nate, ${r.orde.insediate.toFixed(1)} insediate per partita`);
   lines.push(`Popoli nuovi: ${r.nuovi.nati.toFixed(1)} nati per partita, ${r.nuovi.vivi.toFixed(1)} vivi alla fine`);
   return lines.join('\n');
 }

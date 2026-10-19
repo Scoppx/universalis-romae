@@ -1,6 +1,6 @@
 // Modelli dei pannelli: dallo stato di gioco ai dati pronti da mostrare. Niente DOM.
 import { formatDate, dateFromDay, MONTH_NAMES } from '../sim/calendar.js';
-import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf } from '../sim/state.js';
+import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf, isHorde } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify, overextension } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
@@ -227,7 +227,7 @@ export function warsView(game, g) {
     const side = sideOf(w, g), nemici = enemiesOf(w, side), mine = w[side];
     const costo = (ricevente, id) => Math.round(peaceCost(game, w, ricevente, { province: [id] }));
     return {
-      id: w.id,
+      id: w.id, controOrda: [...w.attaccanti, ...w.difensori].some(x => isHorde(game, x)),
       nemico: { id: nemici[0], nome: nome(game, nemici[0]) },
       maxChiedibili: maxCedibili(game, nemici[0]),
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
@@ -370,6 +370,8 @@ export function formatLogEntry(e, game, g) {
     case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
     case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
     case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;
+    case 'orda': return `Scende l'orda dei ${N(e.nazione)} da ${P(e.prov)}: punta su ${game.ambizioni?.regioni?.[game.ambizioni?.orde?.[e.nazione]?.regione]?.nome ?? 'nuove terre'}.`;
+    case 'insediamento': return `L'orda dei ${N(e.nazione)} si stabilisce a ${P(e.prov)}.`;
     case 'ambizione': return `${N(e.nazione)} realizza la sua ambizione: ${testoAmbizione(ambitionOf(game, e.nazione)) ?? ''}`;
     case 'rifiutata': {
       if (e.da !== g) return null;
@@ -402,6 +404,11 @@ export function importantNews(log, game, g) {
       case 'eliminata': return amici.has(e.nazione) || Object.values(game.guerre).some(w => sideOf(w, g) && sideOf(w, e.nazione));
       case 'rifiutata': return e.da === g;
       case 'ambizione': return e.nazione === g;
+      case 'orda': {
+        const r = game.ambizioni?.regioni?.[game.ambizioni?.orde?.[e.nazione]?.regione]?.province ?? [];
+        return [...r, e.prov].some(p => game.province[p]?.owner === g);
+      }
+      case 'insediamento': return Object.values(game.guerre).some(w => sideOf(w, g) && sideOf(w, e.nazione) && sideOf(w, g) !== sideOf(w, e.nazione));
       default: return false;
     }
   };

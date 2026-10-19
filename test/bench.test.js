@@ -88,3 +88,9 @@ test('bench conquistatore: Roma guidata dal giocatore automatico, anni per il 75
   assert.ok(c.anni.length === 1);
   assert.ok(c.anni[0] === null || c.anni[0] <= 6);
 });
+
+test('bench: riepilogo delle ambizioni e delle orde', async () => {
+  const { riepilogo } = await runBench({ anni: 5, semi: 1 });
+  for (const k of ['sopravvivere', 'regione']) assert.ok(riepilogo.ambizioni[k] >= 0 && riepilogo.ambizioni[k] <= 1, k);
+  assert.ok(Number.isFinite(riepilogo.orde.nate) && Number.isFinite(riepilogo.orde.insediate));
+});

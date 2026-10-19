@@ -152,7 +152,9 @@ export function guerreHtml(list) {
     return `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
       (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (una pace prende al più ${limiti}):</div>${caselle(`chiedi-${w.id}`, w.daChiedere, w.capofila ? w.id : null)}` : '') +
       (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere (al più ${esc(w.limiteMio)} per pace):</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
-      '<div class="comandi">' + (!w.capofila
+      '<div class="comandi">' + (w.controOrda
+        ? `<button disabled title="un&#39;orda non tratta: la guerra finisce quando si stabilisce o quando la distruggi">Pace bianca</button>`
+        : !w.capofila
         ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
         : w.propostaInAttesa
         ? '<span class="muto">Proposta in attesa di risposta.</span>'
