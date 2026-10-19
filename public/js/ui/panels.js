@@ -12,7 +12,8 @@ export function cardDetailHtml(c) {
   return `<h3>${esc(c.nome)}</h3>` +
     `<div>Difficoltà: <b class="${diffClass(c.difficolta)}">${esc(c.difficolta)}</b> · ${esc(c.governo)}</div>` +
     `<div class="muto">${esc(c.tratti || 'nessun tratto')}</div>` +
-    (c.bonus ? `<div class="muto">Bonus della difficoltà: ${esc(c.bonus)}</div>` : '') + `<p>${esc(c.carattere)}</p>`;
+    (c.bonus ? `<div class="muto">Bonus della difficoltà: ${esc(c.bonus)}</div>` : '') +
+    (c.ambizione ? `<div>Ambizione: <b>${esc(c.ambizione)}</b></div>` : '') + `<p>${esc(c.carattere)}</p>`;
 }
 
 export function provinceHtml(v) {
@@ -48,6 +49,7 @@ export function governoHtml(v) {
     `<tr><td>Governo</td><td>${esc(v.governo)}${v.effettiGoverno ? ` <span class="muto">(${esc(v.effettiGoverno)})</span>` : ''}</td></tr>` +
     `<tr><td>Stabilità</td><td>${esc(v.stabilita)}</td></tr>` +
     `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr>` +
+    (v.ambizione ? `<tr><td>Ambizione</td><td>${esc(v.ambizione.testo)} <span class="muto">(${esc(v.ambizione.stato)})</span></td></tr>` : '') +
     (v.sovraestensione && v.sovraestensione.province > v.sovraestensione.soglia ? `<tr><td>Province</td><td>${esc(v.sovraestensione.province)} (oltre ${esc(v.sovraestensione.soglia)}: sovraestensione` +
       `${v.sovraestensione.malcontento ? `, +${esc(v.sovraestensione.malcontento)} malcontento nelle terre straniere` : ''})</td></tr>` : '') + '</table>' +
     `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? ' title="Spendi i denari indicati: stabilità +1 (più entrate, meno malcontento; da +2 aiuta in battaglia)"' : ` disabled title="${esc(v.motivoAlzare ?? 'non si può ora')}"`}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +

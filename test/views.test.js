@@ -589,3 +589,35 @@ test('revisione: la riga della sovraestensione compare solo oltre la soglia', ()
   const g = makeGame();
   assert.ok(!H.governoHtml(V.governmentView(g, 'roma')).includes('sovraestensione'));
 });
+
+const ambizioniFixture = g => {
+  g.balance = structuredClone(g.balance);
+  g.balance.ambizioni = { bonusSopravvivenza: 15, bonusRegione: 30, quotaRegione: 0.75, preferenzaRegione: 1.5, prudenza: 1.5 };
+  g.ambizioni = { regioni: { lazio: { nome: 'il Lazio', province: ['a', 'b', 'd', 'e'] } },
+    popoli: { roma: { tipo: 'regione', regione: 'lazio' }, volsci: { tipo: 'sopravvivere', anno: 713 } }, orde: {} };
+};
+
+test('ambizione: testo e stato per i due tipi, null senza ambizione', () => {
+  const g = makeGame();
+  ambizioniFixture(g);
+  assert.deepEqual(V.ambitionView(g, 'roma'), { testo: 'Conquista il Lazio', stato: '2 province su 4, 55% delle tasse (servono il 75% e la capitale)', raggiunta: false });
+  assert.deepEqual(V.ambitionView(g, 'volsci'), { testo: 'Sopravvivi fino al 713 a.C.', stato: 'mancano 40 anni', raggiunta: false });
+  g.nazioni.volsci.ambizioneRaggiunta = 0;
+  assert.equal(V.ambitionView(g, 'volsci').stato, 'raggiunta (+15 punti)');
+  assert.equal(V.ambitionView(g, 'siculi'), null);
+  assert.equal(V.formatLogEntry({ tipo: 'ambizione', nazione: 'volsci' }, g, 'roma'), 'volsci realizza la sua ambizione: Sopravvivi fino al 713 a.C.');
+  assert.equal(V.importantNews([{ tipo: 'ambizione', nazione: 'roma' }], g, 'roma').length, 1);
+  assert.equal(V.importantNews([{ tipo: 'ambizione', nazione: 'volsci' }], g, 'roma').length, 0);
+});
+
+test('ambizione nel Governo (protetta) e nella scheda iniziale', () => {
+  const g = makeGame();
+  ambizioniFixture(g);
+  g.ambizioni.regioni.lazio.nome = '<i>il Lazio</i>';
+  const html = H.governoHtml(V.governmentView(g, 'roma'));
+  assert.match(html, /<tr><td>Ambizione<\/td><td>Conquista &lt;i&gt;il Lazio&lt;\/i&gt;/);
+  const data = loadData();
+  const roma = V.peopleCards(data.popoli, data.balance, data.ambizioni).find(c => c.id === 'roma');
+  assert.equal(roma.ambizione, "Conquista l'Italia");
+  assert.match(H.cardDetailHtml(roma), /Ambizione: <b>Conquista l&#39;Italia<\/b>/);
+});

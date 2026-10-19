@@ -64,6 +64,7 @@ try {
   check((await page.locator('#inizio-lista .carta').count()) === 38, '38 popoli nella schermata iniziale');
   await page.click('[data-popolo="roma"]');
   check((await page.textContent('#inizio-scheda')).includes('facile'), 'Roma risulta facile');
+  check((await page.textContent('#inizio-scheda')).includes("Conquista l'Italia"), "l'ambizione di Roma nella scheda iniziale");
   check(!(await page.isDisabled('#inizio-via')), 'Inizia attivo dopo la scelta');
   await page.screenshot({ path: 'smoke-inizio.png' });
   await page.click('#inizio-via');
