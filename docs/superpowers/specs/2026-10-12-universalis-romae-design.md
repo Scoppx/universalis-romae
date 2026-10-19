@@ -552,6 +552,9 @@ nella tappa 8a), il sito online resta statico.
 - Regione raggiunta quando il popolo possiede almeno il 75% delle tasse della regione e tiene ancora la sua capitale.
 - Bonus una volta sola, resta anche se poi si perdono le terre: `balance.ambizioni.bonusSopravvivenza` e
   `bonusRegione`, valori da tarare perché pesino come una buona espansione (punto di partenza: 15 e 30 punti).
+- Regioni: le terre di partenza più l'area di espansione storica, circa 2–3 volte le province iniziali (i Sanniti:
+  Sannio, Campania, Lucania, Apulia…); un buon giocatore deve raggiungerla a volte, non sempre. Ogni popolo da 4
+  province in su ne ha una; "4 province su 11" è solo un esempio di come si mostra.
 - Le regioni sono elenchi di id di provincia in `public/data/ambizioni.json` (o in `popoli.json`), validati all'avvio.
 
 ### Orde galliche (deciso con l'utente)
@@ -569,6 +572,9 @@ nella tappa 8a), il sito online resta statico.
   si stabiliscono con 2–3 province prese nella regione.
 - Ingresso: una provincia alpina o di margine della pianura padana; l'orda è guidata dalle regole (non da Jev).
 - Il giocatore non entra mai in guerra con un'orda se non vi ha province sul percorso o non lo decide lui.
+- Guerra: l'orda dichiara guerra al padrone della provincia verso cui marcia, una alla volta, man mano che avanza.
+  Finché è un'orda (senza province) non fa pace e non si compra: chi ce l'ha in casa resta in guerra finché l'orda si
+  stabilisce o viene distrutta. Da stabilita, le sue guerre continuano come quelle di un popolo normale.
 
 ### Cartagine (deciso con l'utente)
 - Rinforzi ai Fenici di Sicilia nelle date storiche: un esercito cartaginese sbarca in una provincia fenicia, con
@@ -577,10 +583,15 @@ nella tappa 8a), il sito online resta statico.
   risveglio dei dormienti).
 - Basta a tenere la Sicilia occidentale contro Siracusa, non a prendere l'isola.
 
-**Scelte mie:** date 480 (Imera), 409–405, 397 (dopo Mozia), 278 (contro Pirro); forza da tarare col bench.
+**Scelte mie:** date 480 (Imera), 409–405, 397 (dopo Mozia), 278 (contro Pirro); i rinforzi diventano normali
+eserciti dei Fenici (si muovono, si sciolgono come gli altri); "tiene la Sicilia occidentale ma non l'isola" si
+ottiene con la taratura della forza, non con un limite; forza da tarare col bench.
 
 ### Pirro (deciso con l'utente)
 - Intorno al 280 a.C. evento per chi possiede Taranto (chiunque sia): chiamare Pirro.
+- **Combatte contro Roma** (deciso con l'utente): accettare dichiara guerra a Roma, se confina (con pretesto, senza
+  costo di stabilità); se Taranto è di Roma o Roma non confina, contro il vicino più forte. Pirro sbarca quindi in
+  guerra e combatte subito. Se chi chiama è in guerra con Roma da prima, Pirro entra in quella guerra.
 - Accetta: sbarca un esercito di Pirro molto forte, con gli **elefanti** (bonus in battaglia, dado e morale), che
   combatte per lui; vince quasi sempre le prime battaglie ma **non rimpiazza le perdite** ("vittoria di Pirro").
 - Dopo circa 5 anni (275, Benevento) riparte: l'esercito sparisce, comunque vada.
@@ -590,7 +601,11 @@ nella tappa 8a), il sito online resta statico.
 due battaglie nella maggior parte delle partite in cui sbarca.
 
 ### Eventi storici (deciso con l'utente)
-Scelte con effetti, solo se i protagonisti esistono e tengono le terre giuste:
+Scelte con effetti, solo se i protagonisti esistono e tengono le terre giuste. **Negli eventi tra due popoli, se
+l'altro è il giocatore, ha sempre una scelta sua** (deciso con l'utente): gli arriva un evento di risposta con le sue
+opzioni; nessuna pace, cessione o alleanza gli viene imposta senza un suo clic (regola della tappa 8a). Se l'altro è
+dell'IA, risponde con la `regola` dell'evento di risposta (o con Jev). Es.: Forche Caudine — i Sanniti scelgono di
+umiliare Roma; Roma (giocatore) sceglie se accettare la pace con province o continuare la guerra.
 - **Porsenna (508)**, per Chiusi: marciare su Roma (guerra con pretesto e un esercito in più); Roma: resistere
   (Muzio Scevola) o trattare e cedere.
 - **Coriolano (491)**, per i Volsci: un generale romano esule; bonus in guerra contro Roma per qualche anno.
@@ -599,9 +614,12 @@ Scelte con effetti, solo se i protagonisti esistono e tengono le terre giuste:
 - **Guerra latina (340–338)**, per la Lega latina confinante con una Roma forte: ribellarsi o sottomettersi (foedus).
 - **Forche Caudine (321)**, per i Sanniti in guerra con Roma: umiliare l'esercito romano (pace con province) o
   lasciarlo andare.
-- **Sentino (295)**, per i Sanniti: chiamare Galli, Etruschi e Umbri contro Roma (una coalizione con le regole della
-  tappa 8a; il giocatore non viene messo dentro senza volerlo).
-- **Dionisio di Siracusa (405–367)**, per Siracusa: diventare tirannide (+ esercito), poi saccheggi delle coste
+- **Sentino (295)**, per i Sanniti: chiamare Galli, Etruschi e Umbri contro Roma. Scelta mia: l'evento scavalca la
+  soglia d'infamia e l'attesa di 10 anni delle coalizioni; entrano i popoli di cultura gallica, etrusca e umbra
+  ostili a Roma (relazione negativa), non in tregua con lei né suoi amici; il giocatore riceve un invito con la sua
+  scelta, non viene messo dentro.
+- **Dionisio di Siracusa (405–367)**, per Siracusa: diventare tirannide (il governo `monarchia`, come l'evento
+  "tirannide" che esiste già; + esercito), poi saccheggi delle coste
   etrusche (Pyrgi, 384) e guerre ai Fenici.
 
 ### Lasciato a chi costruisce
