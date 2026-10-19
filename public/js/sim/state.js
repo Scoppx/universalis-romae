@@ -95,6 +95,11 @@ export function log(game, entry) {
 }
 
 // Forza in uomini: quelli negli eserciti più metà della riserva.
+// Un'orda: popolo senza province che marcia verso la sua regione (sim/hordes.js).
+export function isHorde(game, id) {
+  return game.nazioni[id]?.orda != null;
+}
+
 export function power(game, id) {
   const men = armiesOf(game, id).reduce((s, a) => s + a.fanteria + a.cavalleria, 0);
   return men + game.nazioni[id].uomini * 0.5;

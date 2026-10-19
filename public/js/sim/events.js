@@ -6,6 +6,7 @@ import { monthlyIncome } from './economy.js';
 import { changeRelation } from './diplomacy.js';
 import { atWar, startWar } from './war.js';
 import { dormantReady, activateDormant } from './dormant.js';
+import { activateHorde } from './hordes.js';
 
 const ALTRO = ['relazione', 'pretesto', 'pretestoAltro', 'guerra'];
 const LEVE = { societa: 'società', guerra: 'dottrina', governo: 'province' };
@@ -59,6 +60,8 @@ export function conditionsHold(game, def, id) {
   // un risveglio scatta solo per il padrone della capitale del dormiente
   for (const o of def.opzioni) for (const eff of o.effetti) {
     if (eff.crea_popolo && !dormantReady(game, eff.crea_popolo.popolo, id)) return false;
+    // un'orda arriva per il padrone della capitale del dormiente (la sua regione)
+    if (eff.orda && (!game.dormienti[eff.orda.popolo] || game.province[game.dormienti[eff.orda.popolo].capitale]?.owner !== id)) return false;
   }
   return true;
 }
@@ -117,6 +120,9 @@ function applyEffect(game, e, eff) {
       for (const [q, d] of Object.entries(v)) n.slider[q] = clamp(n.slider[q] + d, -lim, lim);
       break;
     }
+    case 'orda':
+      if (!activateHorde(game, v.popolo)) game.eventiFatti[e.evento] = (game.eventiFatti[e.evento] ?? []).filter(x => x !== id);
+      break;
     case 'crea_popolo':
       // risveglio saltato (la capitale è cambiata di mano): l'evento non conta come fatto e potrà tornare
       if (!activateDormant(game, v.popolo, v)) game.eventiFatti[e.evento] = (game.eventiFatti[e.evento] ?? []).filter(x => x !== id);
@@ -167,6 +173,7 @@ export function describeEffects(game, e, opzione) {
 }
 
 function describeExtra(game, k, v) {
+  if (k === 'orda') return `arriva l'orda dei ${game.dormienti[v.popolo]?.nome ?? game.nazioni[v.popolo]?.nome ?? v.popolo}`;
   if (k !== 'crea_popolo') return k;
   const nome = game.dormienti[v.popolo]?.nome ?? game.nazioni[v.popolo]?.nome ?? v.popolo;
   return `nasce ${nome}${(v.esercito ?? 1) !== 1 ? ` (esercito ×${v.esercito})` : ''}${v.guerra ? ', in guerra con noi' : ''}${v.relazione ? `, relazioni ${segno(v.relazione)}` : ''}`;

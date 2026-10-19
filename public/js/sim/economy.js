@@ -12,6 +12,7 @@ export function monthlyIncome(game, id) {
 }
 
 export function monthlyUpkeep(game, id) {
+  if (game.nazioni[id]?.orda) return 0; // un'orda vive di saccheggio
   const men = armiesOf(game, id).reduce((s, a) => s + (a.fanteria + a.cavalleria * 2) / 1000, 0);
   return men * game.balance.economia.mantenimento1000;
 }

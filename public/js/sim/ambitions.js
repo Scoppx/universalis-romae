@@ -4,7 +4,10 @@ import { log } from './state.js';
 import { dateFromDay } from './calendar.js';
 
 export function initAmbitions(game) {
-  for (const id of game.ordine) game.nazioni[id].ambizioneRaggiunta ??= null;
+  for (const id of game.ordine) {
+    game.nazioni[id].ambizioneRaggiunta ??= null;
+    game.nazioni[id].orda ??= null; // solo le orde galliche ne hanno una (sim/hordes.js)
+  }
 }
 
 export function ambitionOf(game, id) {

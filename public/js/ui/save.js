@@ -91,6 +91,8 @@ function validateGame(s, data) {
     if (n.difficolta !== undefined && !isStr(n.difficolta)) return `popolo ${k}`;
     if (n.coalizioneDal !== undefined && n.coalizioneDal !== null && !isInt(n.coalizioneDal)) return `popolo ${k}`;
     if (n.foedusDal !== undefined && n.foedusDal !== null && !isInt(n.foedusDal)) return `popolo ${k}`;
+    if (n.orda !== undefined && n.orda !== null && !(isObj(n.orda) && data.ambizioni?.orde?.[k]?.regione === n.orda.regione &&
+      (n.orda.prima === null || provincia(n.orda.prima)))) return `popolo ${k}`;
     if (n.ambizioneRaggiunta !== undefined && n.ambizioneRaggiunta !== null && !isInt(n.ambizioneRaggiunta)) return `popolo ${k}`;
     if (n.ultimoSlider !== undefined && n.ultimoSlider !== null && !isInt(n.ultimoSlider)) return `popolo ${k}`;
     for (const campo of ['pretesti', 'ambascerie', 'ultimatumInviati', 'ultimatumAccettati']) {

@@ -445,13 +445,7 @@
           "id": "invasione",
           "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
           "effetti": [
-            {
-              "crea_popolo": {
-                "popolo": "senoni",
-                "esercito": 4,
-                "guerra": true
-              }
-            }
+            { "orda": { "popolo": "senoni" } }
           ]
         }
       ],
@@ -475,13 +469,7 @@
           "id": "invasione",
           "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
           "effetti": [
-            {
-              "crea_popolo": {
-                "popolo": "boi",
-                "esercito": 4,
-                "guerra": true
-              }
-            }
+            { "orda": { "popolo": "boi" } }
           ]
         }
       ],
@@ -505,13 +493,7 @@
           "id": "invasione",
           "testo": "Subire l'invasione e prepararsi alla guerra contro il nuovo popolo.",
           "effetti": [
-            {
-              "crea_popolo": {
-                "popolo": "insubri",
-                "esercito": 4,
-                "guerra": true
-              }
-            }
+            { "orda": { "popolo": "insubri" } }
           ]
         }
       ],

@@ -333,3 +333,20 @@ test('ambizione raggiunta nei salvataggi: assente → null, malformata rifiutata
   o.game.nazioni.veio.ambizioneRaggiunta = 'x';
   assert.equal(deserialize(JSON.stringify(o), data).ok, false);
 });
+
+test('orda nei salvataggi: valida si ricarica, malformata è rifiutata, assente → null', async () => {
+  const { activateHorde } = await import('../public/js/sim/hordes.js');
+  const data = loadData();
+  const s = createSession(data, 'roma', 1);
+  activateHorde(s.game, 'insubri');
+  const testo = serialize(s);
+  const r = deserialize(testo, data);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.session.game.nazioni.insubri.orda, { regione: 'orda_insubri', prima: null });
+  assert.equal(r.session.game.nazioni.roma.orda, null);
+  const o = JSON.parse(testo);
+  o.game.nazioni.insubri.orda = { regione: 'boh', prima: null };
+  assert.equal(deserialize(JSON.stringify(o), data).ok, false);
+  o.game.nazioni.insubri.orda = { regione: 'orda_insubri', prima: 'nessuna' };
+  assert.equal(deserialize(JSON.stringify(o), data).ok, false);
+});

@@ -5,6 +5,7 @@ import { log, RIBELLI } from './state.js';
 import { nextRandom } from './rng.js';
 import { atWar, warBetween, sideOf } from './war.js';
 import { friendly } from './diplomacy.js';
+import { isHorde, hordeTook } from './hordes.js';
 
 export function garrison(game, prov) {
   return Math.round(prov.uomini * game.balance.assedio.presidioPerUomo * (1 + prov.fort));
@@ -71,6 +72,7 @@ export function fallProvince(game, prov, capo) {
   }
   prov.assedio = null;
   log(game, { tipo: 'assedio', prov: prov.id, nazione: capo });
+  if (capo !== RIBELLI && isHorde(game, capo)) hordeTook(game, capo, prov);
 }
 
 export function advanceSieges(game) {

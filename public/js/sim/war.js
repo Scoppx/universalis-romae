@@ -1,5 +1,5 @@
 // Guerre: dichiarazione, lati, tregue. Punteggio, pace e proposte sotto.
-import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI, difficultyOf } from './state.js';
+import { newId, log, bordersNation, provincesOf, sumOf, RIBELLI, difficultyOf, isHorde, armiesOf } from './state.js';
 import { friendly, answerDiplomatic, onWarDeclared, cleanupDead, changeRelation } from './diplomacy.js';
 import { monthlyIncome } from './economy.js';
 
@@ -26,8 +26,9 @@ export function atWar(game, a, b) {
   return warBetween(game, a, b) !== null;
 }
 
+// Un'orda ha sempre un pretesto: non perde stabilità a dichiarare guerra.
 export function hasPretext(game, attacker, defender) {
-  return game.nazioni[defender].infamia > game.balance.infamia.soglia ||
+  return isHorde(game, attacker) || game.nazioni[defender].infamia > game.balance.infamia.soglia ||
     (game.nazioni[attacker].pretesti?.[defender] ?? -1) > game.day;
 }
 
@@ -42,7 +43,7 @@ export function checkWar(game, attacker, defender) {
   if (friendly(game, attacker, defender)) return 'siete alleati';
   if (atWar(game, attacker, defender)) return 'già in guerra';
   if (inTruce(game, attacker, defender)) return 'tregua in corso';
-  if (!bordersNation(game, attacker, defender)) return 'nessun confine';
+  if (!bordersNation(game, attacker, defender) && !isHorde(game, attacker)) return 'nessun confine'; // un'orda non ha confini
   return null;
 }
 
@@ -210,6 +211,7 @@ export function checkSurvival(game) {
   for (const id of game.ordine) {
     const n = game.nazioni[id];
     if (!n.vivo) continue;
+    if (n.orda) { if (!armiesOf(game, id).length) eliminate(game, id); continue; } // un'orda vive dei suoi eserciti
     const owned = provincesOf(game, id);
     if (owned.length === 0) { eliminate(game, id); continue; }
     if (game.province[n.capitale].owner !== id) {
@@ -241,6 +243,7 @@ export function proposePeace(game, from, warId, termini) {
   const side = sideOf(war, from);
   if (!side) return { ok: false, motivo: 'non partecipa' };
   if (war[side][0] !== from) return { ok: false, motivo: 'solo il capofila firma la pace' };
+  if ([...war.attaccanti, ...war.difensori].some(x => isHorde(game, x))) return { ok: false, motivo: "un'orda non tratta" };
   const to = enemiesOf(war, side)[0];
   if (termini.ricevente !== from && termini.ricevente !== to) return { ok: false, motivo: 'ricevente non valido' };
   const err = validTerms(game, war, termini.ricevente, termini);
