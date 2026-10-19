@@ -8,6 +8,7 @@ import { eventDef, describeEffects } from '../sim/events.js';
 import { sideOf, enemiesOf, scoreFor, hasPretext, peaceCost } from '../sim/war.js';
 import { formatDate } from '../sim/calendar.js';
 import { relation } from '../sim/diplomacy.js';
+import { ambitionOf, ambitionStatus } from '../sim/ambitions.js';
 
 const round2 = x => Math.round(x * 100) / 100;
 const nome = (game, id) => game.nazioni[id]?.nome ?? id;
@@ -19,9 +20,18 @@ function statoPopolo(game, id, carattere) {
     popolo: {
       nome: n.nome, carattere, governo: n.governo, stabilita: n.stabilita,
       infamia: Math.round(n.infamia), soglia_infamia: game.balance.infamia.soglia,
-      tesoro: Math.round(n.tesoro), forza: Math.round(power(game, id))
+      tesoro: Math.round(n.tesoro), forza: Math.round(power(game, id)),
+      ...(testoAmbizione(game, id) ? { ambizione: testoAmbizione(game, id) } : {})
     }
   };
+}
+
+// L'ambizione storica in parole, per il contesto di Jev.
+function testoAmbizione(game, id) {
+  const a = ambitionOf(game, id);
+  if (!a) return null;
+  if (a.tipo === 'sopravvivere') return `sopravvivere fino al ${a.anno} a.C.`;
+  return `conquistare ${a.nome} (${Math.round(ambitionStatus(game, id).quota * 100)}% delle tasse)`;
 }
 
 function guerreDi(game, id) {

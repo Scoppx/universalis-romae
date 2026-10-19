@@ -335,3 +335,37 @@ test('l\'IA unisce i suoi eserciti fermi nella stessa provincia, nel giorno degl
   assert.ok(cmds.some(c => c.tipo === 'unisci'));
   assert.ok(!cmds.some(c => c.tipo === 'muovi' && [a2.id, a3.id].includes(c.esercito)));
 });
+
+const conAmbizione = (g, popoli) => {
+  g.balance = structuredClone(g.balance);
+  g.balance.ia.anniDiRespiro = 0;
+  g.balance.ambizioni = { bonusSopravvivenza: 15, bonusRegione: 30, quotaRegione: 0.75, preferenzaRegione: 1.5, prudenza: 1.5 };
+  g.ambizioni = { regioni: { lazio: { nome: 'il Lazio', province: ['a', 'b', 'd', 'e'] } }, popoli, orde: {} };
+};
+// forze esatte: roma con `roma` uomini, gli altri con quanto basta per i rapporti voluti
+const forze = (g, valori) => {
+  for (const [id, men] of Object.entries(valori)) {
+    g.nazioni[id].uomini = 0;
+    const tutti = Object.values(g.eserciti).filter(a => a.owner === id);
+    tutti.forEach((a, i) => { a.fanteria = i ? 0 : men; a.cavalleria = 0; });
+  }
+};
+
+test('ambizione: a forze quasi pari si attacca chi sta nella regione', () => {
+  const g = makeGame();
+  conAmbizione(g, { roma: { tipo: 'regione', regione: 'lazio' } });
+  forze(g, { roma: 30000, volsci: 10000, latini: 12000 }); // volsci 3,0; latini 2,5
+  assert.deepEqual(warDecision(g, 'roma'), [{ tipo: 'dichiara_guerra', nazione: 'roma', contro: 'latini' }]);
+  delete g.ambizioni.popoli.roma;
+  assert.deepEqual(warDecision(g, 'roma'), [{ tipo: 'dichiara_guerra', nazione: 'roma', contro: 'volsci' }]);
+});
+
+test('ambizione: chi deve sopravvivere è più prudente', () => {
+  const g = makeGame();
+  conAmbizione(g, { roma: { tipo: 'sopravvivere', anno: 400 } });
+  g.balance.ia.rapportoGuerra = 2;
+  forze(g, { roma: 25000, volsci: 10000, latini: 20000 }); // miglior rapporto 2,5 < 2 × 1,5
+  assert.deepEqual(warDecision(g, 'roma'), []);
+  forze(g, { roma: 31000, volsci: 10000, latini: 20000 }); // 3,1
+  assert.deepEqual(warDecision(g, 'roma'), [{ tipo: 'dichiara_guerra', nazione: 'roma', contro: 'volsci' }]);
+});
