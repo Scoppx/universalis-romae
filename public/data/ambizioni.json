@@ -1,0 +1,746 @@
+{
+ "regioni": {
+  "italia": {
+   "nome": "l'Italia",
+   "province": [
+    "acerrae",
+    "aesernia",
+    "agyrion",
+    "akragas",
+    "alba_fucens",
+    "alba_longa",
+    "alba_pompeia",
+    "albingaunum",
+    "aletrium",
+    "altinum",
+    "ameria",
+    "amiternum",
+    "anagnia",
+    "ancona",
+    "aquileia",
+    "ardea",
+    "ariminum",
+    "arpi",
+    "arpinum",
+    "arretium",
+    "asculum",
+    "ateste",
+    "atina",
+    "aufidena",
+    "augusta_taurinorum",
+    "barium",
+    "bergomum",
+    "bovianum",
+    "brixia",
+    "brundisium",
+    "caelia",
+    "caere",
+    "cales",
+    "canusium",
+    "capena",
+    "capua",
+    "carsioli",
+    "caudium",
+    "clusium",
+    "comum",
+    "consentia",
+    "corfinium",
+    "cortona",
+    "cremona",
+    "cumae",
+    "cures",
+    "dertona",
+    "elea",
+    "entella",
+    "eporedia",
+    "eretum",
+    "eryx",
+    "faesulae",
+    "falerii",
+    "felsina",
+    "feltria",
+    "ferentinum",
+    "fidenae",
+    "firmum",
+    "forum_iulii",
+    "fundi",
+    "gabii",
+    "gela",
+    "genua",
+    "grumentum",
+    "henna",
+    "hipponion",
+    "histonium",
+    "hydruntum",
+    "iguvium",
+    "interamna",
+    "kale_akte",
+    "kamikos",
+    "katane",
+    "kroton",
+    "lavinium",
+    "leontinoi",
+    "lokroi",
+    "luceria",
+    "luna",
+    "lupiae",
+    "maleventum",
+    "mantua",
+    "marruvium",
+    "mediolanum",
+    "metapontion",
+    "minturnae",
+    "morgantina",
+    "motya",
+    "mutina",
+    "naxos",
+    "nicaea",
+    "nola",
+    "nomentum",
+    "novaria",
+    "nuceria",
+    "numana",
+    "opitergium",
+    "panormos",
+    "parma",
+    "patavium",
+    "perusia",
+    "pinna",
+    "pisae",
+    "placentia",
+    "pons_drusi",
+    "populonia",
+    "poseidonia",
+    "potentia",
+    "praeneste",
+    "pyrgi",
+    "reate",
+    "rhegion",
+    "roma",
+    "rusellae",
+    "saepinum",
+    "sarsina",
+    "scylletium",
+    "segesta",
+    "segusio",
+    "sena_gallica",
+    "silvium",
+    "sipontum",
+    "siris",
+    "solus",
+    "sora",
+    "spina",
+    "spoletium",
+    "suessa",
+    "sybaris",
+    "syrakousai",
+    "taras",
+    "tarquinia",
+    "teanum",
+    "temesa",
+    "tibur",
+    "trebula_mutuesca",
+    "tridentum",
+    "triokala",
+    "tuder",
+    "tusculum",
+    "uria",
+    "veio",
+    "vetulonia",
+    "vicetia",
+    "volaterrae",
+    "volsinii",
+    "vulci",
+    "zankle"
+   ]
+  },
+  "sicilia": {
+   "nome": "la Sicilia",
+   "province": [
+    "agyrion",
+    "akragas",
+    "entella",
+    "eryx",
+    "gela",
+    "henna",
+    "kale_akte",
+    "kamikos",
+    "katane",
+    "leontinoi",
+    "morgantina",
+    "motya",
+    "naxos",
+    "panormos",
+    "segesta",
+    "solus",
+    "syrakousai",
+    "triokala",
+    "zankle"
+   ]
+  },
+  "sicilia_occidentale": {
+   "nome": "la Sicilia occidentale",
+   "province": [
+    "akragas",
+    "entella",
+    "eryx",
+    "gela",
+    "kamikos",
+    "motya",
+    "panormos",
+    "segesta",
+    "solus",
+    "triokala"
+   ]
+  },
+  "lega_latina": {
+   "nome": "il Lazio",
+   "province": [
+    "alba_fucens",
+    "alba_longa",
+    "aletrium",
+    "anagnia",
+    "ardea",
+    "carsioli",
+    "eretum",
+    "ferentinum",
+    "fidenae",
+    "fundi",
+    "gabii",
+    "lavinium",
+    "nomentum",
+    "praeneste",
+    "roma",
+    "tibur",
+    "trebula_mutuesca",
+    "tusculum"
+   ]
+  },
+  "sabini": {
+   "nome": "la Sabina",
+   "province": [
+    "alba_fucens",
+    "amiternum",
+    "asculum",
+    "capena",
+    "carsioli",
+    "corfinium",
+    "cures",
+    "eretum",
+    "falerii",
+    "fidenae",
+    "gabii",
+    "interamna",
+    "nomentum",
+    "reate",
+    "trebula_mutuesca"
+   ]
+  },
+  "felsina": {
+   "nome": "l'Emilia",
+   "province": [
+    "ariminum",
+    "ateste",
+    "brixia",
+    "cremona",
+    "faesulae",
+    "felsina",
+    "luna",
+    "mantua",
+    "mutina",
+    "parma",
+    "patavium",
+    "pisae",
+    "spina"
+   ]
+  },
+  "umbri": {
+   "nome": "l'Umbria",
+   "province": [
+    "ameria",
+    "amiternum",
+    "ariminum",
+    "arretium",
+    "asculum",
+    "clusium",
+    "cortona",
+    "faesulae",
+    "falerii",
+    "felsina",
+    "firmum",
+    "iguvium",
+    "interamna",
+    "numana",
+    "perusia",
+    "sarsina",
+    "spoletium",
+    "tuder"
+   ]
+  },
+  "piceni": {
+   "nome": "il Piceno",
+   "province": [
+    "alba_fucens",
+    "amiternum",
+    "ancona",
+    "ariminum",
+    "arretium",
+    "asculum",
+    "carsioli",
+    "firmum",
+    "iguvium",
+    "numana",
+    "pinna",
+    "sena_gallica",
+    "spoletium"
+   ]
+  },
+  "sanniti": {
+   "nome": "il Sud",
+   "province": [
+    "acerrae",
+    "aesernia",
+    "atina",
+    "aufidena",
+    "bovianum",
+    "cales",
+    "capua",
+    "caudium",
+    "corfinium",
+    "histonium",
+    "luceria",
+    "maleventum",
+    "marruvium",
+    "nola",
+    "nuceria",
+    "pinna",
+    "poseidonia",
+    "saepinum"
+   ]
+  },
+  "opici": {
+   "nome": "la Campania",
+   "province": [
+    "acerrae",
+    "aesernia",
+    "atina",
+    "bovianum",
+    "cales",
+    "capua",
+    "caudium",
+    "cumae",
+    "maleventum",
+    "nola",
+    "nuceria",
+    "poseidonia",
+    "saepinum",
+    "suessa",
+    "teanum"
+   ]
+  },
+  "enotri": {
+   "nome": "la Lucania",
+   "province": [
+    "acerrae",
+    "arpi",
+    "caelia",
+    "canusium",
+    "consentia",
+    "elea",
+    "grumentum",
+    "kroton",
+    "luceria",
+    "maleventum",
+    "metapontion",
+    "nuceria",
+    "poseidonia",
+    "potentia",
+    "silvium",
+    "siris",
+    "sybaris",
+    "taras"
+   ]
+  },
+  "itali": {
+   "nome": "il Bruzio",
+   "province": [
+    "agyrion",
+    "consentia",
+    "elea",
+    "grumentum",
+    "hipponion",
+    "kale_akte",
+    "katane",
+    "kroton",
+    "lokroi",
+    "metapontion",
+    "naxos",
+    "potentia",
+    "rhegion",
+    "scylletium",
+    "siris",
+    "sybaris",
+    "temesa",
+    "zankle"
+   ]
+  },
+  "messapi": {
+   "nome": "il Salento",
+   "province": [
+    "barium",
+    "brundisium",
+    "caelia",
+    "canusium",
+    "grumentum",
+    "hydruntum",
+    "lupiae",
+    "metapontion",
+    "potentia",
+    "silvium",
+    "siris",
+    "taras",
+    "uria"
+   ]
+  },
+  "dauni": {
+   "nome": "la Puglia",
+   "province": [
+    "arpi",
+    "barium",
+    "canusium",
+    "histonium",
+    "luceria",
+    "maleventum",
+    "potentia",
+    "saepinum",
+    "silvium",
+    "sipontum"
+   ]
+  },
+  "veneti": {
+   "nome": "il Veneto",
+   "province": [
+    "altinum",
+    "aquileia",
+    "ariminum",
+    "ateste",
+    "bergomum",
+    "brixia",
+    "cremona",
+    "faesulae",
+    "felsina",
+    "feltria",
+    "forum_iulii",
+    "mantua",
+    "mutina",
+    "opitergium",
+    "patavium",
+    "spina",
+    "tridentum",
+    "vicetia"
+   ]
+  },
+  "liguri": {
+   "nome": "la Liguria",
+   "province": [
+    "alba_pompeia",
+    "albingaunum",
+    "ateste",
+    "augusta_taurinorum",
+    "bergomum",
+    "brixia",
+    "comum",
+    "cremona",
+    "dertona",
+    "eporedia",
+    "faesulae",
+    "felsina",
+    "genua",
+    "luna",
+    "mantua",
+    "mediolanum",
+    "mutina",
+    "nicaea",
+    "novaria",
+    "parma",
+    "pisae",
+    "placentia",
+    "segusio",
+    "tridentum",
+    "volaterrae"
+   ]
+  },
+  "orobi": {
+   "nome": "la Lombardia",
+   "province": [
+    "alba_pompeia",
+    "albingaunum",
+    "augusta_taurinorum",
+    "bergomum",
+    "brixia",
+    "comum",
+    "cremona",
+    "dertona",
+    "eporedia",
+    "mantua",
+    "mediolanum",
+    "novaria",
+    "parma",
+    "placentia",
+    "tridentum"
+   ]
+  },
+  "orda_insubri": {
+   "nome": "le terre di Milano",
+   "province": [
+    "bergomum",
+    "comum",
+    "dertona",
+    "mediolanum",
+    "novaria",
+    "placentia"
+   ]
+  },
+  "orda_boi": {
+   "nome": "le terre di Felsina",
+   "province": [
+    "ateste",
+    "faesulae",
+    "felsina",
+    "mutina",
+    "sarsina",
+    "spina"
+   ]
+  },
+  "orda_senoni": {
+   "nome": "le terre di Senigallia",
+   "province": [
+    "ancona",
+    "ariminum",
+    "iguvium",
+    "numana",
+    "sena_gallica"
+   ]
+  }
+ },
+ "popoli": {
+  "roma": {
+   "tipo": "regione",
+   "regione": "italia"
+  },
+  "fenici": {
+   "tipo": "regione",
+   "regione": "sicilia_occidentale"
+  },
+  "sicani": {
+   "tipo": "regione",
+   "regione": "sicilia_occidentale"
+  },
+  "siculi": {
+   "tipo": "regione",
+   "regione": "sicilia"
+  },
+  "siracusa": {
+   "tipo": "regione",
+   "regione": "sicilia"
+  },
+  "lega_latina": {
+   "tipo": "regione",
+   "regione": "lega_latina"
+  },
+  "sabini": {
+   "tipo": "regione",
+   "regione": "sabini"
+  },
+  "falisci": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "veio": {
+   "tipo": "sopravvivere",
+   "anno": 371
+  },
+  "caere": {
+   "tipo": "sopravvivere",
+   "anno": 328
+  },
+  "tarquinia": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "vulci": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "volsinii": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "chiusi": {
+   "tipo": "sopravvivere",
+   "anno": 270
+  },
+  "volterra": {
+   "tipo": "sopravvivere",
+   "anno": 273
+  },
+  "populonia": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "perugia": {
+   "tipo": "sopravvivere",
+   "anno": 270
+  },
+  "arezzo": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "felsina": {
+   "tipo": "regione",
+   "regione": "felsina"
+  },
+  "umbri": {
+   "tipo": "regione",
+   "regione": "umbri"
+  },
+  "piceni": {
+   "tipo": "regione",
+   "regione": "piceni"
+  },
+  "volsci": {
+   "tipo": "sopravvivere",
+   "anno": 313
+  },
+  "equi": {
+   "tipo": "sopravvivere",
+   "anno": 279
+  },
+  "marsi": {
+   "tipo": "sopravvivere",
+   "anno": 279
+  },
+  "ernici": {
+   "tipo": "sopravvivere",
+   "anno": 281
+  },
+  "aurunci": {
+   "tipo": "sopravvivere",
+   "anno": 289
+  },
+  "sanniti": {
+   "tipo": "regione",
+   "regione": "sanniti"
+  },
+  "opici": {
+   "tipo": "regione",
+   "regione": "opici"
+  },
+  "cuma": {
+   "tipo": "sopravvivere",
+   "anno": 396
+  },
+  "enotri": {
+   "tipo": "regione",
+   "regione": "enotri"
+  },
+  "itali": {
+   "tipo": "regione",
+   "regione": "itali"
+  },
+  "messapi": {
+   "tipo": "regione",
+   "regione": "messapi"
+  },
+  "peucezi": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "dauni": {
+   "tipo": "regione",
+   "regione": "dauni"
+  },
+  "veneti": {
+   "tipo": "regione",
+   "regione": "veneti"
+  },
+  "liguri": {
+   "tipo": "regione",
+   "regione": "liguri"
+  },
+  "orobi": {
+   "tipo": "regione",
+   "regione": "orobi"
+  },
+  "reti": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "elimi": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "reggio": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "sibari": {
+   "tipo": "sopravvivere",
+   "anno": 485
+  },
+  "crotone": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "taranto": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "locri": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "gela": {
+   "tipo": "sopravvivere",
+   "anno": 380
+  },
+  "lucani": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "bruzi": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "senoni": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "boi": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "insubri": {
+   "tipo": "sopravvivere",
+   "anno": 264
+  },
+  "neapolis": {
+   "tipo": "sopravvivere",
+   "anno": 301
+  }
+ },
+ "orde": {
+  "insubri": {
+   "regione": "orda_insubri",
+   "ingresso": "eporedia"
+  },
+  "boi": {
+   "regione": "orda_boi",
+   "ingresso": "mantua"
+  },
+  "senoni": {
+   "regione": "orda_senoni",
+   "ingresso": "spina"
+  }
+ }
+}

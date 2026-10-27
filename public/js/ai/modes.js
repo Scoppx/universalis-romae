@@ -10,7 +10,7 @@ export function syncControllers(out, game, ia, ai, escludi = null) {
   game.ordine.forEach((id, i) => {
     if (id === escludi || out[id]) return;
     const jev = ia === 'jev' || (ia === 'misto' && i % 2 === 0);
-    out[id] = jev && ai ? ai.controller : rulesController;
+    out[id] = jev && ai && !game.nazioni[id].orda ? ai.controller : rulesController; // le orde vanno sempre a regole
   });
   return out;
 }

@@ -12,8 +12,10 @@ import { distancesFrom } from '../sim/armies.js';
 import { relation, friendly, checkProposal, checkEmbassy, checkLeaveFoedus, forzaDifesa } from '../sim/diplomacy.js';
 import { stabilityCost } from '../sim/economy.js';
 import { isFirstOfMonth } from '../sim/calendar.js';
+import { ambitionOf } from '../sim/ambitions.js';
+import { hordeOrders } from './orda.js';
 
-function hashId(id) {
+export function hashId(id) {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return h;
@@ -93,6 +95,7 @@ export function routine(game, id) {
 
 export function rulesController(game, id) {
   const cmds = [...answerProposals(game, id), ...eventAnswers(game, id)];
+  if (game.nazioni[id].orda) return [...cmds, ...hordeOrders(game, id)]; // un'orda marcia e assedia, nient'altro
   // le regole non usano obiettivi: uno rimasto da Jev (o da un salvataggio) si azzera; in pace lo fa la routine
   const inWar = Object.values(game.guerre).some(w => sideOf(w, id));
   if (inWar && game.nazioni[id].obiettivo != null) cmds.push({ tipo: 'obiettivo', nazione: id, provincia: null });
@@ -153,10 +156,23 @@ export function legalWarTargets(game, id) {
   return warCandidates(game, id).filter(c => hasPretext(game, id, c.id) || n.stabilita >= 0);
 }
 
+// I popoli che possiedono province della regione dell'ambizione (nessuno se l'ambizione è sopravvivere).
+export function ambitionTargets(game, id) {
+  const a = ambitionOf(game, id);
+  if (a?.tipo !== 'regione') return [];
+  return [...new Set(a.province.map(p => game.province[p]?.owner).filter(o => o && o !== id))].sort();
+}
+
+// Si attacca solo con abbastanza vantaggio (di più se l'ambizione è sopravvivere); tra i bersagli possibili
+// si preferisce chi sta nella regione dell'ambizione.
 export function warDecision(game, id) {
-  const best = legalWarTargets(game, id)[0];
-  if (!best || best.rapporto < game.balance.ia.rapportoGuerra) return [];
-  return [{ tipo: 'dichiara_guerra', nazione: id, contro: best.id }];
+  const amb = game.balance.ambizioni, a = ambitionOf(game, id);
+  const soglia = game.balance.ia.rapportoGuerra * (a?.tipo === 'sopravvivere' ? amb?.prudenza ?? 1 : 1);
+  const nella = new Set(ambitionTargets(game, id));
+  const peso = c => c.rapporto * (nella.has(c.id) ? amb?.preferenzaRegione ?? 1 : 1);
+  const best = legalWarTargets(game, id).filter(c => c.rapporto >= soglia)
+    .sort((x, y) => peso(y) - peso(x) || x.id.localeCompare(y.id))[0];
+  return best ? [{ tipo: 'dichiara_guerra', nazione: id, contro: best.id }] : [];
 }
 
 export function peaceProposals(game, id) {

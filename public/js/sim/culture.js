@@ -4,6 +4,7 @@ import { nextRandom } from './rng.js';
 import { initDiplomacy } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { checkSurvival, sendStrandedHome, atWar } from './war.js';
+import { initAmbitions } from './ambitions.js';
 
 const C = game => game.balance.cultura;
 const COLORI = ['#7a5c8e', '#4f7f6b', '#a0663a', '#5d6f9e', '#8e5a5a', '#6b8e3f', '#9e8a4f', '#4f8e8e'];
@@ -147,6 +148,7 @@ export function spawnNation(game, provId) {
   game.ordine.push(id);
   initDiplomacy(game);
   initGovernment(game);
+  initAmbitions(game);
   return id;
 }
 

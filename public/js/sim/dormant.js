@@ -4,6 +4,7 @@ import { initDiplomacy, changeRelation } from './diplomacy.js';
 import { initGovernment } from './government.js';
 import { checkSurvival, sendStrandedHome, startWar } from './war.js';
 import { protectNewborn } from './culture.js';
+import { initAmbitions } from './ambitions.js';
 
 // Il risveglio è possibile se la capitale del dormiente è di `id`, controllata da lui, e non è la sua ultima provincia.
 export function dormantReady(game, popolo, id) {
@@ -27,6 +28,7 @@ export function activateDormant(game, popolo, { esercito = 1, guerra = false, re
   game.ordine.push(popolo);
   initDiplomacy(game);
   initGovernment(game);
+  initAmbitions(game);
   p.owner = popolo;
   p.controller = popolo;
   p.assimilazione = 0;

@@ -14,7 +14,7 @@ test('il catalogo vero è valido e copre i 13 dormienti', () => {
   assert.ok(data.catalogo.length >= 35, String(data.catalogo.length));
   const dormienti = data.popoli.popoli.filter(p => p.dormiente).map(p => p.id);
   for (const d of dormienti) {
-    assert.ok(data.catalogo.some(e => e.opzioni.some(o => o.effetti.some(x => x.crea_popolo?.popolo === d))), d);
+    assert.ok(data.catalogo.some(e => e.opzioni.some(o => o.effetti.some(x => (x.crea_popolo ?? x.orda)?.popolo === d))), d); // i Galli arrivano come orde
   }
 });
 

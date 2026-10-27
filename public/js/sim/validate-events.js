@@ -7,7 +7,7 @@ const isNum = n => typeof n === 'number' && Number.isFinite(n);
 const isStr = s => typeof s === 'string' && s.length > 0;
 const SUL_ALTRO = ['relazione', 'pretesto', 'pretestoAltro', 'guerra'];
 
-export function validateEvents(catalogo, { map, popoli, balance }) {
+export function validateEvents(catalogo, { map, popoli, balance, ambizioni = null }) {
   const err = [];
   const popoliId = new Set(popoli.popoli.map(p => p.id));
   const dormienti = new Set(popoli.popoli.filter(p => p.dormiente).map(p => p.id));
@@ -64,6 +64,9 @@ export function validateEvents(catalogo, { map, popoli, balance }) {
           case 'cambia_governo': if (!governi.has(v)) E(`effetto: governo sconosciuto ${v}`); break;
           case 'slider':
             if (!isObj(v) || !Object.entries(v).every(([q, d]) => SLIDER.includes(q) && Number.isInteger(d))) E('effetto slider non valido');
+            break;
+          case 'orda':
+            if (!isObj(v) || !dormienti.has(v.popolo) || (ambizioni && !ambizioni.orde?.[v.popolo])) E(`effetto orda: ${v?.popolo} non è un'orda`);
             break;
           case 'crea_popolo':
             if (!isObj(v) || !dormienti.has(v.popolo)) E(`effetto crea_popolo: ${v?.popolo} non è un popolo dormiente`);

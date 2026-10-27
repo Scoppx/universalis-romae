@@ -126,3 +126,15 @@ test('domanda di guerra: guadagno e rischio per ogni bersaglio, la pace non è l
   assert.match(c.volsci, /rischio/);
   assert.deepEqual(q.state.vicini_attaccabili.find(v => v.nome === 'volsci').province, 2);
 });
+
+test('Jev vede l\'ambizione del popolo', () => {
+  const g = makeGame();
+  g.balance = structuredClone(g.balance); g.balance.ia.anniDiRespiro = 0;
+  g.balance.ambizioni = { bonusSopravvivenza: 15, bonusRegione: 30, quotaRegione: 0.75, preferenzaRegione: 1.5, prudenza: 1.5 };
+  g.ambizioni = { regioni: { lazio: { nome: 'il Lazio', province: ['a', 'b', 'd', 'e'] } }, popoli: { roma: { tipo: 'regione', regione: 'lazio' } }, orde: {} };
+  assert.match(buildReview(g, 'roma', '').state.popolo.ambizione, /^conquistare il Lazio \(55% delle tasse\)$/);
+  g.ambizioni.popoli.roma = { tipo: 'sopravvivere', anno: 400 };
+  assert.equal(buildReview(g, 'roma', '').state.popolo.ambizione, 'sopravvivere fino al 400 a.C.');
+  delete g.ambizioni.popoli.roma;
+  assert.equal(buildReview(g, 'roma', '').state.popolo.ambizione, undefined);
+});

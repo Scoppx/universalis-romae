@@ -1,5 +1,5 @@
 // Diplomazia: relazioni, ambascerie, alleanze, foedus, tributi, ultimatum, pretesti, coalizioni, chiamate alle armi.
-import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf, neighborsOf } from './state.js';
+import { clamp, newId, log, bordersNation, provincesOf, power, maxManpower, governmentOf, difficultyOf, neighborsOf, isHorde } from './state.js';
 import { atWar, sideOf, enemiesOf, inTruce, checkSurvival, sendStrandedHome, checkWar, hasPretext, startWar } from './war.js';
 import { monthlyIncome, monthlyManpower } from './economy.js';
 
@@ -168,7 +168,7 @@ export function answerDiplomatic(game, p, accetta) {
   const d = D(game), A = game.nazioni[p.da], B = game.nazioni[p.a];
   if (!accetta) {
     if ((p.tipo === 'tributo' || p.tipo === 'ultimatum') && A.vivo) A.pretesti[p.a] = game.day + d.pretestoAnni * 365;
-    if (p.tipo === 'chiamata') {
+    if (p.tipo === 'chiamata' && !controOrda(game, p)) {
       if (allied(game, p.da, p.a)) breakAlliance(game, p.da, p.a);
       changeRelation(game, p.da, p.a, d.rifiutoChiamata);
     }
@@ -208,6 +208,12 @@ export function answerDiplomatic(game, p, accetta) {
 function puoEntrare(game, war, id, contro) {
   return Boolean(id) && game.nazioni[id]?.vivo && !sideOf(war, id) &&
     contro.every(x => !friendly(game, id, x) && !inTruce(game, id, x));
+}
+
+// Chiamata in una guerra contro un'orda: rifiutarla non rompe l'alleanza.
+export function controOrda(game, p) {
+  const war = game.guerre[p.guerra];
+  return Boolean(war) && [...war.attaccanti, ...war.difensori].some(id => isHorde(game, id));
 }
 
 function joinCall(game, p) {
@@ -259,7 +265,14 @@ export function onWarDeclared(game, war) {
   const [att] = war.attaccanti, [dif] = war.difensori;
   const d = D(game);
   const difesa = [...game.nazioni[dif].alleati, ...federatiOf(game, dif), game.nazioni[dif].protettore, ...coalition(game, att)];
-  for (const id of difesa) if (puoEntrare(game, war, id, war.attaccanti)) war.difensori.push(id);
+  // contro un'orda (niente pace) il giocatore alleato sceglie: riceve una chiamata invece di entrare da solo
+  const scelta = id => isHorde(game, att) && id === game.giocatore && game.nazioni[dif].alleati.includes(id);
+  for (const id of difesa) {
+    if (!puoEntrare(game, war, id, war.attaccanti)) continue;
+    if (!scelta(id)) { war.difensori.push(id); continue; }
+    const pid = newId(game, 'p');
+    game.proposte[pid] = { id: pid, tipo: 'chiamata', guerra: war.id, da: dif, a: id, giorno: game.day };
+  }
   for (const id of federatiOf(game, att)) if (puoEntrare(game, war, id, war.difensori)) war.attaccanti.push(id);
   for (const id of game.nazioni[att].alleati) {
     if (!puoEntrare(game, war, id, war.difensori)) continue;

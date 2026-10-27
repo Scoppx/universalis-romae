@@ -1,6 +1,6 @@
 // Modelli dei pannelli: dallo stato di gioco ai dati pronti da mostrare. Niente DOM.
 import { formatDate, dateFromDay, MONTH_NAMES } from '../sim/calendar.js';
-import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf } from '../sim/state.js';
+import { maxManpower, armiesOf, bordersNation, governmentOf, sliderOf, power, provincesOf, isHorde } from '../sim/state.js';
 import { checkSlider } from '../sim/government.js';
 import { malcontent, hasColony, colonyCost, checkColony, fortCost, checkFortify, overextension } from '../sim/culture.js';
 import { eventDef, describeEffects } from '../sim/events.js';
@@ -8,8 +8,9 @@ import { nearestSafe, nearestSafeReachable, checkRetreat } from '../sim/combat.j
 import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
-import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione, checkIntegrate, checkRelease, integrationCost } from '../sim/diplomacy.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione, checkIntegrate, checkRelease, integrationCost, controOrda } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
+import { ambitionOf, ambitionStatus, ambitionBonus } from '../sim/ambitions.js';
 
 const DIFFICOLTA = ['facile', 'normale', 'difficile', 'molto difficile'];
 const pct = v => Math.round(v * 100);
@@ -96,12 +97,13 @@ function formatBonus(d) {
   return parti.join(', ');
 }
 
-export function peopleCards(popoli, balance = null) {
+export function peopleCards(popoli, balance = null, ambizioni = null) {
   return popoli.popoli.filter(p => !p.dormiente)
     .map(p => ({
       id: p.id, nome: p.nome, colore: p.colore, difficolta: p.difficolta, governo: p.governo,
       capitale: p.capitale, tratti: formatTratti(p.tratti), carattere: p.carattere,
-      bonus: formatBonus(balance?.difficolta?.[p.difficolta])
+      bonus: formatBonus(balance?.difficolta?.[p.difficolta]),
+      ambizione: testoAmbizione(ambitionOf({ ambizioni }, p.id))
     }))
     .sort((a, b) => DIFFICOLTA.indexOf(a.difficolta) - DIFFICOLTA.indexOf(b.difficolta) || byNome(a, b));
 }
@@ -147,6 +149,29 @@ export function provinceInfo(game, id, g) {
   };
 }
 
+// L'ambizione in parole: "Sopravvivi fino al 371 a.C.", "Conquista il Sud".
+// "su" con l'articolo del nome: "le terre di Milano" → "sulle terre di Milano".
+function su(nome) {
+  const m = nome.match(/^(l'|il |la |le |i |gli )(.*)$/);
+  if (!m) return `su ${nome}`;
+  return { "l'": "sull'", 'il ': 'sul ', 'la ': 'sulla ', 'le ': 'sulle ', 'i ': 'sui ', 'gli ': 'sugli ' }[m[1]] + m[2];
+}
+
+function testoAmbizione(a) {
+  if (!a) return null;
+  return a.tipo === 'sopravvivere' ? `Sopravvivi fino al ${a.anno} a.C.` : `Conquista ${a.nome}`;
+}
+
+export function ambitionView(game, id) {
+  const a = ambitionOf(game, id), s = ambitionStatus(game, id);
+  if (!a || !s) return null;
+  let stato;
+  if (s.giaRaggiunta) stato = `raggiunta (+${ambitionBonus(game, id)} punti)`;
+  else if (a.tipo === 'sopravvivere') stato = s.anniMancanti === 1 ? 'manca 1 anno' : `mancano ${s.anniMancanti} anni`;
+  else stato = `${s.possedute} province su ${s.totale}, ${Math.round(s.quota * 100)}% delle tasse (servono il ${Math.round(game.balance.ambizioni.quotaRegione * 100)}% e la capitale)`;
+  return { testo: testoAmbizione(a), stato, raggiunta: s.giaRaggiunta };
+}
+
 export function governmentView(game, g) {
   const n = game.nazioni[g], costo = stabilityCost(game, g), s = sliderOf(game, g);
   return {
@@ -155,6 +180,7 @@ export function governmentView(game, g) {
     stabilita: segno(n.stabilita), tratti: formatTratti(n.tratti),
     costoStabilita: costo.toFixed(1), puoAlzare: n.stabilita < 3 && n.tesoro >= costo,
     motivoAlzare: n.stabilita >= 3 ? 'la stabilità è già al massimo (+3)' : n.tesoro < costo ? `servono ${costo.toFixed(1)} denari, ne hai ${n.tesoro.toFixed(1)}` : null,
+    ambizione: ambitionView(game, g),
     sovraestensione: { province: provincesOf(game, g).length, soglia: game.balance.sovraestensione.soglia, malcontento: overextension(game, g) },
     slider: LEVE.map(l => ({ ...l, valore: segno(s[l.quale]), meno: checkSlider(game, g, l.quale, -1), piu: checkSlider(game, g, l.quale, 1) }))
   };
@@ -208,7 +234,7 @@ export function warsView(game, g) {
     const side = sideOf(w, g), nemici = enemiesOf(w, side), mine = w[side];
     const costo = (ricevente, id) => Math.round(peaceCost(game, w, ricevente, { province: [id] }));
     return {
-      id: w.id,
+      id: w.id, controOrda: [...w.attaccanti, ...w.difensori].some(x => isHorde(game, x)),
       nemico: { id: nemici[0], nome: nome(game, nemici[0]) },
       maxChiedibili: maxCedibili(game, nemici[0]),
       ruolo: side === 'attaccanti' ? 'attaccante' : 'difensore',
@@ -306,7 +332,7 @@ export function pendingProposals(game, g) {
     else {
       const w = game.guerre[p.guerra];
       const contro = w ? enemiesOf(w, sideOf(w, p.da)).map(n => nome(game, n)).join(', ') : '';
-      testo = `${da} ti chiama alle armi contro ${contro}. Se rifiuti l'alleanza si rompe.`;
+      testo = `${da} ti chiama alle armi contro ${contro}. ${controOrda(game, p) ? "Contro un'orda puoi restare fuori: l'alleanza resta." : "Se rifiuti l'alleanza si rompe."}`;
     }
     return { id: p.id, da, titolo: TITOLI[p.tipo], testo };
   });
@@ -351,6 +377,13 @@ export function formatLogEntry(e, game, g) {
     case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
     case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
     case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;
+    case 'orda': return `Scende l'orda dei ${N(e.nazione)} da ${P(e.prov)}: punta ${su(game.ambizioni?.regioni?.[game.ambizioni?.orde?.[e.nazione]?.regione]?.nome ?? 'nuove terre')}.`;
+    case 'insediamento': return `L'orda dei ${N(e.nazione)} si stabilisce a ${P(e.prov)}.`;
+    case 'ambizione': {
+      const a = ambitionOf(game, e.nazione);
+      const cosa = !a ? 'realizza' : a.tipo === 'sopravvivere' ? `arriva al ${a.anno} a.C.` : `conquista ${a.nome}`;
+      return `${N(e.nazione)} ${cosa}: ambizione realizzata.`;
+    }
     case 'rifiutata': {
       if (e.da !== g) return null;
       const cosa = { ultimatum: 'il tuo ultimatum', alleanza: 'la tua alleanza', foedus: 'il foedus', tributo: 'il tributo',
@@ -381,6 +414,12 @@ export function importantNews(log, game, g) {
       case 'integrazione': case 'liberazione': return e.nazione === g || e.federato === g;
       case 'eliminata': return amici.has(e.nazione) || Object.values(game.guerre).some(w => sideOf(w, g) && sideOf(w, e.nazione));
       case 'rifiutata': return e.da === g;
+      case 'ambizione': return e.nazione === g;
+      case 'orda': {
+        const r = game.ambizioni?.regioni?.[game.ambizioni?.orde?.[e.nazione]?.regione]?.province ?? [];
+        return [...r, e.prov].some(p => game.province[p]?.owner === g);
+      }
+      case 'insediamento': return Object.values(game.guerre).some(w => sideOf(w, g) && sideOf(w, e.nazione) && sideOf(w, g) !== sideOf(w, e.nazione));
       default: return false;
     }
   };

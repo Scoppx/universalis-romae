@@ -37,3 +37,40 @@ test('Roma facile, Volsci molto difficili', () => {
   assert.equal(by.volsci.difficolta, 'molto difficile');
   assert.ok(Object.keys(by.volsci.tratti).length <= 1);
 });
+
+test('ambizioni: ogni popolo (anche dormiente) ne ha una, valida', async () => {
+  const { loadData } = await import('../tools/load-data.js');
+  const { map, popoli: { popoli: tutti }, ambizioni } = loadData();
+  assert.ok(ambizioni, 'ambizioni.json caricato');
+  const ids = new Set(map.province.map(p => p.id));
+  const iniziali = id => map.province.filter(p => p.owner === id).map(p => p.id);
+  for (const r of Object.values(ambizioni.regioni)) {
+    assert.ok(r.nome && r.province.length);
+    for (const p of r.province) assert.ok(ids.has(p), `provincia ${p}`);
+  }
+  for (const p of tutti) {
+    const a = ambizioni.popoli[p.id];
+    assert.ok(a, `ambizione di ${p.id}`);
+    if (a.tipo === 'sopravvivere') assert.ok(Number.isInteger(a.anno) && a.anno >= 264 && a.anno <= 753, p.id);
+    else {
+      assert.equal(a.tipo, 'regione');
+      const r = ambizioni.regioni[a.regione];
+      assert.ok(r, `regione di ${p.id}`);
+      const mie = iniziali(p.id);
+      for (const q of mie) assert.ok(r.province.includes(q), `${p.id}: ${q} nella sua regione`);
+      if (!['italia', 'sicilia', 'sicilia_occidentale'].includes(a.regione)) {
+        assert.ok(r.province.length >= 2 * mie.length && r.province.length <= 3 * mie.length, `${p.id}: ${r.province.length} per ${mie.length}`);
+      }
+    }
+  }
+  assert.deepEqual(ambizioni.popoli.veio, { tipo: 'sopravvivere', anno: 371 });
+  assert.equal(ambizioni.popoli.roma.regione, 'italia');
+  assert.equal(ambizioni.regioni.italia.province.length, map.province.length);
+  const vicini = Object.fromEntries(map.province.map(p => [p.id, p.vicini]));
+  for (const [id, o] of Object.entries(ambizioni.orde)) {
+    const r = ambizioni.regioni[o.regione].province;
+    assert.ok(!r.includes(o.ingresso), `${id}: ingresso fuori regione`);
+    assert.ok(r.some(q => vicini[q].includes(o.ingresso)), `${id}: ingresso confinante`);
+  }
+  assert.deepEqual(Object.keys(ambizioni.orde).sort(), ['boi', 'insubri', 'senoni']);
+});

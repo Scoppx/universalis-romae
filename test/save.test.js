@@ -309,3 +309,44 @@ test('sfida e giocatore: salvati; salvataggi vecchi ricevono normale', () => {
   x.game.sfida = 'impossibile';
   assert.equal(deserialize(JSON.stringify(x), data).ok, false);
 });
+
+test('le ambizioni non si salvano: al caricamento valgono quelle correnti', async () => {
+  const { loadData } = await import('../tools/load-data.js');
+  const { createSession } = await import('../public/js/ui/session.js');
+  const data = loadData();
+  const s = createSession(data, 'roma', 1);
+  const testo = serialize(s);
+  assert.ok(!JSON.parse(testo).game.ambizioni);
+  const r = deserialize(testo, data);
+  assert.equal(r.ok, true);
+  assert.equal(r.session.game.ambizioni, data.ambizioni);
+});
+
+test('ambizione raggiunta nei salvataggi: assente → null, malformata rifiutata', () => {
+  const data = loadData();
+  const s = createSession(data, 'roma', 1);
+  const o = JSON.parse(serialize(s));
+  delete o.game.nazioni.veio.ambizioneRaggiunta;
+  const r = deserialize(JSON.stringify(o), data);
+  assert.equal(r.ok, true);
+  assert.equal(r.session.game.nazioni.veio.ambizioneRaggiunta, null);
+  o.game.nazioni.veio.ambizioneRaggiunta = 'x';
+  assert.equal(deserialize(JSON.stringify(o), data).ok, false);
+});
+
+test('orda nei salvataggi: valida si ricarica, malformata è rifiutata, assente → null', async () => {
+  const { activateHorde } = await import('../public/js/sim/hordes.js');
+  const data = loadData();
+  const s = createSession(data, 'roma', 1);
+  activateHorde(s.game, 'insubri');
+  const testo = serialize(s);
+  const r = deserialize(testo, data);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.session.game.nazioni.insubri.orda, { regione: 'orda_insubri', prima: null });
+  assert.equal(r.session.game.nazioni.roma.orda, null);
+  const o = JSON.parse(testo);
+  o.game.nazioni.insubri.orda = { regione: 'boh', prima: null };
+  assert.equal(deserialize(JSON.stringify(o), data).ok, false);
+  o.game.nazioni.insubri.orda = { regione: 'orda_insubri', prima: 'nessuna' };
+  assert.equal(deserialize(JSON.stringify(o), data).ok, false);
+});

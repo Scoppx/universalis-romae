@@ -12,7 +12,8 @@ export function cardDetailHtml(c) {
   return `<h3>${esc(c.nome)}</h3>` +
     `<div>Difficoltà: <b class="${diffClass(c.difficolta)}">${esc(c.difficolta)}</b> · ${esc(c.governo)}</div>` +
     `<div class="muto">${esc(c.tratti || 'nessun tratto')}</div>` +
-    (c.bonus ? `<div class="muto">Bonus della difficoltà: ${esc(c.bonus)}</div>` : '') + `<p>${esc(c.carattere)}</p>`;
+    (c.bonus ? `<div class="muto">Bonus della difficoltà: ${esc(c.bonus)}</div>` : '') +
+    (c.ambizione ? `<div>Ambizione: <b>${esc(c.ambizione)}</b></div>` : '') + `<p>${esc(c.carattere)}</p>`;
 }
 
 export function provinceHtml(v) {
@@ -48,6 +49,7 @@ export function governoHtml(v) {
     `<tr><td>Governo</td><td>${esc(v.governo)}${v.effettiGoverno ? ` <span class="muto">(${esc(v.effettiGoverno)})</span>` : ''}</td></tr>` +
     `<tr><td>Stabilità</td><td>${esc(v.stabilita)}</td></tr>` +
     `<tr><td>Tratti</td><td>${esc(v.tratti || 'nessuno')}</td></tr>` +
+    (v.ambizione ? `<tr><td>Ambizione</td><td>${esc(v.ambizione.testo)} <span class="muto">(${esc(v.ambizione.stato)})</span></td></tr>` : '') +
     (v.sovraestensione && v.sovraestensione.province > v.sovraestensione.soglia ? `<tr><td>Province</td><td>${esc(v.sovraestensione.province)} (oltre ${esc(v.sovraestensione.soglia)}: sovraestensione` +
       `${v.sovraestensione.malcontento ? `, +${esc(v.sovraestensione.malcontento)} malcontento nelle terre straniere` : ''})</td></tr>` : '') + '</table>' +
     `<div class="comandi"><button data-azione="alza-stabilita"${v.puoAlzare ? ' title="Spendi i denari indicati: stabilità +1 (più entrate, meno malcontento; da +2 aiuta in battaglia)"' : ` disabled title="${esc(v.motivoAlzare ?? 'non si può ora')}"`}>Alza stabilità (${esc(v.costoStabilita)} denari)</button></div>` +
@@ -150,7 +152,9 @@ export function guerreHtml(list) {
     return `<div><h3>Contro ${esc(w.nemico.nome)}</h3><div>Sei ${esc(w.ruolo)}. Punteggio: <b>${esc(w.punteggio)}</b></div>` +
       (w.daChiedere.length ? `<div class="muto">Province occupate che puoi chiedere (una pace prende al più ${limiti}):</div>${caselle(`chiedi-${w.id}`, w.daChiedere, w.capofila ? w.id : null)}` : '') +
       (w.daCedere.length ? `<div class="muto">Tue province occupate che puoi cedere (al più ${esc(w.limiteMio)} per pace):</div>${caselle(`cedi-${w.id}`, w.daCedere)}` : '') +
-      '<div class="comandi">' + (!w.capofila
+      '<div class="comandi">' + (w.controOrda
+        ? `<button disabled title="un&#39;orda non tratta: la guerra finisce quando si stabilisce o quando la distruggi">Pace bianca</button>`
+        : !w.capofila
         ? '<span class="muto">La pace la firma il capofila del tuo schieramento.</span>'
         : w.propostaInAttesa
         ? '<span class="muto">Proposta in attesa di risposta.</span>'

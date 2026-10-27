@@ -538,7 +538,7 @@ nella tappa 8a), il sito online resta statico.
 - **Popoli piccoli** (partono con una o due province): ambizione **sopravvivere** fino a un anno oltre quello in cui
   nella storia vera persero l'indipendenza (Veio cade nel 396 a.C.: l'ambizione è essere vivi qualche anno dopo).
 - **Popoli grandi** (Sanniti, Etruschi grandi, Umbri…): **tenere le proprie terre e conquistare una regione** (i
-  Sanniti tutto il Sud, ecc.). **Roma: l'Italia** (il 75% delle tasse, come il bench della tappa 8a).
+  Sanniti tutto il Sud, ecc.). **Roma: l'Italia** (il 60% delle tasse, come le altre regioni; il bench della tappa 8a misura ancora il 75%).
 - Si vede nella schermata iniziale accanto al popolo e nella scheda Governo con lo stato (es. "Sud Italia: 4 province
   su 11", "sopravvivi fino al 350 a.C.: mancano 40 anni").
 - Raggiunta: notizia (con la finestra che ferma il tempo, se è tua), **bonus di punteggio**, la partita continua.
@@ -549,7 +549,10 @@ nella tappa 8a), il sito online resta statico.
 - Soglia tra piccoli e grandi: fino a 3 province all'inizio → sopravvivere; da 4 in su → regione; eccezioni scritte nei
   dati (Roma: Italia; Fenici: Sicilia occidentale; Siracusa: la Sicilia; le colonie greche dormienti: sopravvivere).
 - Anno di sopravvivenza: anno storico della perdita d'indipendenza + 25, al più il 264 a.C. (fine partita).
-- Regione raggiunta quando il popolo possiede almeno il 75% delle tasse della regione e tiene ancora la sua capitale.
+- Regione raggiunta quando il popolo possiede almeno il 60% delle tasse della regione e tiene ancora la sua capitale
+  (`ambizioni.quotaRegione`; era 75%, abbassata dall'utente dopo la taratura: al 75% la raggiungeva il 5% dei popoli).
+- Orda che attacca un alleato del giocatore: il giocatore non entra da solo ma riceve una chiamata alle armi; rifiutarla
+  non rompe l'alleanza (con un'orda non c'è pace). Gli alleati dell'IA difendono da soli come in ogni guerra.
 - Bonus una volta sola, resta anche se poi si perdono le terre: `balance.ambizioni.bonusSopravvivenza` e
   `bonusRegione`, valori da tarare perché pesino come una buona espansione (punto di partenza: 15 e 30 punti).
 - Regioni: le terre di partenza più l'area di espansione storica, circa 2–3 volte le province iniziali (i Sanniti:
