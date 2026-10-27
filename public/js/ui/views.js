@@ -8,7 +8,7 @@ import { nearestSafe, nearestSafeReachable, checkRetreat } from '../sim/combat.j
 import { garrison, siegeInfo, assaultChance, checkAssault } from '../sim/siege.js';
 import { monthlyIncome, monthlyUpkeep, stabilityCost } from '../sim/economy.js';
 import { atWar, inTruce, hasPretext, sideOf, enemiesOf, scoreFor, peaceCost, checkWar, maxCedibili, validTerms, annexable } from '../sim/war.js';
-import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione, checkIntegrate, checkRelease, integrationCost } from '../sim/diplomacy.js';
+import { relation, coalition, checkProposal, checkEmbassy, allied, checkLeaveFoedus, warPreview, sogliaCoalizione, checkIntegrate, checkRelease, integrationCost, controOrda } from '../sim/diplomacy.js';
 import { ranking } from '../sim/score.js';
 import { ambitionOf, ambitionStatus, ambitionBonus } from '../sim/ambitions.js';
 
@@ -332,7 +332,7 @@ export function pendingProposals(game, g) {
     else {
       const w = game.guerre[p.guerra];
       const contro = w ? enemiesOf(w, sideOf(w, p.da)).map(n => nome(game, n)).join(', ') : '';
-      testo = `${da} ti chiama alle armi contro ${contro}. Se rifiuti l'alleanza si rompe.`;
+      testo = `${da} ti chiama alle armi contro ${contro}. ${controOrda(game, p) ? "Contro un'orda puoi restare fuori: l'alleanza resta." : "Se rifiuti l'alleanza si rompe."}`;
     }
     return { id: p.id, da, titolo: TITOLI[p.tipo], testo };
   });

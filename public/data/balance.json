@@ -76,7 +76,7 @@
     "presaAlleato": 10
   },
   "orde": { "eserciti": 3, "fanteria": 7000, "cavalleria": 1000, "insediamento": 2, "saccheggio": 6 },
-  "ambizioni": { "bonusSopravvivenza": 15, "bonusRegione": 30, "quotaRegione": 0.75, "preferenzaRegione": 1.5, "prudenza": 1.5 },
+  "ambizioni": { "bonusSopravvivenza": 15, "bonusRegione": 30, "quotaRegione": 0.6, "preferenzaRegione": 1.5, "prudenza": 1.5 },
   "punteggio": {
     "culturaPropria": 1
   },

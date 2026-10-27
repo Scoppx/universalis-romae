@@ -114,18 +114,39 @@ test('orda IA: con Jev resta a regole', () => {
   assert.equal(buildControllers(g, 'jev', finto).galli, rulesController);
 });
 
-test('orda IA: se marcia su un alleato del giocatore, il giocatore difende per l\'alleanza e lo sa', async () => {
-  const { importantNews } = await import('../public/js/ui/views.js');
+test('orda IA: se marcia su un alleato del giocatore, al giocatore arriva una chiamata che può rifiutare senza perdere l\'alleanza', async () => {
+  const { pendingProposals } = await import('../public/js/ui/views.js');
+  const { answerDiplomatic } = await import('../public/js/sim/diplomacy.js');
   const g = conOrda();
   g.giocatore = 'roma';
   g.nazioni.roma.alleati.push('volsci'); g.nazioni.volsci.alleati.push('roma');
   activateHorde(g, 'galli');
   giornoOrdini(g, 'galli');
-  g.log = [];
   for (const c of hordeOrders(g, 'galli')) applyCommand(g, c);
   const w = Object.values(g.guerre).find(x => x.attaccanti[0] === 'galli');
+  assert.deepEqual(w.difensori, ['volsci']); // niente guerra automatica
+  const p = Object.values(g.proposte).find(x => x.tipo === 'chiamata' && x.a === 'roma');
+  assert.ok(p && p.da === 'volsci' && p.guerra === w.id);
+  const [vista] = pendingProposals(g, 'roma');
+  assert.match(vista.testo, /contro Galli\. Contro un'orda puoi restare fuori: l'alleanza resta\.$/);
+  const rel = g.nazioni.roma.relazioni?.volsci;
+  delete g.proposte[p.id];
+  answerDiplomatic(g, p, false);
+  assert.ok(g.nazioni.roma.alleati.includes('volsci') && g.nazioni.volsci.alleati.includes('roma'));
+  assert.equal(g.nazioni.roma.relazioni?.volsci, rel);
+  assert.deepEqual(answerDiplomatic(g, p, true), { ok: true, accettata: true }); // e se accetta entra
   assert.deepEqual(w.difensori, ['volsci', 'roma']);
-  assert.ok(importantNews(g.log, g, 'roma').some(t => t.includes('dichiara guerra')));
+});
+
+test('orda IA: gli alleati dell\'IA difendono ancora da soli', () => {
+  const g = conOrda();
+  g.giocatore = 'roma';
+  g.nazioni.latini.alleati.push('volsci'); g.nazioni.volsci.alleati.push('latini');
+  activateHorde(g, 'galli');
+  giornoOrdini(g, 'galli');
+  for (const c of hordeOrders(g, 'galli')) applyCommand(g, c);
+  const w = Object.values(g.guerre).find(x => x.attaccanti[0] === 'galli');
+  assert.deepEqual(w.difensori, ['volsci', 'latini']);
 });
 
 test('orda IA: arriva, assedia e si stabilisce in una partita headless', () => {
