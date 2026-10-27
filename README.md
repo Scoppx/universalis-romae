@@ -50,6 +50,17 @@ Conquistare l'Italia deve costare gran parte della partita:
 - **Foedus**: dopo 10 anni e con relazione 100 puoi **integrare** un federato pagando 10 × le sue tasse, oppure **liberarlo** (`foedus`).
 - **Livello di sfida** (schermata iniziale): normale; difficile (l'IA ha +20% di tasse e reclute); storico (+40%, e le coalizioni contro di te scattano già da infamia 15).
 
+## Ambizioni
+
+Ogni popolo ha un'ambizione storica (`public/data/ambizioni.json`), scritta nella schermata iniziale e nella scheda Governo con lo stato:
+- i popoli piccoli (fino a 3 province) e i dormienti devono **sopravvivere** fino a 25 anni oltre la data in cui persero l'indipendenza (al più fino al 264 a.C.): Veio fino al 371;
+- i grandi devono **conquistare la loro regione**: almeno il 75% delle sue tasse, tenendo la capitale (Roma: l'Italia; i Sanniti: il Sud; i Fenici: la Sicilia occidentale…).
+Raggiunta, dà un bonus di punteggio (15 o 30, `ambizioni`) che resta anche se poi si perdono le terre. L'IA preferisce le guerre verso la sua regione e, se deve sopravvivere, attacca solo con più vantaggio; Jev riceve l'ambizione tra i fatti. `tools/gen-regioni.js` rigenera il file (poi si rivede a mano).
+
+## Orde galliche
+
+Senoni, Boi e Insubri non arrivano più come popoli normali: scendono come **orde**, tre grandi eserciti senza province (`orde` in `balance.json`). Un'orda non paga il mantenimento, saccheggia le province che prende, dichiara guerra a chi le sbarra la strada verso la sua regione (una guerra per volta) e **non fa pace**: chi ce l'ha in casa resta in guerra finché l'orda non si stabilisce o viene distrutta. Prese 2 province della sua regione si stabilisce e diventa un popolo normale, con capitale la prima presa.
+
 ## Difficoltà e taratura
 
 Ogni popolo ha un'etichetta di difficoltà con un bonus in `balance.json` (`difficolta`): moltiplicatori dell'esercito, del tesoro e della riserva iniziali (`esercito`, `tesoro`, `uomini`), un modificatore al dado (`dado`), bonus di reclute e tasse per tutta la partita (`reclute`, `tasse`) e, per i facili, la capitale che non si cede né in pace né con un ultimatum (`capitaleSalva`). "Molto difficile" resta senza aiuti: Volsci ed Equi sono duri anche da giocare.
