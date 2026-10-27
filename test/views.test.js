@@ -605,7 +605,7 @@ test('ambizione: testo e stato per i due tipi, null senza ambizione', () => {
   g.nazioni.volsci.ambizioneRaggiunta = 0;
   assert.equal(V.ambitionView(g, 'volsci').stato, 'raggiunta (+15 punti)');
   assert.equal(V.ambitionView(g, 'siculi'), null);
-  assert.equal(V.formatLogEntry({ tipo: 'ambizione', nazione: 'volsci' }, g, 'roma'), 'volsci realizza la sua ambizione: Sopravvivi fino al 713 a.C.');
+  assert.equal(V.formatLogEntry({ tipo: 'ambizione', nazione: 'volsci' }, g, 'roma'), 'volsci arriva al 713 a.C.: ambizione realizzata.');
   assert.equal(V.importantNews([{ tipo: 'ambizione', nazione: 'roma' }], g, 'roma').length, 1);
   assert.equal(V.importantNews([{ tipo: 'ambizione', nazione: 'volsci' }], g, 'roma').length, 0);
 });

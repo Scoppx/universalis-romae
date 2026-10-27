@@ -150,6 +150,13 @@ export function provinceInfo(game, id, g) {
 }
 
 // L'ambizione in parole: "Sopravvivi fino al 371 a.C.", "Conquista il Sud".
+// "su" con l'articolo del nome: "le terre di Milano" → "sulle terre di Milano".
+function su(nome) {
+  const m = nome.match(/^(l'|il |la |le |i |gli )(.*)$/);
+  if (!m) return `su ${nome}`;
+  return { "l'": "sull'", 'il ': 'sul ', 'la ': 'sulla ', 'le ': 'sulle ', 'i ': 'sui ', 'gli ': 'sugli ' }[m[1]] + m[2];
+}
+
 function testoAmbizione(a) {
   if (!a) return null;
   return a.tipo === 'sopravvivere' ? `Sopravvivi fino al ${a.anno} a.C.` : `Conquista ${a.nome}`;
@@ -370,9 +377,13 @@ export function formatLogEntry(e, game, g) {
     case 'rivolta': return e.nazione === g ? `Rivolta a ${P(e.prov)} contro ${N(e.nazione)}!` : null;
     case 'indipendenza': return `${P(e.prov)} si stacca da ${N(e.da)} e passa a ${N(e.a)}.`;
     case 'assimilata': return e.nazione === g ? `${P(e.prov)} ha preso la tua cultura.` : null;
-    case 'orda': return `Scende l'orda dei ${N(e.nazione)} da ${P(e.prov)}: punta su ${game.ambizioni?.regioni?.[game.ambizioni?.orde?.[e.nazione]?.regione]?.nome ?? 'nuove terre'}.`;
+    case 'orda': return `Scende l'orda dei ${N(e.nazione)} da ${P(e.prov)}: punta ${su(game.ambizioni?.regioni?.[game.ambizioni?.orde?.[e.nazione]?.regione]?.nome ?? 'nuove terre')}.`;
     case 'insediamento': return `L'orda dei ${N(e.nazione)} si stabilisce a ${P(e.prov)}.`;
-    case 'ambizione': return `${N(e.nazione)} realizza la sua ambizione: ${testoAmbizione(ambitionOf(game, e.nazione)) ?? ''}`;
+    case 'ambizione': {
+      const a = ambitionOf(game, e.nazione);
+      const cosa = !a ? 'realizza' : a.tipo === 'sopravvivere' ? `arriva al ${a.anno} a.C.` : `conquista ${a.nome}`;
+      return `${N(e.nazione)} ${cosa}: ambizione realizzata.`;
+    }
     case 'rifiutata': {
       if (e.da !== g) return null;
       const cosa = { ultimatum: 'il tuo ultimatum', alleanza: 'la tua alleanza', foedus: 'il foedus', tributo: 'il tributo',

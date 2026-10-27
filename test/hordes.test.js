@@ -146,7 +146,7 @@ test('orda nell\'interfaccia: notizie e pace spenta con la spiegazione', async (
   const H = await import('../public/js/ui/panels.js');
   const g = conOrda();
   activateHorde(g, 'galli');
-  assert.equal(V.formatLogEntry({ tipo: 'orda', nazione: 'galli', prov: 'g' }, g, 'roma'), "Scende l'orda dei Galli da G: punta su le terre dei Volsci.");
+  assert.equal(V.formatLogEntry({ tipo: 'orda', nazione: 'galli', prov: 'g' }, g, 'roma'), "Scende l'orda dei Galli da G: punta sulle terre dei Volsci.");
   assert.equal(V.importantNews([{ tipo: 'orda', nazione: 'galli', prov: 'g' }], g, 'volsci').length, 1); // la regione è sua
   assert.equal(V.importantNews([{ tipo: 'orda', nazione: 'galli', prov: 'g' }], g, 'roma').length, 0);
   declareWar(g, 'galli', 'volsci');
@@ -155,4 +155,30 @@ test('orda nell\'interfaccia: notizie e pace spenta con la spiegazione', async (
   assert.ok(!html.includes('Invia proposta'));
   assert.equal(V.formatLogEntry({ tipo: 'insediamento', nazione: 'galli', prov: 'f' }, g, 'roma'), "L'orda dei Galli si stabilisce a F.");
   assert.equal(V.importantNews([{ tipo: 'insediamento', nazione: 'galli', prov: 'f' }], g, 'volsci').length, 1); // in guerra con lei
+});
+
+test('orda nei testi: preposizione articolata davanti alla regione', async () => {
+  const V = await import('../public/js/ui/views.js');
+  const { describeEffects } = await import('../public/js/sim/events.js');
+  const g = createGame({ ...loadData(), seed: 1 });
+  assert.equal(describeEffects(g, { nazione: 'roma' }, { effetti: [{ orda: { popolo: 'insubri' } }] }), "arriva l'orda dei Galli Insubri");
+  activateHorde(g, 'insubri'); activateHorde(g, 'boi');
+  assert.match(V.formatLogEntry({ tipo: 'orda', nazione: 'insubri', prov: 'eporedia' }, g, 'roma'), /^Scende l'orda dei Galli Insubri da .*: punta sulle terre di Milano\.$/);
+  assert.match(V.formatLogEntry({ tipo: 'insediamento', nazione: 'boi', prov: 'felsina' }, g, 'roma'), /^L'orda dei Galli Boi si stabilisce a /);
+});
+
+test('orda: una pace altrove non la teletrasporta nella sua regione', async () => {
+  const { sendStrandedHome } = await import('../public/js/sim/war.js');
+  const g = conOrda();
+  activateHorde(g, 'galli'); // all'ingresso g, dei siculi, con cui non è in guerra
+  sendStrandedHome(g);
+  assert.ok(armiesOf(g, 'galli').every(a => a.prov === 'g'));
+});
+
+test('orda: chi la combatte non vince la guerra solo perché lei non ha terre', async () => {
+  const { warscore } = await import('../public/js/sim/war.js');
+  const g = conOrda();
+  activateHorde(g, 'galli');
+  const { guerra } = declareWar(g, 'galli', 'siculi');
+  assert.equal(warscore(g, g.guerre[guerra]), 0);
 });

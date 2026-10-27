@@ -71,7 +71,7 @@ function occupation(game, war, side) {
   const owners = war[side], enemies = enemiesOf(war, side);
   const owned = Object.values(game.province).filter(p => owners.includes(p.owner));
   const total = sumOf(owned, 'tasse');
-  if (total === 0) return 100;
+  if (total === 0) return owners.some(id => isHorde(game, id)) ? 0 : 100; // un'orda non ha terre da perdere
   return 100 * sumOf(owned.filter(p => enemies.includes(p.controller)), 'tasse') / total;
 }
 
@@ -197,7 +197,7 @@ export function makePeace(game, warId, receiver, termini) {
 // Eserciti rimasti in terra straniera (né in guerra con il padrone né amici suoi) tornano nella capitale.
 export function sendStrandedHome(game) {
   for (const a of Object.values(game.eserciti)) {
-    if (a.owner === RIBELLI) continue;
+    if (a.owner === RIBELLI || isHorde(game, a.owner)) continue; // un'orda non ha casa: resta dov'è
     const p = game.province[a.prov];
     if (p.owner !== a.owner && p.controller !== a.owner && !atWar(game, a.owner, p.owner) && !friendly(game, a.owner, p.owner)) {
       a.prov = game.nazioni[a.owner].capitale;
